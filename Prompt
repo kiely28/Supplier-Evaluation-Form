@@ -1,3 +1,12 @@
+
+I have a folder in "D:\Supplier Evaluation Form" where i put all the Supplier Evaluations.
+Using macro please check the file name and get the first 6 character for example: "X23147_SUMITRONICS PHILS. INC.xlsx" get the "X23147" then Open this file for the tabulating Template "D:\FY25 Supplier periodic evaluation Summary.xlsx". In column N check if have same code. 
+if have please copy in X23147_SUMITRONICS PHILS. INC.xlsx column c row 10 to 21 (because its merge) then paste to FY25 Supplier periodic evaluation Summary.xlsx column p13
+
+
+
+**
+
 Below is a clean, commented VBA sample macro that follows your requirement step-by-step. You can paste this into a standard VBA module.
 
 
