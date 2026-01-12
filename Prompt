@@ -1,0 +1,2 @@
+please create a sample code in macro that
+in my folder(Supplier Evaluation Form), please check my excel files then take the first six characters from excel file name sample "X23147_SUMITRONICS PHILS. INC.xlsx(evaluation form)" in my folder then open and finds that OP_code in Column N of another Excel file(template), starting from row 12. (column header name OP_Code) if have OP_Code in template excel file then open the excel file(evaluation form) copy the data in column c and row 10 to 21 (merge cell) then paste to template excel file column p13
