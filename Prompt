@@ -1,2 +1,180 @@
+Below is a clean, commented VBA sample macro that follows your requirement step-by-step. You can paste this into a standard VBA module.
+
+
+---
+
+Assumptions (adjust if needed)
+
+Folder name: Supplier Evaluation Form
+
+Evaluation form file name example:
+X23147_SUMITRONICS PHILS. INC.xlsx
+
+OP_Code = first 6 characters of the evaluation file name (e.g., X23147)
+
+Template file:
+
+Already open OR you will set its full path
+
+OP_Code column = Column N
+
+Header row = Row 11
+
+Data starts at Row 12
+
+
+Copy source:
+
+Evaluation form Column C
+
+Rows 10 to 21 (merged or not)
+
+
+Paste destination:
+
+Template Column P
+
+Start at Row 13
+
+
+
+
+---
+
+VBA Macro Code
+
+Sub ImportSupplierEvaluation()
+
+    Dim evalFolder As String
+    Dim evalFile As String
+    Dim opCode As String
+
+    Dim wbEval As Workbook
+    Dim wsEval As Worksheet
+
+    Dim wbTemp As Workbook
+    Dim wsTemp As Worksheet
+
+    Dim findRow As Range
+    Dim srcRange As Range
+    Dim destCell As Range
+
+    ' === SETTINGS ===
+    evalFolder = ThisWorkbook.Path & "\Supplier Evaluation Form\"
+    
+    ' If TEMPLATE is already open
+    Set wbTemp = Workbooks("Template.xlsx") ' <-- CHANGE NAME IF NEEDED
+    Set wsTemp = wbTemp.Sheets(1)            ' <-- CHANGE SHEET IF NEEDED
+
+    ' Get first Excel file in folder
+    evalFile = Dir(evalFolder & "*.xlsx")
+
+    Do While evalFile <> ""
+
+        ' Skip temporary Excel files
+        If Left(evalFile, 2) <> "~$" Then
+
+            ' Get OP_Code (first 6 characters of filename)
+            opCode = Left(evalFile, 6)
+
+            ' Find OP_Code in Template Column N starting Row 12
+            Set findRow = wsTemp.Range("N12:N" & wsTemp.Rows.Count).Find( _
+                            What:=opCode, _
+                            LookAt:=xlWhole, _
+                            LookIn:=xlValues)
+
+            ' If OP_Code exists in template
+            If Not findRow Is Nothing Then
+
+                ' Open Evaluation Form
+                Set wbEval = Workbooks.Open(evalFolder & evalFile)
+                Set wsEval = wbEval.Sheets(1) ' <-- CHANGE IF NEEDED
+
+                ' Copy Column C, Rows 10 to 21 (merged-safe)
+                Set srcRange = wsEval.Range("C10:C21")
+
+                ' Paste to Template Column P, Row 13
+                Set destCell = wsTemp.Range("P13")
+                destCell.Resize(srcRange.Rows.Count, 1).Value = srcRange.Value
+
+                ' Close Evaluation Form (no save)
+                wbEval.Close SaveChanges:=False
+
+            End If
+
+        End If
+
+        ' Next file
+        evalFile = Dir
+
+    Loop
+
+    MsgBox "Supplier Evaluation data import completed.", vbInformation
+
+End Sub
+
+
+---
+
+What This Macro Does (Simple Flow)
+
+1. Loops through all Excel files in Supplier Evaluation Form
+
+
+2. Extracts OP_Code from file name
+
+
+3. Searches Column N (from Row 12) in Template
+
+
+4. If OP_Code is found:
+
+Opens the evaluation form
+
+Copies C10:C21
+
+Pastes values into P13:P24 in Template
+
+Closes the evaluation file
+
+
+
+
+
+---
+
+Notes / Optional Enhancements
+
+✔ Works even if C10:C21 is merged
+
+✔ Safe against ~$ temp files
+
+🔧 You can change:
+
+Destination row to match findRow.Row if needed
+
+Template path instead of using already-open workbook
+
+Add error handling if Template is not open
+
+
+
+If you want:
+
+Paste relative to found OP_Code row
+
+Auto-open the template
+
+Handle multiple sheets
+
+Append instead of overwrite
+
+
+Just tell me 👍
+
+
+**
+
+
 please create a sample code in macro that
 in my folder(Supplier Evaluation Form), please check my excel files then take the first six characters from excel file name sample "X23147_SUMITRONICS PHILS. INC.xlsx(evaluation form)" in my folder then open and finds that OP_code in Column N of another Excel file(template), starting from row 12. (column header name OP_Code) if have OP_Code in template excel file then open the excel file(evaluation form) copy the data in column c and row 10 to 21 (merge cell) then paste to template excel file column p13
