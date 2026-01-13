@@ -1,3 +1,207 @@
+Good question — this is a classic EF Core configuration issue, not a problem with your stored procedure logic 👍
+Your code is mostly correct, but the error tells us exactly what’s wrong.
+
+
+---
+
+❌ ERROR EXPLAINED
+
+> InvalidOperationException: The ConnectionString property has not been initialized.
+
+
+
+This means:
+
+➡️ Database.GetDbConnection() was created
+➡️ BUT EF Core was never given a connection string
+
+So when this line runs:
+
+using var conn = Database.GetDbConnection();
+await conn.OpenAsync();
+
+EF Core has no idea which SQL Server to connect to.
+
+
+---
+
+✅ ROOT CAUSE (99% THIS)
+
+Your ApplicationDbContext is not configured with UseSqlServer(...)
+OR it is not registered correctly in Program.cs.
+
+
+---
+
+✅ FIX 1 (MOST IMPORTANT): Check Program.cs
+
+You MUST have this 👇
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    ));
+
+✔ Without this → connection string is NULL
+✔ With this → Database.GetDbConnection() works
+
+
+---
+
+✅ FIX 2: Check appsettings.json
+
+Make sure you have:
+
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=YOUR_DB;Trusted_Connection=True;TrustServerCertificate=True;"
+  }
+}
+
+⚠️ Common mistakes:
+
+Typo in ConnectionStrings
+
+Typo in DefaultConnection
+
+Empty value
+
+
+
+---
+
+✅ FIX 3: Verify Constructor (YOURS IS OK ✅)
+
+Your constructor is correct:
+
+public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+    : base(options)
+{
+}
+
+❌ DO NOT add a parameterless constructor
+❌ DO NOT manually new-up DbContext
+
+
+---
+
+⚠️ BUG IN YOUR GetTotalScansAsync (IMPORTANT)
+
+You open the connection manually but never close it.
+
+❌ Current Code
+
+using var conn = Database.GetDbConnection();
+await conn.OpenAsync();
+
+using var cmd = conn.CreateCommand();
+cmd.CommandText = "sp_Students_GetTotalScans";
+cmd.CommandType = CommandType.StoredProcedure;
+
+var result = await cmd.ExecuteScalarAsync();
+return Convert.ToInt32(result);
+
+
+---
+
+✅ FIXED VERSION (SAFE)
+
+public async Task<int> GetTotalScansAsync()
+{
+    await using var conn = Database.GetDbConnection();
+
+    if (conn.State != ConnectionState.Open)
+        await conn.OpenAsync();
+
+    await using var cmd = conn.CreateCommand();
+    cmd.CommandText = "sp_Students_GetTotalScans";
+    cmd.CommandType = CommandType.StoredProcedure;
+
+    var result = await cmd.ExecuteScalarAsync();
+    return Convert.ToInt32(result);
+}
+
+EF Core will now:
+
+✔ Use the configured connection string
+
+✔ Open safely
+
+✔ Dispose correctly
+
+
+
+---
+
+✅ WHY OTHER METHODS WORK BUT THIS FAILS
+
+These work:
+
+FromSqlRaw(...)
+ExecuteSqlRawAsync(...)
+
+Because EF Core internally manages the connection.
+
+This fails:
+
+Database.GetDbConnection()
+
+Because YOU are now responsible for the connection — and EF Core needs to be configured first.
+
+
+---
+
+🧪 QUICK DEBUG CHECK
+
+Put this breakpoint before OpenAsync():
+
+var conn = Database.GetDbConnection();
+var cs = conn.ConnectionString; // 👈 THIS IS EMPTY NOW
+
+If cs == "" → configuration issue (Program.cs / appsettings.json)
+
+
+---
+
+✅ FINAL CHECKLIST
+
+✔ Program.cs → AddDbContext + UseSqlServer
+✔ appsettings.json → valid connection string
+✔ No manual new ApplicationDbContext() anywhere
+✔ Proper open/close in GetTotalScansAsync
+
+
+---
+
+🏁 RESULT AFTER FIX
+
+✅ Total Scan count works
+
+✅ No DataTables dependency
+
+✅ Stored procedure-based
+
+✅ Production safe
+
+
+
+---
+
+If you want, next I can:
+
+Refactor all DB calls to one consistent pattern
+
+Add transaction scope
+
+Convert SerialNoExistsAsync to FromSqlRaw
+
+Add connection pooling-safe helpers
+
+
+Just tell me 👍
+
+
+**
 
 InvalidOperationException: The ConnectionString property has not been initialized.
 
