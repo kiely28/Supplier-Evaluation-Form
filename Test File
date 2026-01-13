@@ -1,3 +1,221 @@
+Good news: your DataTables setup is 90% correct 👍
+The problem is NOT the table, NOT the markup, and NOT the DataTables library itself.
+
+The issue is SCRIPT EXECUTION ORDER.
+
+
+---
+
+🚨 ROOT CAUSE (THIS IS THE REAL PROBLEM)
+
+❌ Your DataTable initialization runs BEFORE jQuery & DataTables JS are loaded
+
+In Create.cshtml, you have this:
+
+<script>
+    $(document).ready(function () {
+        $('#itemsTable').DataTable({
+            pageLength: 5,
+            ordering: true,
+            searching: true,
+            lengthChange: false
+        });
+    });
+</script>
+
+But…
+
+👉 This script is rendered inside @RenderBody()
+👉 jQuery & DataTables are loaded AFTER @RenderBody() in _Layout.cshtml
+
+So at runtime:
+
+❌ $ is undefined
+❌ DataTable() is not available yet
+❌ Script silently fails
+
+That’s why:
+
+No search
+
+No pagination
+
+No error popup
+
+
+
+---
+
+✅ CORRECT FIX (DO THIS EXACTLY)
+
+🔧 MOVE DataTable init INTO @section Scripts
+
+❌ REMOVE this from Create.cshtml:
+
+<script>
+    $(document).ready(function () {
+        $('#itemsTable').DataTable({
+            pageLength: 5,
+            ordering: true,
+            searching: true,
+            lengthChange: false
+        });
+    });
+</script>
+
+
+---
+
+✅ ADD THIS instead (AT BOTTOM of Create.cshtml):
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            if ($('#itemsTable').length) {
+                $('#itemsTable').DataTable({
+                    pageLength: 5,
+                    ordering: true,
+                    searching: true,
+                    lengthChange: false
+                });
+            }
+        });
+    </script>
+
+}
+
+✔ This guarantees:
+
+jQuery is loaded
+
+DataTables is loaded
+
+Table exists in DOM
+
+
+
+---
+
+✅ WHY THIS FIX WORKS
+
+Your _Layout.cshtml already has:
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+@await RenderSectionAsync("Scripts", required: false)
+
+So anything inside @section Scripts runs AFTER jQuery + DataTables.
+
+That’s the key.
+
+
+---
+
+⚠️ SECOND IMPORTANT ISSUE (NOT BLOCKING, BUT WRONG)
+
+You currently have TWO “Quantity” inputs:
+
+❌ This is WRONG:
+
+<label>Quantity</label>
+<input asp-for="Age" id="basic-default-sno1" />
+
+AND later:
+
+<input asp-for="Quantity" id="quantity" />
+
+👉 This will cause:
+
+Confusing UI
+
+Model binding issues
+
+Wrong values saved
+
+
+✅ FIX IT:
+
+Remove this block completely:
+
+<div class="row mb-6">
+    <label class="col-sm-2 col-form-label" for="basic-default-sno1">Quantity</label>
+    <div class="col-sm-10">
+        <input asp-for="Age" class="form-control" id="basic-default-sno1" />
+    </div>
+</div>
+
+Age ≠ Quantity ❌
+
+
+---
+
+🧪 QUICK CONFIRMATION TEST
+
+After the fix:
+
+1. Reload page
+
+
+2. Scroll to table
+
+
+3. You should see:
+
+🔍 Search box
+
+📄 Pagination
+
+“Showing X of Y entries”
+
+
+
+
+If yes → FIXED ✅
+
+
+---
+
+🏆 FINAL SUMMARY
+
+✅ What was broken
+
+DataTable initialized before JS libraries loaded
+
+
+✅ What fixed it
+
+Move DataTable init into @section Scripts
+
+
+✅ Extra cleanup
+
+Remove duplicate Quantity/Age field
+
+
+
+---
+
+If you want next:
+
+Highlight newly saved row
+
+Auto-scroll to table after save
+
+Ajax refresh table without reload
+
+Server-side DataTables (SP-based)
+
+
+Just tell me 👍
+
+
+
+*****
+
 
 Create.cshtml
 
