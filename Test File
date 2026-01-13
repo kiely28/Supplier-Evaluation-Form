@@ -1,3 +1,187 @@
+Got it 👍
+You want a Total Scan Count that:
+
+✅ Counts all scanned items
+
+❌ Is NOT affected by DataTables paging, search, or filtering
+
+✅ Updates after save / submit
+
+✅ Works in your IN module
+
+
+Below is the correct and reliable way to do this.
+
+
+---
+
+✅ OPTION 1 (RECOMMENDED): TOTAL FROM DATABASE (NOT DataTables)
+
+This is the most accurate and safest approach.
+
+
+---
+
+🔹 1. SQL: Stored Procedure to Get Total Scans
+
+CREATE PROCEDURE sp_Students_GetTotalScans
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT COUNT(*) AS TotalCount
+    FROM Students;
+END
+
+> ✅ Not affected by paging
+✅ Not affected by search
+✅ Always correct
+
+
+
+
+---
+
+🔹 2. ApplicationDbContext
+
+public async Task<int> GetTotalScansAsync()
+{
+    using var conn = Database.GetDbConnection();
+    await conn.OpenAsync();
+
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "sp_Students_GetTotalScans";
+    cmd.CommandType = CommandType.StoredProcedure;
+
+    var result = await cmd.ExecuteScalarAsync();
+    return Convert.ToInt32(result);
+}
+
+
+---
+
+🔹 3. Controller (IN Module)
+
+public async Task<IActionResult> Create()
+{
+    ViewBag.TotalScans = await _context.GetTotalScansAsync();
+    ViewBag.CategoryList = await _context.GetCategoriesAsync();
+    ViewBag.LocationList = await _context.GetLocationsAsync();
+
+    return View();
+}
+
+After SAVE:
+
+[HttpPost]
+public async Task<IActionResult> Create(Student model)
+{
+    if (!ModelState.IsValid)
+    {
+        ViewBag.TotalScans = await _context.GetTotalScansAsync();
+        return View(model);
+    }
+
+    await _context.InsertStudentAsync(model);
+
+    ViewBag.SuccessMessage = "Saved successfully!";
+    ViewBag.TotalScans = await _context.GetTotalScansAsync();
+
+    ModelState.Clear();
+    return View(new Student());
+}
+
+
+---
+
+🔹 4. Create.cshtml – Display Total Scan Count
+
+Place this above the table:
+
+<div class="ui statistic">
+    <div class="value" id="totalScans">
+        @ViewBag.TotalScans
+    </div>
+    <div class="label">
+        Total Scanned Items
+    </div>
+</div>
+
+
+---
+
+✅ OPTION 2: Client-side Count (ONLY IF ALL DATA IS LOADED)
+
+⚠️ Not recommended for large data or paging.
+
+const totalCount = $('#itemsTable tbody tr').length;
+$('#totalScans').text(totalCount);
+
+❌ Breaks if:
+
+Server-side paging
+
+Search
+
+Filtering
+
+
+
+---
+
+🏆 BEST PRACTICE (YOUR CASE)
+
+Since you are using:
+
+Stored Procedures
+
+IN transaction
+
+DataTables
+
+
+👉 OPTION 1 (Database Count) is the correct solution
+
+
+---
+
+🔁 AUTO-REFRESH AFTER SAVE (AJAX OPTIONAL)
+
+If later you switch to AJAX insert:
+
+$.get('/Students/GetTotalScans', function (count) {
+    $('#totalScans').text(count);
+});
+
+
+---
+
+🧪 FINAL RESULT
+
+✔ Always correct total
+✔ Independent from DataTables
+✔ Professional transaction behavior
+✔ Ready for audit / reporting
+
+
+---
+
+If you want next:
+
+Total per Category
+
+Total per Date
+
+Running total per session
+
+Total Qty instead of row count
+
+
+Just tell me 👍
+
+**
+
+
 Great question 👍
 To use DataTables with Semantic UI styling, you must load the Semantic UI integration files, not the default DataTables CSS.
 
