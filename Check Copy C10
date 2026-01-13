@@ -1,3 +1,229 @@
+Your logic is almost correct 👍 — the reason it’s not copying is usually due to one (or more) of these VBA gotchas:
+
+1. Find is failing silently
+
+
+2. Merged cell value handling
+
+
+3. Hidden mismatch in supplier code (spaces, case, filename format)
+
+
+4. Find parameters not fully defined
+
+
+5. Summary sheet calculation / protection issues
+
+
+
+Let’s go step-by-step, then I’ll give you a fixed + hardened version of your macro.
+
+
+---
+
+🔴 Main Issues in Your Current Code
+
+❌ 1. Find is unreliable without full parameters
+
+If Excel previously used different Find settings, .Find may not match anything, even if the value exists.
+
+You MUST specify all parameters.
+
+
+---
+
+❌ 2. Filename may include spaces or unexpected characters
+
+Example:
+
+X23147_SUMITRONICS PHILS. INC.xlsx
+
+Left(evalFile, 6) → X23147 ✅
+But if Column N contains:
+
+X23147␠
+
+or
+
+x23147
+
+Find will FAIL.
+
+
+---
+
+❌ 3. Merged cells can return blank if not handled carefully
+
+You handled this correctly, but we’ll make it safer.
+
+
+---
+
+❌ 4. No confirmation when Find fails
+
+Your macro runs, but nothing happens, so it looks broken.
+
+
+---
+
+✅ FIXED & HARDENED VERSION (Recommended)
+
+✔ What this version improves
+
+Forces reliable .Find
+
+Trims supplier code
+
+Handles merged cells safely
+
+Adds debug output
+
+Prevents silent failure
+
+
+
+---
+
+✅ Corrected VBA Code
+
+Sub UpdateSupplierEvaluationSummary()
+
+    Dim evalFolder As String
+    Dim evalFile As String
+    Dim evalWB As Workbook
+    Dim evalWS As Worksheet
+
+    Dim summaryWB As Workbook
+    Dim summaryWS As Worksheet
+
+    Dim supplierCode As String
+    Dim findCell As Range
+    Dim copyValue As Variant
+
+    ' Path
+    evalFolder = "D:\Supplier Evaluation Form\"
+
+    ' Open summary file once
+    Set summaryWB = Workbooks.Open("D:\FY25 Supplier periodic evaluation Summary.xlsx")
+    Set summaryWS = summaryWB.Sheets(2)
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+
+    evalFile = Dir(evalFolder & "*.xls*")
+
+    Do While evalFile <> ""
+
+        supplierCode = Trim(Left(evalFile, 6))
+        Debug.Print "Checking file:", evalFile, "Code:", supplierCode
+
+        ' SAFE FIND
+        Set findCell = summaryWS.Range("N12:N" & summaryWS.Cells(summaryWS.Rows.Count, "N").End(xlUp).Row) _
+            .Find(What:=supplierCode, _
+                  LookIn:=xlValues, _
+                  LookAt:=xlWhole, _
+                  MatchCase:=False)
+
+        If Not findCell Is Nothing Then
+
+            Debug.Print "Match found at row:", findCell.Row
+
+            Set evalWB = Workbooks.Open(evalFolder & evalFile, ReadOnly:=True)
+            Set evalWS = evalWB.Sheets(1)
+
+            ' Get value from merged range safely
+            If evalWS.Range("C10").MergeCells Then
+                copyValue = evalWS.Range("C10").MergeArea.Cells(1, 1).Value
+            Else
+                copyValue = evalWS.Range("C10").Value
+            End If
+
+            Debug.Print "Copied value:", copyValue
+
+            ' Paste to Column P
+            summaryWS.Cells(findCell.Row, "P").Value = copyValue
+
+            evalWB.Close SaveChanges:=False
+
+        Else
+            Debug.Print "NO MATCH for:", supplierCode
+        End If
+
+        evalFile = Dir
+    Loop
+
+    summaryWB.Save
+
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+
+    MsgBox "Supplier Evaluation Summary updated successfully!", vbInformation
+
+End Sub
+
+
+---
+
+🧪 HOW TO VERIFY IT’S WORKING
+
+1. Press CTRL + G in VBA → opens Immediate Window
+
+
+2. Run the macro
+
+
+3. Watch messages like:
+
+
+
+Checking file: X23147_SUMITRONICS PHILS. INC.xlsx  Code: X23147
+Match found at row: 15
+Copied value: PASSED
+
+If you see:
+
+NO MATCH for: X23147
+
+➡ Column N does NOT exactly match the code.
+
+
+---
+
+✅ If It Still Doesn’t Copy, Check These
+
+🔍 Column N
+
+No leading/trailing spaces
+
+Not a formula returning X23147 
+
+Not formatted as number
+
+
+Fix column N once:
+
+=TRIM(N12)
+
+
+---
+
+🟢 Want Enhancements?
+
+I can also:
+
+Copy multiple cells instead of just C10
+
+Write to different columns based on labels
+
+Auto-log files that failed to match
+
+Skip already-processed suppliers
+
+
+Just tell me 👍
+
+**
+
 
 Sub UpdateSupplierEvaluationSummary()
 
