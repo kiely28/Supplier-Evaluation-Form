@@ -1,0 +1,63 @@
+
+Sub UpdateSupplierEvaluationSummary()
+
+    Dim evalFolder As String
+    Dim evalFile As String
+    Dim evalWB As Workbook
+    Dim evalWS As Worksheet
+
+    Dim summaryWB As Workbook
+    Dim summaryWS As Worksheet
+
+    Dim supplierCode As String
+    Dim findCell As Range
+    Dim copyValue As Variant
+
+    ' Paths
+    evalFolder = "D:\Supplier Evaluation Form\"
+    
+    ' Open Summary Template (open once only)
+    Set summaryWB = Workbooks.Open("D:\FY25 Supplier periodic evaluation Summary.xlsx")
+    Set summaryWS = summaryWB.Sheets(2) ' adjust if needed
+
+    ' Loop through supplier evaluation files
+    evalFile = Dir(evalFolder & "*.xls*")
+
+    Do While evalFile <> ""
+
+        ' Get first 6 characters of filename
+        supplierCode = Left(evalFile, 6)
+
+        ' Find supplier code in Column N starting row 12
+        Set findCell = summaryWS.Range("N12:N" & summaryWS.Rows.Count) _
+                        .Find(What:=supplierCode, LookAt:=xlWhole)
+
+        If Not findCell Is Nothing Then
+
+            ' Open supplier evaluation file
+            Set evalWB = Workbooks.Open(evalFolder & evalFile)
+            Set evalWS = evalWB.Sheets(1) ' adjust if needed
+
+            ' Copy merged range C10:C21 (value only)
+            'copyValue = evalWS.Range("C10").Value
+            copyValue = evalWS.Range("C10").MergeArea.Cells(1).Value
+            Debug.Print "Value to write:", copyValue
+
+            ' Paste to Column P of the found row
+            'summaryWS.Cells(findCell.Row, "P").Value = copyValue
+            summaryWS.Cells(findCell.Row, 16).Value = copyValue
+
+            ' Close supplier file
+            evalWB.Close SaveChanges:=False
+        End If
+
+        evalFile = Dir
+    Loop
+
+    ' Save summary file
+    summaryWB.Save
+
+    MsgBox "Supplier Evaluation Summary updated successfully!", vbInformation
+
+End Sub
+
