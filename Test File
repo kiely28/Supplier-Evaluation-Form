@@ -1,3 +1,162 @@
+
+InvalidOperationException: The ConnectionString property has not been initialized.
+
+ApplicationDbContext.cs: 
+
+
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using System.Data;
+using WebApplication1.Models;
+
+namespace WebApplication1.Data
+{
+    public class ApplicationDbContext : DbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
+        public DbSet<Student> Students { get; set; }
+
+
+        // GET ALL (Async)
+        public async Task<List<Student>> GetStudentsAsync()
+        {
+            return await Students
+                .FromSqlRaw("EXEC sp_Students_GetAll")
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        // INSERT (Async)
+        public async Task InsertStudentAsync(Student student)
+        {
+            await Database.ExecuteSqlRawAsync(
+                "EXEC sp_Students_Insert @Name, @Age, @CategoryId, @LocationId, @SerialNo, @Quantity",
+                new SqlParameter("@Name", student.Name),
+                new SqlParameter("@Age", student.Age),
+                new SqlParameter("@CategoryId", student.CategoryId),
+                new SqlParameter("@LocationId", student.LocationId),
+                new SqlParameter("@SerialNo", student.SerialNo),
+                new SqlParameter("@Quantity", student.Quantity)
+            );
+        }
+
+
+
+        // UPDATE (Async)
+        public async Task UpdateStudentAsync(Student student)
+        {
+            await Database.ExecuteSqlRawAsync(
+                "EXEC sp_Students_Update @Id, @Name, @Age, @CategoryId, @SerialNo",
+                new SqlParameter("@Id", student.Id),
+                new SqlParameter("@Name", student.Name),
+                new SqlParameter("@Age", student.Age),
+                new SqlParameter("@CategoryId", student.CategoryId),
+                new SqlParameter("@SerialNo", student.SerialNo)
+            );
+        }
+
+        // DELETE (Async)
+        public async Task DeleteStudentAsync(int id)
+        {
+            await Database.ExecuteSqlRawAsync(
+                "EXEC sp_Students_Delete @Id",
+                new SqlParameter("@Id", id)
+            );
+        }
+
+        public DbSet<Category> Categories { get; set; }
+
+        // Get categories for dropdown
+        public async Task<List<Category>> GetCategoriesAsync()
+        {
+            return await Categories
+                .FromSqlRaw("EXEC sp_Category_GetAll")
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+
+        //public async Task<bool> SerialNoExistsAsync(string serialNo)
+        //{
+        //    var count = await Database.ExecuteSqlRawAsync(
+        //        "EXEC sp_Students_SerialNoExists @SerialNo",
+        //        new SqlParameter("@SerialNo", serialNo)
+        //    );
+
+        //    return count > 0;
+        //}
+
+        public async Task<bool> SerialNoExistsAsync(string serialNo)
+        {
+            using var command = Database.GetDbConnection().CreateCommand();
+            command.CommandText = "sp_Students_SerialNoExists";
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.Add(new SqlParameter("@SerialNo", serialNo));
+
+            await Database.OpenConnectionAsync();
+            var result = (int)await command.ExecuteScalarAsync();
+            await Database.CloseConnectionAsync();
+
+            return result > 0;
+        }
+
+        //public async Task<bool> SerialNoExistsAsync(string serialNo)
+        //{
+        //    using var connection = Database.GetDbConnection();
+        //    using var command = connection.CreateCommand();
+
+        //    command.CommandText = "sp_Students_SerialNoExists";
+        //    command.CommandType = CommandType.StoredProcedure;
+
+        //    command.Parameters.Add(
+        //        new SqlParameter("@SerialNo", SqlDbType.NVarChar, 50)
+        //        {
+        //            Value = serialNo
+        //        });
+
+        //    if (connection.State != ConnectionState.Open)
+        //        await connection.OpenAsync();
+
+        //    var result = (int)await command.ExecuteScalarAsync();
+
+        //    return result > 0;
+        //}
+
+        public DbSet<Location> Locations { get; set; }
+
+        public async Task<List<Location>> GetLocationsAsync()
+        {
+            return await Locations
+                .FromSqlRaw("EXEC sp_Location_GetAll")
+                .ToListAsync();
+        }
+
+        public async Task<int> GetTotalScansAsync()
+        {
+            using var conn = Database.GetDbConnection();
+            await conn.OpenAsync();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "sp_Students_GetTotalScans";
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            var result = await cmd.ExecuteScalarAsync();
+            return Convert.ToInt32(result);
+        }
+
+
+    }
+}
+
+
+
+**
+
+
 Got it 👍
 You want a Total Scan Count that:
 
