@@ -1,3 +1,225 @@
+This is a classic DataTables issue 👍
+Your table is rendering, but DataTables JS is NOT initializing, which is why:
+
+❌ No search box
+❌ No pagination
+❌ Looks like a normal HTML table
+
+Let’s fix it step-by-step, starting from the most common causes.
+
+
+---
+
+✅ 1️⃣ CHECK: jQuery MUST load BEFORE DataTables
+
+DataTables depends on jQuery.
+If jQuery loads after DataTables → nothing works (no error, just silent failure).
+
+✅ CORRECT ORDER (VERY IMPORTANT)
+
+Put this ONCE, preferably in _Layout.cshtml, before </body>:
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+❌ Do NOT load jQuery again inside the page.
+
+
+---
+
+✅ 2️⃣ CHECK: Table ID MUST MATCH EXACTLY
+
+HTML
+
+<table id="itemsTable" class="table table-bordered table-striped">
+
+JavaScript
+
+$('#itemsTable').DataTable();
+
+❌ These will NOT work:
+
+$('#itemTable')   // missing "s"
+$('#ItemsTable') // case mismatch
+
+IDs are case-sensitive.
+
+
+---
+
+✅ 3️⃣ CHECK: DataTable INIT MUST RUN AFTER TABLE EXISTS
+
+✅ SAFE VERSION (USE THIS)
+
+<script>
+    $(document).ready(function () {
+        if ($('#itemsTable').length) {
+            $('#itemsTable').DataTable({
+                pageLength: 5,
+                searching: true,
+                ordering: true,
+                lengthChange: false
+            });
+        }
+    });
+</script>
+
+If the table is inside:
+
+@if (ViewBag.StudentList != null)
+
+then DataTables will not initialize when list is empty.
+
+✔ The if ($('#itemsTable').length) check fixes this.
+
+
+---
+
+✅ 4️⃣ CHECK: Table MUST HAVE <thead> and <tbody>
+
+DataTables requires <thead>.
+
+✅ CORRECT
+
+<table id="itemsTable" class="table">
+    <thead>
+        <tr>
+            <th>Control No</th>
+            <th>Serial No</th>
+            <th>Model</th>
+            <th>Category</th>
+            <th>Location</th>
+            <th>Qty</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in list)
+        {
+            <tr>
+                <td>@item.ControlNo</td>
+                <td>@item.SerialNo</td>
+                <td>@item.Name</td>
+                <td>@item.CategoryName</td>
+                <td>@item.LocationName</td>
+                <td>@item.Quantity</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+❌ Missing <thead> = DataTables won’t activate.
+
+
+---
+
+✅ 5️⃣ CHECK: Are There JavaScript Errors?
+
+Open Browser DevTools → Console.
+
+Common errors:
+
+jQuery is not defined
+
+$(...).DataTable is not a function
+
+
+🔥 Meaning:
+
+Error	Cause
+
+jQuery is not defined	jQuery not loaded
+DataTable is not a function	DataTables loaded before jQuery OR duplicate jQuery
+No error but no UI	Init ran before table existed
+
+
+
+---
+
+✅ 6️⃣ DO NOT LOAD SCRIPTS MULTIPLE TIMES
+
+❌ This breaks DataTables:
+
+<script src="jquery.js"></script>
+<script src="jquery.js"></script> <!-- DUPLICATE -->
+
+✔ Only ONE jQuery version allowed.
+
+
+---
+
+✅ 7️⃣ QUICK TEST (COPY–PASTE)
+
+Paste this temporarily under your table:
+
+<script>
+    console.log("jQuery:", typeof $);
+    console.log("DataTable:", typeof $.fn.DataTable);
+</script>
+
+Expected output:
+
+jQuery: function
+DataTable: function
+
+If DataTable: undefined → library not loaded.
+
+
+---
+
+✅ 8️⃣ RECOMMENDED FINAL SETUP (BEST PRACTICE)
+
+📁 _Layout.cshtml
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+@RenderSection("Scripts", required: false)
+
+📄 Create.cshtml
+
+@section Scripts {
+<script>
+    $(document).ready(function () {
+        $('#itemsTable').DataTable({
+            pageLength: 5
+        });
+    });
+</script>
+}
+
+
+---
+
+🏆 FINAL VERDICT (99% OF CASES)
+
+✔ jQuery loaded AFTER DataTables ❌
+✔ Duplicate jQuery ❌
+✔ Script runs before table exists ❌
+
+Once fixed → search + pagination appear instantly.
+
+
+---
+
+If you want, paste:
+
+_Layout.cshtml
+
+Bottom of Create.cshtml
+
+
+and I’ll pinpoint the exact line causing the issue in one reply.
+
+
+**
+
+
 Perfect — this is a very common and good UX pattern for an IN module 👍
 Below is a clear, step-by-step implementation that fits exactly your existing coding style:
 
