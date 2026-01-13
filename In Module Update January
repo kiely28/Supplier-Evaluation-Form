@@ -1,0 +1,238 @@
+Perfect — this is a very common and good UX pattern for an IN module 👍
+Below is a clear, step-by-step implementation that fits exactly your existing coding style:
+
+ASP.NET Core MVC (.NET 8)
+
+EF Core
+
+Stored Procedures only
+
+Async
+
+Thin controller
+
+DataTable shown below the Create form
+
+Table refreshes after Save
+
+
+
+---
+
+🎯 GOAL
+
+After saving an item in Create (IN module):
+
+The same page reloads
+
+Form stays (Serial No cleared & focused)
+
+A DataTable appears below, showing the saved records
+
+
+
+---
+
+✅ STEP 1: GET DATA SP (FOR DATATABLE)
+
+You already have this, but confirming format:
+
+sp_Students_GetAll
+
+ALTER PROCEDURE sp_Students_GetAll
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        s.Id,
+        s.ControlNo,
+        s.SerialNo,
+        s.Name,
+        s.Quantity,
+        c.CategoryName,
+        l.LocationName,
+        s.Age
+    FROM Students s
+    INNER JOIN tbl_Category c ON s.CategoryId = c.CategoryId
+    INNER JOIN tbl_Location l ON s.LocationId = l.LocationId
+    ORDER BY s.Id DESC;
+END
+
+
+---
+
+✅ STEP 2: DbContext Method
+
+public async Task<List<Student>> GetStudentsAsync()
+{
+    return await Students
+        .FromSqlRaw("EXEC sp_Students_GetAll")
+        .AsNoTracking()
+        .ToListAsync();
+}
+
+
+---
+
+✅ STEP 3: Controller (IMPORTANT CHANGE)
+
+👉 After Save → return same View with data
+
+StudentsController.cs
+
+public async Task<IActionResult> Create()
+{
+    ViewBag.CategoryList = await _context.GetCategoriesAsync();
+    ViewBag.LocationList = await _context.GetLocationsAsync();
+    ViewBag.StudentList = await _context.GetStudentsAsync(); // 👈 TABLE DATA
+    return View(new Student());
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> Create(Student student)
+{
+    if (!ModelState.IsValid)
+    {
+        ViewBag.CategoryList = await _context.GetCategoriesAsync();
+        ViewBag.LocationList = await _context.GetLocationsAsync();
+        ViewBag.StudentList = await _context.GetStudentsAsync();
+        return View(student);
+    }
+
+    await _context.InsertStudentAsync(student);
+
+    ViewBag.SuccessMessage = "Saved successfully.";
+    ViewBag.FocusSerial = true;
+
+    ViewBag.CategoryList = await _context.GetCategoriesAsync();
+    ViewBag.LocationList = await _context.GetLocationsAsync();
+    ViewBag.StudentList = await _context.GetStudentsAsync();
+
+    return View(new Student()); // 👈 reset form
+}
+
+
+---
+
+✅ STEP 4: Create.cshtml – ADD DATATABLE SECTION BELOW FORM
+
+🔹 Add this AFTER the form
+
+@if (ViewBag.StudentList != null)
+{
+    var list = ViewBag.StudentList as List<WebApplication1.Models.Student>;
+
+    <hr />
+
+    <h4>Saved Items</h4>
+
+    <table id="itemsTable" class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Control No</th>
+                <th>Serial No</th>
+                <th>Model</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in list)
+        {
+            <tr>
+                <td>@item.ControlNo</td>
+                <td>@item.SerialNo</td>
+                <td>@item.Name</td>
+                <td>@item.CategoryName</td>
+                <td>@item.LocationName</td>
+                <td>@item.Quantity</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+
+---
+
+✅ STEP 5: ENABLE DATATABLE (JS)
+
+Add at bottom of Create.cshtml
+
+<link rel="stylesheet"
+      href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('#itemsTable').DataTable({
+            pageLength: 5,
+            ordering: true,
+            searching: true,
+            lengthChange: false
+        });
+    });
+</script>
+
+
+---
+
+✅ STEP 6: KEEP YOUR EXISTING UX RULES
+
+✔ Serial No clears
+✔ Focus returns to Serial No
+✔ Clear button still works
+✔ Enter-key logic still works
+✔ No redirect to Index
+
+
+---
+
+🏆 FINAL USER EXPERIENCE
+
+1. User inputs data
+
+
+2. Clicks Save
+
+
+3. Page reloads
+
+
+4. Form remains
+
+
+5. New row appears instantly below
+
+
+6. Cursor focuses back to Serial No
+
+
+7. User continues scanning/encoding
+
+
+
+This is exactly how warehouse / inventory IN modules work.
+
+
+---
+
+🔥 OPTIONAL NEXT UPGRADES (TELL ME IF YOU WANT)
+
+Highlight newly inserted row
+
+Auto-scroll to table
+
+Inline delete/edit row
+
+Ajax save (no page reload)
+
+Filter by today’s entries only
+
+
+Just say the word 👍
