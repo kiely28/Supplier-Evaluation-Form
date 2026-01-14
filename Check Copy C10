@@ -1,3 +1,130 @@
+Got it 👍
+You just need to repeat the same merged-cell–safe logic for C23:C34 and paste the value to Column Q.
+
+Below is the clean + correct way to do it without breaking your existing logic.
+
+
+---
+
+✅ WHAT THIS WILL DO
+
+Read value from merged C10:C21 → paste to Column P
+
+Read value from merged C23:C34 → paste to Column Q
+
+Works even if the value is not stored in C10 or C23
+
+Safe for formulas and merged cells
+
+
+
+---
+
+🔧 ONLY REPLACE the COPY SECTION with THIS
+
+Put this inside:
+
+If Not findCell Is Nothing Then
+
+
+---
+
+✅ Final Copy Logic (Column P & Q)
+
+Dim srcCell As Range
+Dim srcCell2 As Range
+Dim copyValue1 As Variant
+Dim copyValue2 As Variant
+
+' ===== C10:C21 → Column P =====
+Set srcCell = evalWS.Range("C10")
+
+If srcCell.MergeCells Then
+    copyValue1 = srcCell.MergeArea.Cells(1, 1).Value2
+Else
+    copyValue1 = srcCell.Value2
+End If
+
+summaryWS.Cells(findCell.Row, "P").Value = copyValue1
+Debug.Print "C10:C21 copied:", copyValue1
+
+
+' ===== C23:C34 → Column Q =====
+Set srcCell2 = evalWS.Range("C23")
+
+If srcCell2.MergeCells Then
+    copyValue2 = srcCell2.MergeArea.Cells(1, 1).Value2
+Else
+    copyValue2 = srcCell2.Value2
+End If
+
+summaryWS.Cells(findCell.Row, "Q").Value = copyValue2
+Debug.Print "C23:C34 copied:", copyValue2
+
+
+---
+
+🧪 DEBUG CONFIRMATION (Optional but Useful)
+
+If it ever copies blank again, run this once:
+
+Dim c As Range
+For Each c In evalWS.Range("C23").MergeArea
+    Debug.Print c.Address, "=", c.Value
+Next c
+
+This shows exactly where Excel stored the value.
+
+
+---
+
+🟢 PRO TIP (Future-Proof)
+
+If later you need more merged ranges, use a helper function:
+
+Function GetMergedValue(rng As Range) As Variant
+    If rng.MergeCells Then
+        GetMergedValue = rng.MergeArea.Cells(1, 1).Value2
+    Else
+        GetMergedValue = rng.Value2
+    End If
+End Function
+
+Then your code becomes:
+
+summaryWS.Cells(findCell.Row, "P").Value = GetMergedValue(evalWS.Range("C10"))
+summaryWS.Cells(findCell.Row, "Q").Value = GetMergedValue(evalWS.Range("C23"))
+
+
+---
+
+✅ RESULT
+
+Source	Destination
+
+C10:C21 (merged)	Column P
+C23:C34 (merged)	Column Q
+
+
+
+---
+
+If you want next:
+
+Copy multiple merged blocks dynamically
+
+Skip files already updated
+
+Validate numeric values only
+
+Add logging sheet for errors
+
+
+Just say the word 💪
+
+
+**
+
 
 Good catch — this is a classic merged-cell + formula issue in Excel VBA.
 If C10 visually shows 1 but VBA reads it as empty, one of these is 99% the cause.
