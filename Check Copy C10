@@ -1,3 +1,22 @@
+
+
+Direct Material 
+M1 C10 - C21 - P
+M2 C22 - C34 - Q
+M3 C35 - C46 - R
+M4 C47 - C58 - S
+M5 C59 - C75 - T
+M6 C76 - C88 - U
+M7 C89 - C102 - V
+M8 C103 - C114 - W
+M9 C115 - C130 - X
+M10 C131 - C145 - Y
+M11 C146 - C158 - Z
+
+
+**
+
+
 Got it 👍
 You just need to repeat the same merged-cell–safe logic for C23:C34 and paste the value to Column Q.
 
