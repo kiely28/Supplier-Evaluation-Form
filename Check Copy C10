@@ -1,3 +1,138 @@
+
+Good catch — this is a classic merged-cell + formula issue in Excel VBA.
+If C10 visually shows 1 but VBA reads it as empty, one of these is 99% the cause.
+
+
+---
+
+🔴 WHY THIS HAPPENS
+
+✅ Most common reasons
+
+1. C10 is merged but the value is NOT stored in C10
+
+Excel stores the value in the top-left cell of the merged area
+
+That top-left cell may be B10, C9, or C10 depending on how it was merged
+
+
+
+2. C10 contains a formula returning ""
+
+Looks like 1, but VBA reads "" (empty string)
+
+
+
+3. C10 is text "1" from a formula but merged area hides it
+
+
+
+
+---
+
+✅ THE REAL FIX (Guaranteed)
+
+🔧 Read the VALUE from the TOP-LEFT CELL of the MERGED AREA
+
+Instead of assuming C10 holds the value, force VBA to read from the merged area’s first cell.
+
+
+---
+
+✅ REPLACE your copy section with THIS
+
+Dim srcCell As Range
+
+Set srcCell = evalWS.Range("C10")
+
+If srcCell.MergeCells Then
+    copyValue = srcCell.MergeArea.Cells(1, 1).Value
+Else
+    copyValue = srcCell.Value
+End If
+
+Debug.Print "Merged Area Address:", srcCell.MergeArea.Address
+Debug.Print "Copied value:", copyValue
+
+
+---
+
+🧪 DEBUG CHECK (VERY IMPORTANT)
+
+Add this once to confirm where the value actually is:
+
+Dim c As Range
+For Each c In evalWS.Range("C10").MergeArea
+    Debug.Print c.Address, "=", c.Value
+Next c
+
+You’ll see something like:
+
+$B$10 = 1
+$C$10 =
+$D$10 =
+
+➡ This proves why your original code returned empty
+
+
+---
+
+✅ EVEN SAFER (FORMULA-PROOF VERSION)
+
+If the cell has a formula:
+
+If srcCell.MergeCells Then
+    copyValue = srcCell.MergeArea.Cells(1, 1).Value2
+Else
+    copyValue = srcCell.Value2
+End If
+
+(Value2 ignores formatting quirks)
+
+
+---
+
+🟢 BEST PRACTICE (Recommended)
+
+🔥 NEVER read directly from a merged cell
+
+Always do this:
+
+With evalWS.Range("C10")
+    copyValue = .MergeArea.Cells(1, 1).Value
+End With
+
+
+---
+
+✅ QUICK SUMMARY
+
+Issue	Result
+
+Merged cell	Value stored elsewhere
+Formula returns ""	VBA sees empty
+Value not in C10	Must read MergeArea
+Using .Value	May fail
+Using .Value2	Reliable
+
+
+
+---
+
+If you want, I can:
+
+Auto-detect where the value is inside the merged area
+
+Copy C10:C21 merged block properly
+
+Add a fallback search if merged structure changes
+
+
+Just tell me 👍
+
+**
+
+
 Your logic is almost correct 👍 — the reason it’s not copying is usually due to one (or more) of these VBA gotchas:
 
 1. Find is failing silently
