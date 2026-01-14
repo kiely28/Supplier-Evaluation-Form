@@ -1,3 +1,176 @@
+Here you go 👍
+Below is a FULL, CLEAN, READY-TO-COPY VBA MACRO that includes everything we discussed and works safely with merged cells.
+
+You can copy–paste this entire code into one standard module.
+
+
+---
+
+✅ COMPLETE WORKING CODE (COPY EVERYTHING)
+
+Option Explicit
+
+Sub UpdateSupplierEvaluationSummary()
+
+    Dim evalFolder As String
+    Dim evalFile As String
+    Dim evalWB As Workbook
+    Dim evalWS As Worksheet
+
+    Dim summaryWB As Workbook
+    Dim summaryWS As Worksheet
+
+    Dim supplierCode As String
+    Dim findCell As Range
+
+    Dim startRows As Variant
+    Dim endRows As Variant
+    Dim destCol As Long
+    Dim i As Long
+
+    ' ==========================
+    ' PATHS
+    ' ==========================
+    evalFolder = "D:\Supplier Evaluation Form\"
+
+    ' Open summary file once
+    Set summaryWB = Workbooks.Open("D:\FY25 Supplier periodic evaluation Summary.xlsx")
+    Set summaryWS = summaryWB.Sheets(2) ' adjust if needed
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    ' ==========================
+    ' SOURCE ROW BLOCKS (COLUMN C)
+    ' ==========================
+    startRows = Array(10, 22, 35, 47, 59, 76, 89, 103, 115, 131, 146)
+    endRows   = Array(21, 34, 46, 58, 75, 88, 102, 114, 130, 145, 158)
+
+    evalFile = Dir(evalFolder & "*.xls*")
+
+    Do While evalFile <> ""
+
+        supplierCode = Trim(Left(evalFile, 6))
+        Debug.Print "Processing:", evalFile, "Code:", supplierCode
+
+        ' ==========================
+        ' FIND SUPPLIER CODE (COLUMN N, ROW 12 DOWN)
+        ' ==========================
+        Set findCell = summaryWS.Range("N12:N" & summaryWS.Cells(summaryWS.Rows.Count, "N").End(xlUp).Row) _
+            .Find(What:=supplierCode, LookIn:=xlValues, LookAt:=xlWhole, MatchCase:=False)
+
+        If Not findCell Is Nothing Then
+
+            Set evalWB = Workbooks.Open(evalFolder & evalFile, ReadOnly:=True)
+            Set evalWS = evalWB.Sheets(1) ' adjust if needed
+
+            destCol = 16 ' Column P
+
+            ' ==========================
+            ' COPY MERGED BLOCKS
+            ' ==========================
+            For i = LBound(startRows) To UBound(startRows)
+
+                summaryWS.Cells(findCell.Row, destCol).Value = _
+                    GetMergedValue(evalWS.Range("C" & startRows(i)))
+
+                Debug.Print "C" & startRows(i) & ":C" & endRows(i) & _
+                            " -> Col " & summaryWS.Cells(1, destCol).Address(0, 0), _
+                            "Value:", summaryWS.Cells(findCell.Row, destCol).Value
+
+                destCol = destCol + 1
+            Next i
+
+            evalWB.Close SaveChanges:=False
+
+        Else
+            Debug.Print "NO MATCH FOUND FOR:", supplierCode
+        End If
+
+        evalFile = Dir
+    Loop
+
+    summaryWB.Save
+
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+
+    MsgBox "Supplier Evaluation Summary updated successfully!", vbInformation
+
+End Sub
+
+
+' ==================================================
+' FUNCTION: SAFE VALUE READER FOR MERGED CELLS
+' ==================================================
+Function GetMergedValue(rng As Range) As Variant
+    If rng.MergeCells Then
+        GetMergedValue = rng.MergeArea.Cells(1, 1).Value2
+    Else
+        GetMergedValue = rng.Value2
+    End If
+End Function
+
+
+---
+
+✅ WHAT THIS CODE DOES
+
+✔ Loops all supplier evaluation files
+✔ Extracts first 6 characters of filename
+✔ Finds match in Column N (from row 12)
+✔ Reads 11 merged ranges in Column C
+✔ Pastes values into Columns P → Z
+✔ Handles merged cells + formulas correctly
+✔ Safe, fast, and debuggable
+
+
+---
+
+🧪 HOW TO VERIFY
+
+1. Open VBA Editor → CTRL + G
+
+
+2. Run the macro
+
+
+3. Watch the Immediate Window:
+
+
+
+Processing: X23147_SUMIT.xlsx Code: X23147
+C10:C21 -> Col P Value: 1
+C22:C34 -> Col Q Value: 0
+...
+C146:C158 -> Col Z Value: PASSED
+
+
+---
+
+🔥 NEXT IMPROVEMENTS (Optional)
+
+If you want, I can add:
+
+Auto-skip files already copied
+
+Validation (numbers only / max score)
+
+Error logging sheet
+
+Dynamic block detection
+
+Progress bar
+
+
+Just tell me 👍
+
+
+**
+
+
 C10:C21 (merged) - Column P
 C22:C34 (merged) - Column Q
 C35:C46 (merged) - Column R
