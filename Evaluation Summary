@@ -1,3 +1,67 @@
+
+For "Direct Material" then
+M means Management
+M1 C10:C21 (merged) - Column P
+M2 C22:C34 (merged) - Column Q
+M3 C35:C46 (merged) - Column R
+M4 C47:C58 (merged) - Column S
+M5 C59:C75 (merged) - Column T
+M6 C76:C88 (merged) - Column U
+M7 C89:C102 (merged) - Column V
+M8 C103:C114 (merged) - Column W
+M9 C115:C130 (merged) - Column X
+M10 C131:C145 (merged) - Column Y
+M11 C146:C158 (merged) - Column Z
+M12 C159:C179 (merged) - Column AA
+M13 C180:C191 (merged) - Column AB
+M14 C192:C205 (merged) - Column AC
+M15 C206:C222 (merged) - Column AD
+M16 C223:C233 (merged) - Column AE
+M17 C234:C248 (merged) - Column AF
+M18 C249:C261 (merged) - Column AG
+M19 Skip - Column AH
+M20 C262:C272 (merged) - Column AI
+
+E means Environment
+E1 C274:C288 (merged) - Column AJ
+E2 C289:C303 (merged) - Column AK
+E3 C304:C318 (merged) - Column AL
+E4 C319:C333 (merged) - Column AM
+E5 C334:C358 (merged) - Column AN
+
+Q means Quality
+Q1 C369:C383 (merged) - Column AO
+Q2 C884:C400 (merged) - Column AP
+Q3 C401:C415 (merged) - Column AQ
+Q4 C416:C429 (merged) - Column AR
+Q5 C430:C445 (merged) - Column AS
+Q6 C446:C460 (merged) - Column AT
+Q7 C461:C477 (merged) - Column AU
+Q8 C478:C491 (merged) - Column AV
+Q9 C492:C507 (merged) - Column AW
+Q10 C508:C522 (merged) - Column AX
+Q11 C523:C535 (merged) - Column AY
+Q12 C536:C548 (merged) - Column AZ
+
+C means Cost
+C1 C550:C566 (merged) - Column BA
+C2 C567:C580 (merged) - Column BB
+C3 C581:C597 (merged) - Column BC
+C4 C598:C612 (merged) - Column BD
+C5 C613:C624 (merged) - Column BE
+
+D means Delivery
+D1 C626:C639 (merged) - Column BF
+D2 C640:C656 (merged) - Column BG
+D3 C657:C674 (merged) - Column BH
+D4 C675:C685 (merged) - Column BI
+D5 C686:C697 (merged) - Column BJ
+
+
+
+**
+
+
 Understood 👍
 This is now a material-type–dependent mapping, so the correct and maintainable solution is:
 
