@@ -1,3 +1,200 @@
+Great idea 👍
+Moving mappings to a Config sheet is the best long-term solution for what you’re building.
+Below is a clear, practical SAMPLE DESIGN + VBA that you can directly adapt.
+
+
+---
+
+✅ 1️⃣ CONFIG SHEET DESIGN (Excel)
+
+Create a sheet named:
+
+Config_Mapping
+
+📋 Column Layout
+
+A	B	C	D	E
+
+MaterialType	Category	SourceStartRow	SourceEndRow	DestColumn
+Direct Material	M1	10	21	P
+Direct Material	M2	22	34	Q
+Direct Material	M3	35	46	R
+Direct Material	M4	47	58	S
+Direct Material	M5	59	75	T
+Direct Material	M6	76	88	U
+Direct Material	M7	89	102	V
+Direct Material	M8	103	114	W
+Direct Material	M9	115	130	X
+Direct Material	M10	131	145	Y
+Direct Material	M11	146	158	Z
+Direct Material	M12	159	179	AA
+Direct Material	M13	180	191	AB
+Direct Material	M14	192	205	AC
+Direct Material	M15	206	222	AD
+Direct Material	M16	223	233	AE
+Direct Material	M17	234	248	AF
+Direct Material	M18	249	261	AG
+Direct Material	M19	0	0	AH
+Direct Material	M20	262	272	AI
+Direct Material	E1	274	288	AJ
+Direct Material	E2	289	303	AK
+…	…	…	…	…
+
+
+🔴 SKIP RULE
+
+If SourceStartRow = 0 → skip this mapping
+
+
+
+---
+
+✅ 2️⃣ WHY THIS IS POWERFUL
+
+✔ No VBA edits when rows change
+✔ Easy to add Indirect / Professional Service
+✔ Excel users can maintain logic
+✔ VBA becomes generic & clean
+
+
+---
+
+✅ 3️⃣ VBA CODE USING CONFIG SHEET
+
+🔧 COMPLETE SAMPLE (COPY-PASTE)
+
+Option Explicit
+
+Sub UpdateSupplierEvaluationSummary_ConfigDriven()
+
+    Dim evalFolder As String, evalFile As String
+    Dim evalWB As Workbook, evalWS As Worksheet
+    Dim summaryWB As Workbook, summaryWS As Worksheet
+    Dim cfgWS As Worksheet
+    Dim findCell As Range
+
+    Dim supplierCode As String
+    Dim materialType As String
+    Dim lastCfgRow As Long
+    Dim r As Long
+
+    evalFolder = "D:\Supplier Evaluation Form\"
+
+    Set summaryWB = Workbooks.Open("D:\FY25 Supplier periodic evaluation Summary.xlsx")
+    Set summaryWS = summaryWB.Sheets(2)
+    Set cfgWS = summaryWB.Sheets("Config_Mapping")
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    evalFile = Dir(evalFolder & "*.xls*")
+
+    Do While evalFile <> ""
+
+        supplierCode = Trim(Left(evalFile, 6))
+
+        Set findCell = summaryWS.Range("N12:N" & _
+            summaryWS.Cells(summaryWS.Rows.Count, "N").End(xlUp).Row) _
+            .Find(supplierCode, LookIn:=xlValues, LookAt:=xlWhole)
+
+        If Not findCell Is Nothing Then
+
+            materialType = Trim(summaryWS.Cells(findCell.Row, "L").Value)
+
+            Set evalWB = Workbooks.Open(evalFolder & evalFile, ReadOnly:=True)
+            Set evalWS = evalWB.Sheets(1)
+
+            lastCfgRow = cfgWS.Cells(cfgWS.Rows.Count, "A").End(xlUp).Row
+
+            ' ==============================
+            ' LOOP CONFIG MAPPINGS
+            ' ==============================
+            For r = 2 To lastCfgRow
+
+                If cfgWS.Cells(r, "A").Value = materialType Then
+
+                    ' Skip rows with startRow = 0
+                    If cfgWS.Cells(r, "C").Value <> 0 Then
+
+                        summaryWS.Cells(findCell.Row, cfgWS.Cells(r, "E").Value).Value = _
+                            GetMergedValue(evalWS.Range("C" & cfgWS.Cells(r, "C").Value))
+
+                    End If
+                End If
+            Next r
+
+            evalWB.Close SaveChanges:=False
+        End If
+
+        evalFile = Dir
+    Loop
+
+    summaryWB.Save
+
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+
+    MsgBox "Config-driven evaluation update completed!", vbInformation
+
+End Sub
+
+
+Function GetMergedValue(rng As Range) As Variant
+    If rng.MergeCells Then
+        GetMergedValue = rng.MergeArea.Cells(1, 1).Value2
+    Else
+        GetMergedValue = rng.Value2
+    End If
+End Function
+
+
+---
+
+✅ 4️⃣ HOW THIS WORKS (SIMPLE FLOW)
+
+1. Reads Material Type from Column L
+
+
+2. Looks up Config_Mapping
+
+
+3. Matches rows where MaterialType = Column L
+
+
+4. Copies merged value from Column C
+
+
+5. Pastes to destination column
+
+
+6. Skips rows marked with 0
+
+
+
+
+---
+
+🔥 NEXT IMPROVEMENTS (OPTIONAL)
+
+If you want, I can add:
+
+Validation warnings for missing mappings
+
+Auto-sort mapping by column order
+
+Multiple source columns (not just C)
+
+Versioned config sheets (FY25 / FY26)
+
+
+Just tell me 👍
+
+
+
+**
+
 
 For "Direct Material" then
 M means Management
