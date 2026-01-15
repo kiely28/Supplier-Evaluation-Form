@@ -1,0 +1,63 @@
+- Direct Material
+C10:C21 (merged) - Column P
+C22:C34 (merged) - Column Q
+C35:C46 (merged) - Column R
+C47:C58 (merged) - Column S
+C59:C75 (merged) - Column T
+C76:C88 (merged) - Column U
+C89:C102 (merged) - Column V
+C103:C114 (merged) - Column W
+C115:C130 (merged) - Column X
+C131:C145 (merged) - Column Y
+C146:C158 (merged) - Column Z
+C159:C179 (merged) - Column AA
+C180:C191 (merged) - Column AB
+C192:C205 (merged) - Column AC
+C206:C222 (merged) - Column AD
+C223:C233 (merged) - Column AE
+C234:C248 (merged) - Column AF
+C249:C261 (merged) - Column AG
+Skip - Column AH
+C262:C272 (merged) - Column AI
+
+
+
+- Indirect Material
+M1 C10:C21 (merged) - Column P
+M2 C22:C34 (merged) - Column Q
+M3 C35:C46 (merged) - Column R
+M4 C47:C58 (merged) - Column S
+M5 C59:C75 (merged) - Column T
+M6 C76:C88 (merged) - Column U
+M7 C89:C102 (merged) - Column V
+M8 C103:C114 (merged) - Column W
+M9 C115:C130 (merged) - Column X
+M10 C131:C145 (merged) - Column Y
+M11 C146:C158 (merged) - Column Z
+M12 C159:C179 (merged) - Column AA
+M13 C180:C191 (merged) - Column AB
+M14 C192:C205 (merged) - Column AC
+M15 C206:C222 (merged) - Column AD
+M16 C223:C233 (merged) - Column AE
+M17 C234:C248 (merged) - Column AF
+M18 C249:C261 (merged) - Column AG
+M19 Skip - Column AH
+M20 C262:C272 (merged) - Column AI
+
+
+- Professional Service
+M1 C10:C21 (merged) - Column P
+M2 C22:C34 (merged) - Column Q
+M3 C35:C46 (merged) - Column R
+M4 C47:C57 (merged) - Column S
+M5 C58:C68 (merged) - Column T
+M6 C69:C81 (merged) - Column U
+M7 C82:C98 (merged) - Column V
+M8 C99:C115 (merged) - Column W
+M9 C116:C130 (merged) - Column X
+M10 C131:C142 (merged) - Column Y
+M11 C143:C156 (merged) - Column Z
+M12 C157:C173 (merged) - Column AA
+M19 Skip - Column AB to AH
+M20 C174:C184 (merged) - Column AI
+
