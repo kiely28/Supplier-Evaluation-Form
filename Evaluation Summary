@@ -1,3 +1,227 @@
+Good question 👍
+There are two clean ways to add another mapping for Sheet2 when you are using a config-driven approach. I’ll show the recommended (scalable) way, then a simpler alternative.
+
+
+---
+
+✅ RECOMMENDED WAY (Best Practice)
+
+➜ Add SourceSheet column in the Config sheet
+
+This allows:
+
+Multiple source sheets (Sheet1, Sheet2, Sheet3…)
+
+No VBA changes when mappings change
+
+One macro handles everything
+
+
+
+---
+
+1️⃣ UPDATE YOUR Config_Mapping SHEET
+
+🔧 Add Column F: SourceSheet
+
+A	B	C	D	E	F
+
+MaterialType	Category	SourceStartRow	SourceEndRow	DestColumn	SourceSheet
+Direct Material	M1	10	21	P	Sheet1
+Direct Material	M2	22	34	Q	Sheet1
+Direct Material	E1	274	288	AJ	Sheet1
+Direct Material	Q1	369	383	AO	Sheet2
+Direct Material	Q2	384	400	AP	Sheet2
+Direct Material	C1	550	566	BA	Sheet2
+Direct Material	M19	0	0	AH	Sheet1
+
+
+🔴 RULE
+
+SourceStartRow = 0 → SKIP
+
+SourceSheet decides which worksheet to read from
+
+
+
+---
+
+2️⃣ UPDATED VBA (SUPPORTS SHEET1 & SHEET2)
+
+✅ COPY-PASTE COMPLETE CODE
+
+Option Explicit
+
+Sub UpdateSupplierEvaluationSummary_ConfigDriven()
+
+    Dim evalFolder As String, evalFile As String
+    Dim evalWB As Workbook
+    Dim summaryWB As Workbook, summaryWS As Worksheet
+    Dim cfgWS As Worksheet
+    Dim findCell As Range
+
+    Dim supplierCode As String
+    Dim materialType As String
+    Dim lastCfgRow As Long
+    Dim r As Long
+
+    Dim srcWS As Worksheet
+    Dim srcSheetName As String
+
+    evalFolder = "D:\Supplier Evaluation Form\"
+
+    Set summaryWB = Workbooks.Open("D:\FY25 Supplier periodic evaluation Summary.xlsx")
+    Set summaryWS = summaryWB.Sheets(2)
+    Set cfgWS = summaryWB.Sheets("Config_Mapping")
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    evalFile = Dir(evalFolder & "*.xls*")
+
+    Do While evalFile <> ""
+
+        supplierCode = Trim(Left(evalFile, 6))
+
+        Set findCell = summaryWS.Range("N12:N" & _
+            summaryWS.Cells(summaryWS.Rows.Count, "N").End(xlUp).Row) _
+            .Find(supplierCode, LookIn:=xlValues, LookAt:=xlWhole)
+
+        If Not findCell Is Nothing Then
+
+            materialType = Trim(summaryWS.Cells(findCell.Row, "L").Value)
+
+            Set evalWB = Workbooks.Open(evalFolder & evalFile, ReadOnly:=True)
+
+            lastCfgRow = cfgWS.Cells(cfgWS.Rows.Count, "A").End(xlUp).Row
+
+            ' ==============================
+            ' LOOP CONFIG MAPPINGS
+            ' ==============================
+            For r = 2 To lastCfgRow
+
+                If cfgWS.Cells(r, "A").Value = materialType Then
+
+                    ' Skip mapping rows
+                    If cfgWS.Cells(r, "C").Value = 0 Then GoTo NextMap
+
+                    ' Get source sheet name
+                    srcSheetName = cfgWS.Cells(r, "F").Value
+
+                    On Error Resume Next
+                    Set srcWS = evalWB.Sheets(srcSheetName)
+                    On Error GoTo 0
+
+                    If srcWS Is Nothing Then GoTo NextMap
+
+                    summaryWS.Cells(findCell.Row, cfgWS.Cells(r, "E").Value).Value = _
+                        GetMergedValue(srcWS.Range("C" & cfgWS.Cells(r, "C").Value))
+
+                End If
+NextMap:
+                Set srcWS = Nothing
+            Next r
+
+            evalWB.Close SaveChanges:=False
+        End If
+
+        evalFile = Dir
+    Loop
+
+    summaryWB.Save
+
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+
+    MsgBox "Config-driven (multi-sheet) update completed!", vbInformation
+
+End Sub
+
+
+Function GetMergedValue(rng As Range) As Variant
+    If rng.MergeCells Then
+        GetMergedValue = rng.MergeArea.Cells(1, 1).Value2
+    Else
+        GetMergedValue = rng.Value2
+    End If
+End Function
+
+
+---
+
+3️⃣ HOW THIS WORKS (VERY IMPORTANT)
+
+Sheet1 mappings → read from Sheet1
+
+Sheet2 mappings → read from Sheet2
+
+One config row = one rule
+
+You can mix Sheet1 & Sheet2 mappings freely
+
+
+
+---
+
+✅ EXAMPLE USE CASE
+
+Mapping	Reads From
+
+Management	Sheet1
+Environment	Sheet1
+Quality	Sheet2
+Cost	Sheet2
+Delivery	Sheet2
+
+
+No VBA changes needed — just update the config sheet 👍
+
+
+---
+
+🔹 SIMPLE ALTERNATIVE (NOT RECOMMENDED)
+
+Hard-code logic in VBA like:
+
+If cfgWS.Cells(r, "B").Value Like "Q*" Then
+    Set srcWS = evalWB.Sheets(2)
+Else
+    Set srcWS = evalWB.Sheets(1)
+End If
+
+⚠️ This becomes hard to maintain later.
+
+
+---
+
+🔥 RECOMMENDATION
+
+✅ Use SourceSheet column
+❌ Avoid hard-coding sheet numbers
+✅ Config sheet becomes your “rule engine”
+
+
+---
+
+If you want next, I can:
+
+Add validation if sheet name is wrong
+
+Auto-create config template
+
+Add versioned mappings (FY25 / FY26)
+
+Add logging for missing mappings
+
+
+Just tell me 👍
+
+**
+
+
+
 Great idea 👍
 Moving mappings to a Config sheet is the best long-term solution for what you’re building.
 Below is a clear, practical SAMPLE DESIGN + VBA that you can directly adapt.
