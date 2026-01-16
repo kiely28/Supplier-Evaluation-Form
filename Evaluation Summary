@@ -1,3 +1,13 @@
+
+before copying the value from srcWS, please check column b in the srcWS if in the Category(Column B) 
+in Config_Mapping is equal but in srcWS column b is like this: "M1．Mission/Vision statement" get the category after "." 
+and get the row number of column b in Config_Mapping Column C (Source Start Row)
+
+
+****
+
+
+
 Good question 👍
 There are two clean ways to add another mapping for Sheet2 when you are using a config-driven approach. I’ll show the recommended (scalable) way, then a simpler alternative.
 
