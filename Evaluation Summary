@@ -1,3 +1,23 @@
+Before copying the value of Column C (merged cell) in srcWS, 
+
+
+
+please add a validation in column b in srcWS 
+
+
+how to check:
+1. the set column is b and get the row number in config_mapping in source start row then get the value.
+eg., column B, row 2 then value = M1
+2. In srcWS, column B contains values like: "M1．Mission/Vision statement",
+   Extract the category name after the "." eg., M1
+3. compare the value. if doesn't match then Dest Column highlight to Red.
+
+purpose:
+to check the input of the source start row because the first row cell merged has a beside category name which is in the config_mapping(category name).
+
+if the value doesn't match then, possible wrong input of source start row or inserting another row
+
+**
 
 before copying the value from srcWS, please check column b in the srcWS if in the Category(Column B) 
 in Config_Mapping is equal but in srcWS column b is like this: "M1．Mission/Vision statement" get the category after "." 
