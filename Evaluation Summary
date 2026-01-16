@@ -1,3 +1,163 @@
+Good catch — this is a known Excel/VBA edge case 👍
+Your text does contain a full-width dot, but VBA sometimes fails to match it reliably depending on encoding / copy source.
+
+Let’s fix this 100% reliably.
+
+
+---
+
+✅ WHY InStr("．") FAILS SOMETIMES
+
+The character in:
+
+M1．Mission/Vision statement
+
+is U+FF0E (Fullwidth Full Stop)
+
+Excel may store it as:
+
+Unicode full-width dot
+
+Or visually identical variant
+
+Or pasted as IME character
+
+
+So matching "．" directly is not safe.
+
+
+---
+
+✅ BULLETPROOF SOLUTION (RECOMMENDED)
+
+✔ Instead of searching for the dot,
+
+✔ Extract the category using a pattern: Letters + Numbers
+
+Because your categories are always like:
+
+M1, M12, Q3, E5, C10, D4
+
+This is FAR more robust.
+
+
+---
+
+🧠 NEW EXTRACTION LOGIC
+
+We extract:
+
+Leading LETTER(S) + NUMBER(S)
+
+From:
+
+"M1．Mission/Vision statement"
+
+Result:
+
+M1
+
+From:
+
+"Q12.Some text"
+
+Result:
+
+Q12
+
+
+---
+
+✅ REPLACE YOUR FUNCTION WITH THIS (COPY-PASTE)
+
+Function ExtractCategory(val As String) As String
+    Dim re As Object
+    Dim m As Object
+
+    Set re = CreateObject("VBScript.RegExp")
+    re.Pattern = "^[A-Za-z]+[0-9]+"
+    re.Global = False
+    re.IgnoreCase = True
+
+    If re.Test(Trim(val)) Then
+        Set m = re.Execute(Trim(val))
+        ExtractCategory = m(0)
+    Else
+        ExtractCategory = ""
+    End If
+End Function
+
+
+---
+
+✅ WHY THIS WORKS 100%
+
+✔ Ignores dot type (fullwidth / halfwidth / missing)
+✔ Ignores language / description text
+✔ Works even if someone types:
+
+M1  Mission
+M1-Mission
+M1：Mission
+
+✔ Safe against Excel encoding weirdness
+
+
+---
+
+🔍 QUICK TEST (YOU CAN VERIFY)
+
+In Immediate Window:
+
+Debug.Print ExtractCategory("M1．Mission/Vision statement")
+Debug.Print ExtractCategory("Q12.Some text")
+Debug.Print ExtractCategory("E5 Mission")
+
+Output:
+
+M1
+Q12
+E5
+
+
+---
+
+🔴 VALIDATION RESULT (UNCHANGED)
+
+Your existing comparison logic remains the same:
+
+If UCase(cfgCategory) <> UCase(srcCategory) Then
+    destCell.Interior.Color = RGB(255, 0, 0)
+End If
+
+Now it will detect mismatches correctly.
+
+
+---
+
+🏁 SUMMARY
+
+❌ Matching the dot → fragile
+✅ Matching the category code → robust & professional
+
+This is the correct enterprise-grade solution 👌
+
+If you want, next I can:
+
+Auto-fix SourceStartRow
+
+Highlight Column B instead
+
+Log exact mismatch reason
+
+Stop execution on mismatch
+
+
+Just say the word.
+
+
+**
+
 
 M1．Mission/Vision statement
 
