@@ -1,3 +1,225 @@
+Excellent requirement 👍 — this is a very good data-integrity check, and you’re thinking exactly like a production VBA developer.
+
+Below I’ll give you:
+
+1. Clear logic explanation (plain English)
+
+
+2. Exact VBA code to ADD (copy-paste)
+
+
+3. Where it fits in your existing config-driven macro
+
+
+4. What gets highlighted and why
+
+
+
+No hand-waving — this is solid and safe.
+
+
+---
+
+🧠 WHAT THIS VALIDATION DOES (IN SIMPLE TERMS)
+
+Before copying a value from Column C (merged) in srcWS, the macro will:
+
+1. Look at Config_Mapping → Category column (e.g., M1, E2, Q5)
+
+
+2. Go to srcWS Column B, same SourceStartRow
+
+
+3. Extract the category code from text like:
+
+M1．Mission/Vision statement
+
+→ Extracts M1
+
+
+4. Compare:
+
+Config category (M1)
+vs
+Extracted source category (M1)
+
+
+5. If NOT equal:
+
+❌ Value is still copied
+
+🔴 Destination cell is highlighted RED
+
+This flags wrong SourceStartRow or row insertion error
+
+
+
+
+So you immediately SEE which mappings are broken.
+
+
+---
+
+🧩 CONFIG SHEET REQUIREMENT (ONE COLUMN)
+
+Make sure your Config_Mapping sheet has this column:
+
+Column	Name	Example
+
+B	Category	M1, E2, Q5
+
+
+You already have this — we’ll now USE it.
+
+
+---
+
+🧠 CATEGORY EXTRACTION RULE
+
+From source sheet (srcWS):
+
+"M1．Mission/Vision statement"
+
+We extract:
+
+M1
+
+✔ Works even if description changes
+✔ Only category code matters
+
+
+---
+
+✅ CODE YOU NEED TO ADD
+
+1️⃣ HELPER FUNCTION – extract category from Column B
+
+👉 Add this ONCE at the bottom of the module (below GetMergedValue)
+
+Function ExtractCategory(val As String) As String
+    Dim p As Long
+
+    ' Handle both full-width and normal dot
+    p = InStr(val, "．")
+    If p = 0 Then p = InStr(val, ".")
+
+    If p > 0 Then
+        ExtractCategory = Trim(Left(val, p - 1))
+    Else
+        ExtractCategory = Trim(val)
+    End If
+End Function
+
+
+---
+
+2️⃣ MODIFY THE COPY SECTION (IMPORTANT)
+
+🔴 REPLACE THIS EXISTING LINE:
+
+summaryWS.Cells(findCell.Row, cfgWS.Cells(r, "E").Value).Value = _
+    GetMergedValue(srcWS.Range("C" & cfgWS.Cells(r, "C").Value))
+
+
+---
+
+✅ WITH THIS VALIDATED VERSION
+
+Dim cfgCategory As String
+Dim srcCategory As String
+Dim srcRow As Long
+Dim destCell As Range
+
+srcRow = cfgWS.Cells(r, "C").Value
+Set destCell = summaryWS.Cells(findCell.Row, cfgWS.Cells(r, "E").Value)
+
+' Get category from config (e.g., M1)
+cfgCategory = Trim(cfgWS.Cells(r, "B").Value)
+
+' Get category from source sheet Column B
+srcCategory = ExtractCategory(srcWS.Cells(srcRow, "B").Value)
+
+' Copy value from merged C column
+destCell.Value = GetMergedValue(srcWS.Range("C" & srcRow))
+
+' VALIDATION CHECK
+If UCase(cfgCategory) <> UCase(srcCategory) Then
+    destCell.Interior.Color = RGB(255, 0, 0) ' RED highlight
+Else
+    destCell.Interior.ColorIndex = xlNone
+End If
+
+
+---
+
+🧪 EXAMPLE SCENARIO (REAL LIFE)
+
+Config_Mapping
+
+Category	SourceStartRow
+
+M3	35
+
+
+srcWS
+
+B	C
+
+M4．Risk Management	(merged score)
+
+
+RESULT
+
+❌ M3 ≠ M4
+
+Value still copied
+
+🔴 Destination cell turns RED
+
+
+➡ You immediately know:
+
+> “Someone inserted a row or changed the form layout.”
+
+
+
+
+---
+
+✅ WHAT THIS PROTECTS YOU FROM
+
+✔ Wrong SourceStartRow
+✔ Inserted rows in supplier form
+✔ Template version mismatch
+✔ Copying wrong category score
+✔ Silent data corruption
+
+This is enterprise-level validation 👍
+
+
+---
+
+🔥 OPTIONAL UPGRADES (VERY EASY NEXT)
+
+If you want, I can add:
+
+❌ Skip copying entirely when mismatch
+
+📝 Log errors to a Validation sheet
+
+🟡 Use Yellow for warning, Red for error
+
+🔔 Final popup listing all mismatches
+
+🔒 Stop macro if mismatch count > X
+
+
+Just tell me what behavior you want next 👌
+
+
+
+**
+
 Before copying the value of Column C (merged cell) in srcWS, 
 
 
