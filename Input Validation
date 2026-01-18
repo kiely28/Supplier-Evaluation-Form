@@ -1,0 +1,22 @@
+Sub InputValidation()
+    ' Check if the Cell is Empty
+    
+    Dim ws As Worksheet
+    Dim SumfilePath As String
+    
+    Set ws = ThisWorkbook.Sheets(1)
+    SumfilePath = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+    
+
+    If SumfilePath = "" Then
+        MsgBox "File path is required. Please enter a valid file path.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206) ' Light red
+        End
+    ElseIf Dir(SumfilePath) = "" Then
+        MsgBox "The specified file path does not exist. Please check and try again.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206) ' Light red
+        End
+    Else
+        ws.Range("B5:L5").Interior.Color = RGB(242, 242, 242)
+    End If
+End Sub
