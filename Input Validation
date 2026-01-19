@@ -1,3 +1,117 @@
+
+Got it 👍
+Below is the updated validation that accepts both .xlsx and .xls for B5, while keeping folder validation for B8.
+
+This version is clean, safe, and production-ready.
+
+
+---
+
+✅ Updated Validation (Accepts .xlsx AND .xls)
+
+Sub ValidatePaths()
+
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim folderPath As String
+    Dim fileExt As String
+
+    Set ws = ThisWorkbook.Sheets(1)
+
+    filePath = Trim(ws.Range("B5").Value)
+    folderPath = Trim(ws.Range("B8").Value)
+
+    ' ===============================
+    ' Validate Excel File Path (B5)
+    ' ===============================
+    If filePath = "" Then
+        MsgBox "Excel file path (B5) is required.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    fileExt = LCase(Mid(filePath, InStrRev(filePath, ".") + 1))
+
+    If fileExt <> "xlsx" And fileExt <> "xls" Then
+        MsgBox "The file in B5 must be an Excel file (.xlsx or .xls).", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If Dir(filePath) = "" Then
+        MsgBox "The Excel file path in B5 does not exist.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    ws.Range("B5:L5").Interior.Color = RGB(242, 242, 242)
+
+    ' ===============================
+    ' Validate Folder Path (B8)
+    ' ===============================
+    If folderPath = "" Then
+        MsgBox "Folder path (B8) is required.", vbCritical
+        ws.Range("B8:L8").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If Dir(folderPath, vbDirectory) = "" Then
+        MsgBox "The folder path in B8 does not exist.", vbCritical
+        ws.Range("B8:L8").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    ws.Range("B8:L8").Interior.Color = RGB(242, 242, 242)
+
+    MsgBox "Excel file and folder paths are valid.", vbInformation
+
+End Sub
+
+
+---
+
+🔍 What Changed
+
+✔ Supports both .xlsx and .xls
+✔ Uses InStrRev → safer for long paths
+✔ Keeps folder validation strict
+✔ No End usage
+✔ Easy to extend later (xlsm, csv, etc.)
+
+
+---
+
+🔥 Optional: Allow .xlsm Too (If Needed Later)
+
+Just update this line:
+
+If fileExt <> "xlsx" And fileExt <> "xls" And fileExt <> "xlsm" Then
+
+
+---
+
+🚀 Next Enhancements (If You Want)
+
+📁 Browse button for B8
+
+📄 File picker for B5
+
+🔐 Check read/write permission
+
+🔁 Reusable function for all validations
+
+⚡ Auto-validate on cell change
+
+
+Tell me what you want next and I’ll wire it in cleanly 👍
+
+
+
+
+****
+
+
+
 Below is a clean, safe, and reusable validation that checks both:
 
 ✅ Excel file path (.xlsx) in B5
