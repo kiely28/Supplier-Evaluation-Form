@@ -1,4 +1,130 @@
+Below is a clean, safe, and reusable validation that checks both:
 
+✅ Excel file path (.xlsx) in B5
+
+✅ Folder path in B8
+
+
+This follows best VBA practices (no End, clear messages, proper folder/file checks, and visual feedback).
+
+
+---
+
+✅ What This Validation Covers
+
+Cell	Expected Input	Validation
+
+B5	Excel file path	Must exist and end in .xlsx
+B8	Folder path	Must exist and be a directory
+
+
+
+---
+
+✅ Recommended Validation Macro
+
+Sub ValidatePaths()
+
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim folderPath As String
+
+    Set ws = ThisWorkbook.Sheets(1)
+
+    filePath = Trim(ws.Range("B5").Value)
+    folderPath = Trim(ws.Range("B8").Value)
+
+    ' -----------------------
+    ' Validate Excel File Path (B5)
+    ' -----------------------
+    If filePath = "" Then
+        MsgBox "Excel file path (B5) is required.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If LCase(Right(filePath, 5)) <> ".xlsx" Then
+        MsgBox "The file in B5 must be an Excel (.xlsx) file.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If Dir(filePath) = "" Then
+        MsgBox "The Excel file path in B5 does not exist.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    ws.Range("B5:L5").Interior.Color = RGB(242, 242, 242)
+
+    ' -----------------------
+    ' Validate Folder Path (B8)
+    ' -----------------------
+    If folderPath = "" Then
+        MsgBox "Folder path (B8) is required.", vbCritical
+        ws.Range("B8:L8").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If Dir(folderPath, vbDirectory) = "" Then
+        MsgBox "The folder path in B8 does not exist.", vbCritical
+        ws.Range("B8:L8").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    ws.Range("B8:L8").Interior.Color = RGB(242, 242, 242)
+
+    MsgBox "File and folder paths are valid.", vbInformation
+
+End Sub
+
+
+---
+
+🔥 Optional Enhancement: Auto-Run Validation When User Edits
+
+Place this in Sheet1 code (not a module):
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+
+    If Not Intersect(Target, Me.Range("B5,B8")) Is Nothing Then
+        Application.EnableEvents = False
+        ValidatePaths
+        Application.EnableEvents = True
+    End If
+
+End Sub
+
+
+---
+
+🧠 Best Practice Tips
+
+✔ Use .xlsx validation to avoid .xlsm or wrong files
+✔ Dir(path, vbDirectory) ensures folder detection
+✔ Visual feedback helps users immediately fix errors
+✔ Avoid End — always use Exit Sub
+✔ Ready to integrate into Supplier Evaluation automation
+
+
+---
+
+🚀 Want More?
+
+I can also:
+
+Add Browse File / Browse Folder buttons
+
+Validate read/write permission
+
+Allow .xlsm optionally
+
+Combine this into a single reusable function
+
+
+Just tell me 👍
+
+**
 Here is the before and after scenario with clear paragraphs and bullet points, suitable for audit, report, or presentation use:
 
 
