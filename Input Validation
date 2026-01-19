@@ -1,4 +1,52 @@
 
+Here is the before and after scenario with clear paragraphs and bullet points, suitable for audit, report, or presentation use:
+
+
+---
+
+Before Scenario
+
+Before the enhancement, there was no automated mechanism in SAP to notify administrators of users whose end date fell on the current day. As a result, tracking expiring user access required manual checking, making it difficult to identify affected users in a timely manner and increasing the risk of missed or delayed actions.
+
+Before:
+
+No automated email alert for user end dates
+
+No visibility on which users had an end date today
+
+Manual review of user records was required
+
+Higher risk of missed expirations and delayed response
+
+
+
+---
+
+After Scenario
+
+After the improvement, an automated email alert was configured in SAP to trigger when a user’s end date matches the current date. This provides immediate notification to responsible users, improves visibility, and ensures timely management of user access.
+
+After:
+
+Automated SAP email alert for users with end dates matching today
+
+Immediate visibility of affected users
+
+Reduced manual effort and improved efficiency
+
+More proactive and controlled end date management
+
+
+
+---
+
+If you want this adjusted for management, IT controls, or audit compliance language, I can tailor it further.
+
+
+**
+
+
+
 Your validation logic is correct and functional, but there are a few important improvements you can make to make it safer, more reusable, and more professional—especially for macros that will grow over time.
 
 Below I’ll first review your current code, then give you an improved version, and finally explain why each change helps.
