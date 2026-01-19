@@ -1,3 +1,8 @@
+add a validation in suppliercode it gets the 6 character, after open the file please check suppliercode vs column b5 of the open workbook
+
+
+**
+
 
 Got it 👍
 Below is the updated validation that accepts both .xlsx and .xls for B5, while keeping folder validation for B8.
