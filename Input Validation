@@ -1,3 +1,142 @@
+
+Excellent question — this is a very important VBA detail 👍
+Short answer: YES, it can reset Column O unintentionally if you don’t guard it properly.
+
+Let’s fix it correctly and safely.
+
+
+---
+
+⚠️ WHY THIS CAN HAPPEN
+
+Your loop runs many mappings per supplier row.
+
+Example:
+
+Mapping 1 → match
+
+Mapping 2 → mismatch
+
+Mapping 3 → match
+
+
+If your code does this inside each mapping:
+
+Else
+    summaryWS.Cells(destRow, "O").Interior.Pattern = xlNone
+End If
+
+➡️ The last match wins
+➡️ Column O becomes cleared, even though a mismatch happened earlier.
+
+❌ This is logically wrong.
+
+
+---
+
+✅ CORRECT DESIGN (FLAG-BASED)
+
+You must:
+
+1. Track if ANY mismatch happened
+
+
+2. Apply/reset Column O ONCE per row
+
+
+
+
+---
+
+🧠 SOLUTION: USE A BOOLEAN FLAG
+
+🔹 Step 1: Declare flag per supplier row
+
+Dim hasMismatch As Boolean
+hasMismatch = False
+
+
+---
+
+🔹 Step 2: Inside mapping loop — only SET flag
+
+If UCase(cfgCategory) <> UCase(srcCategory) Then
+    summaryWS.Cells(destRow, destCol).Interior.Color = RGB(255, 0, 0)
+    hasMismatch = True
+Else
+    summaryWS.Cells(destRow, destCol).Interior.Pattern = xlNone
+End If
+
+⚠️ DO NOT touch Column O here
+
+
+---
+
+🔹 Step 3: AFTER mapping loop — handle Column O once
+
+If hasMismatch Then
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 0, 0)
+Else
+    summaryWS.Cells(destRow, "O").Interior.Pattern = xlNone
+End If
+
+
+---
+
+✅ THIS GUARANTEES
+
+Scenario	Result
+
+1 mismatch among 20	Column O stays RED
+All fixed	Column O clears
+Mixed results	Correct visual state
+Supplier name	Never touched
+
+
+
+---
+
+🧪 REAL-WORLD EXAMPLE
+
+Mapping	Result
+
+M1	✅ match
+M2	❌ mismatch
+M3	✅ match
+
+
+🔴 Column O → RED (correct)
+
+Without flag: ❌ Column O → cleared (wrong)
+
+
+---
+
+🏁 SUMMARY (BEST PRACTICE)
+
+✔ Never reset shared indicators inside inner loops
+✔ Use Boolean flags for row-level validation
+✔ Column O handled once per supplier
+
+This is exactly how enterprise Excel automation is written 👌
+
+If you want next:
+
+multiple flags per category group (M/E/Q)
+
+per-column summary
+
+stop copy if mismatch detected
+
+
+Just say the word 👍
+
+
+
+***
+
+
+
 Got it 👍
 That’s easy to add and it fits perfectly with your validation logic.
 
