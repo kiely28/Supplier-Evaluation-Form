@@ -1,3 +1,113 @@
+Got it 👍
+That’s easy to add and it fits perfectly with your validation logic.
+
+Below is the exact change you need so that when the category mismatch is detected:
+
+✅ Destination score cell → RED
+✅ Supplier Name (Column O) → RED
+
+
+---
+
+✅ WHERE THIS APPLIES
+
+This happens when:
+
+Config mapping Category (e.g. M1)
+≠
+
+Extracted category from srcWS Column B
+
+"M1．Mission/Vision statement" → M1
+
+
+Meaning:
+
+> Possible wrong source start row or inserted row
+
+
+
+
+---
+
+✅ COPY-PASTE: UPDATED VALIDATION BLOCK
+
+Replace your existing mismatch logic with this:
+
+Dim srcCategory As String
+Dim cfgCategory As String
+
+' Extract category from Source Column B
+srcCategory = ExtractCategory(srcWS.Cells(srcStartRow, "B").Value)
+
+' Category from Config Mapping sheet
+cfgCategory = Trim(mapWS.Cells(mapRow, "B").Value)
+
+If UCase(srcCategory) <> UCase(cfgCategory) Then
+
+    ' Highlight destination score cell
+    destWS.Cells(destRow, destCol).Interior.Color = RGB(255, 0, 0)
+
+    ' Highlight Supplier Name (Column O)
+    destWS.Cells(destRow, "O").Interior.Color = RGB(255, 0, 0)
+
+    ' Optional debug
+    Debug.Print "CATEGORY MISMATCH:", _
+                "Expected:", cfgCategory, _
+                "Found:", srcCategory, _
+                "Row:", destRow
+End If
+
+
+---
+
+🧠 WHY COLUMN O IS CORRECT TO HIGHLIGHT
+
+Column O = Supplier Name
+
+Visual indicator:
+
+Reviewer immediately knows which supplier
+
+Avoids hunting across rows
+
+
+Common audit practice ✔
+
+
+
+---
+
+✅ RESULT IN EXCEL
+
+Column	Behavior
+
+P–BJ (score columns)	❌ Red when mismatch
+O (Supplier Name)	❌ Red when mismatch
+Correct rows	Normal
+
+
+
+---
+
+🔥 OPTIONAL IMPROVEMENTS (If You Want)
+
+I can also add:
+
+⚠️ Comment note in Column O explaining the mismatch
+
+🛑 Stop macro after first mismatch
+
+📄 Log all mismatches to a new sheet
+
+🎯 Highlight Column B in source file instead
+
+
+Just tell me 👍
+
+**
+
+
 add a validation in suppliercode it gets the 6 character, after open the file please check suppliercode vs column b5 of the open workbook
 
 
