@@ -1,4 +1,9 @@
+How can I count the number of files inside my “Completed” and “Invalid” folders, 
+and display the results in my Excel worksheet (for example: ‘2/4 forms completed’ and ‘1 invalid’)?
 
+
+
+***
 
 Good catch — that error is expected with the current helper if one of these happens.
 Let’s fix it properly and safely.
