@@ -1,4 +1,148 @@
 
+
+Got it 👍
+You want prefix-based de-duplication:
+
+> If a file with the same first 6 characters already exists in the target folder, delete the existing file first, then move the new one.
+
+
+
+This is cleaner than renaming and matches your business rule (supplier-code–based uniqueness).
+
+Below is the correct, safe implementation.
+
+
+---
+
+✅ RULE IMPLEMENTED
+
+Supplier key = first 6 characters of filename
+
+Before moving:
+
+Check target folder
+
+If any file starts with the same 6 chars → DELETE it
+
+
+Then move the new file normally
+
+
+✔ No overwrite errors
+✔ One file per supplier
+✔ Deterministic behavior
+
+
+---
+
+🔹 STEP 1: ADD THIS HELPER PROCEDURE (ONCE)
+
+Put this below your other helper functions:
+
+Sub DeleteExistingByPrefix(folderPath As String, prefix6 As String)
+    Dim f As String
+
+    f = Dir(folderPath & prefix6 & "*.xls*")
+
+    Do While f <> ""
+        Kill folderPath & f
+        f = Dir
+    Loop
+End Sub
+
+
+---
+
+🔹 STEP 2: REPLACE FILE MOVE LOGIC
+
+🟢 MOVE TO COMPLETED
+
+Replace your existing move code with:
+
+' Delete existing file with same supplier code
+Call DeleteExistingByPrefix(completedFolder, supplierCode)
+
+' Move file
+Name evalFolder & evalFile As completedFolder & evalFile
+
+
+---
+
+🔴 MOVE TO INVALID
+
+Replace your existing move code with:
+
+' Delete existing file with same supplier code
+Call DeleteExistingByPrefix(invalidFolder, supplierCode)
+
+' Move file
+Name evalFolder & evalFile As invalidFolder & evalFile
+
+
+---
+
+🧠 HOW THIS WORKS
+
+Example:
+
+Incoming file
+
+X23147_SUMITRONICS.xlsx
+
+Completed folder contains
+
+X23147_OLD.xlsx
+X23147_2024.xlsx
+
+➡ Both are deleted
+➡ New file is moved in
+➡ Folder now contains only the latest file
+
+
+---
+
+⚠️ IMPORTANT SAFETY NOTES
+
+Only files starting with same 6 chars are deleted
+
+Limited to *.xls* → no accidental deletion of PDFs, etc.
+
+No On Error Resume Next abuse
+
+Deterministic & auditable
+
+
+
+---
+
+🏁 SUMMARY
+
+✔ Supplier-code–based uniqueness
+✔ No filename collision issues
+✔ Clean folder state
+✔ Business-rule aligned
+
+
+---
+
+🔧 OPTIONAL (IF YOU WANT EXTRA SAFETY)
+
+If you want to:
+
+delete only the oldest file
+
+move old file to an Archive instead of delete
+
+log deleted filenames
+
+
+I can add that in one step — just tell me 👍
+
+
+
+***
+
+
 Understood 👍
 If your rule is “Completed folder should always keep the latest file”, then we should REPLACE (overwrite) the existing file instead of renaming it.
 
