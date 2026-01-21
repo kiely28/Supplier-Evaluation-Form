@@ -1,3 +1,146 @@
+
+Understood 👍
+If your rule is “Completed folder should always keep the latest file”, then we should REPLACE (overwrite) the existing file instead of renaming it.
+
+Below is the correct, clean, and safe way to do that in VBA.
+
+
+---
+
+✅ DESIGN (WHAT WILL HAPPEN)
+
+If file already exists in Completed → delete the old file
+→ move the new file in its place
+
+No prompts
+
+No crash
+
+Deterministic behavior (latest wins)
+
+
+
+---
+
+⚠️ IMPORTANT VBA NOTE
+
+The Name statement CANNOT overwrite files.
+So we must:
+
+1. Check if destination file exists
+
+
+2. Delete it
+
+
+3. Then move the file
+
+
+
+
+---
+
+✅ STEP 1: ADD THIS HELPER PROCEDURE (ONCE)
+
+Put this below your other helper functions:
+
+Sub MoveAndReplaceFile(srcPath As String, destPath As String)
+    ' If destination exists, delete it first
+    If Dir(destPath) <> "" Then
+        Kill destPath
+    End If
+
+    ' Move (rename) the file
+    Name srcPath As destPath
+End Sub
+
+
+---
+
+✅ STEP 2: REPLACE YOUR COMPLETED MOVE CODE
+
+🔴 OLD (REMOVE THIS)
+
+safeName = GetSafeFileName(completedFolder, evalFile)
+Name evalFolder & evalFile As completedFolder & safeName
+
+
+---
+
+✅ NEW (REPLACE WITH THIS)
+
+Call MoveAndReplaceFile( _
+    evalFolder & evalFile, _
+    completedFolder & evalFile _
+)
+
+
+---
+
+✅ INVALID FOLDER (KEEP AS IS OR ALSO REPLACE)
+
+If you also want Invalid to replace files, use the same logic:
+
+Call MoveAndReplaceFile( _
+    evalFolder & evalFile, _
+    invalidFolder & evalFile _
+)
+
+If not, you can keep your previous “rename” logic there.
+
+
+---
+
+🧠 WHY THIS IS CORRECT
+
+✔ Uses native VBA file system
+✔ No On Error Resume Next masking
+✔ No accidental duplicates
+✔ Always latest file in Completed
+✔ Simple & readable
+
+
+---
+
+🧪 REAL-WORLD FLOW
+
+Completed folder before
+
+X23147.xlsx  (old)
+
+After macro
+
+X23147.xlsx  (new – replaced)
+
+
+---
+
+🏁 SUMMARY
+
+Name alone ❌ cannot overwrite
+
+Kill + Name ✅ correct overwrite pattern
+
+Wrapped in a helper = reusable & safe
+
+
+If you want next:
+
+protect against file-in-use errors
+
+move only when no mismatches
+
+archive replaced files instead of deleting
+
+
+Just tell me 👍
+
+
+
+***
+
+
+
 Below is your UPDATED, COMPLETE, COPY-PASTE-READY VBA CODE with file routing logic added, while keeping all existing validations and protections intact.
 
 
