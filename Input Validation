@@ -1,4 +1,146 @@
 
+Great question 👍
+This is easy and clean to do, especially since you are already using FileSystemObject (FSO).
+
+Below is a safe, reusable solution that:
+
+✅ Counts Excel files in Completed
+✅ Counts Excel files in Invalid
+✅ Displays friendly text like
+
+> “2/4 forms completed”
+“1 invalid”
+
+
+
+
+---
+
+✅ STEP 1: ADD THIS HELPER FUNCTION (ONCE)
+
+Put this below your other helper functions:
+
+Function CountExcelFiles(folderPath As String) As Long
+    Dim fso As Object
+    Dim f As Object
+    Dim cnt As Long
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If fso.FolderExists(folderPath) = False Then
+        CountExcelFiles = 0
+        Exit Function
+    End If
+
+    For Each f In fso.GetFolder(folderPath).Files
+        If LCase(fso.GetExtensionName(f.Name)) Like "xls*" Then
+            cnt = cnt + 1
+        End If
+    Next f
+
+    CountExcelFiles = cnt
+End Function
+
+
+---
+
+✅ STEP 2: CALL IT AFTER FILE PROCESSING
+
+Place this after your main loop, before the MsgBox or before saving.
+
+Example target cells (you can change these):
+
+B2 → Completed status
+
+B3 → Invalid status
+
+
+
+---
+
+✅ DISPLAY COUNTS IN EXCEL
+
+Dim completedCount As Long
+Dim invalidCount As Long
+Dim totalCount As Long
+
+completedCount = CountExcelFiles(completedFolder)
+invalidCount = CountExcelFiles(invalidFolder)
+
+totalCount = completedCount + invalidCount
+
+' Display results
+summaryWS.Range("B2").Value = completedCount & "/" & totalCount & " forms completed"
+summaryWS.Range("B3").Value = invalidCount & " invalid"
+
+
+---
+
+🧠 RESULT IN EXCEL
+
+Cell	Display
+
+B2	2/4 forms completed
+B3	1 invalid
+
+
+✔ Clear
+✔ User-friendly
+✔ No formulas needed
+
+
+---
+
+🔥 OPTIONAL ENHANCEMENTS
+
+🔹 Add timestamp
+
+summaryWS.Range("B4").Value = "Last updated: " & Now
+
+🔹 Bold / color for visibility
+
+summaryWS.Range("B2").Font.Bold = True
+summaryWS.Range("B3").Font.Bold = True
+
+🔹 Conditional color
+
+If invalidCount > 0 Then
+    summaryWS.Range("B3").Font.Color = RGB(255, 0, 0)
+End If
+
+
+---
+
+🏁 SUMMARY
+
+✔ Uses FSO (stable)
+✔ Counts only Excel files
+✔ Human-readable output
+✔ Easy to relocate to any sheet
+
+If you want next:
+
+percentage completed
+
+progress bar
+
+dashboard-style summary
+
+auto-reset when folders empty
+
+
+Just tell me 👍
+
+
+
+
+***
+
+
+
+
+
+
 You’re hitting the same root problem again, and at this point the only correct, stable fix is to stop using Dir entirely.
 
 This is not your fault — it’s a well-known VBA limitation:
