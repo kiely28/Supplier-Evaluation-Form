@@ -1,3 +1,160 @@
+
+
+This is a known VBA trap 👍
+Your code logic is correct, but the error cause is very specific.
+
+
+---
+
+❌ WHY YOU GET
+
+“Invalid procedure call or argument”
+on evalFile
+
+Root cause:
+
+You are using Dir() to loop files AND you are:
+
+Name (move) files
+
+Kill (delete) files
+
+
+👉 Any file system change breaks the active Dir() enumeration.
+
+So when VBA executes:
+
+evalFile = Dir
+
+after a file was moved or deleted
+➡️ Dir is now pointing to a non-existing file handle
+➡️ VBA throws the error.
+
+
+---
+
+✅ THE CORRECT FIX (REQUIRED)
+
+🔑 RULE:
+
+Always store the next filename BEFORE moving or deleting the current file
+
+
+---
+
+✅ EXACT FIX (COPY-PASTE)
+
+🔴 OLD (CAUSES ERROR)
+
+Do While evalFile <> ""
+
+    ' process file
+
+    Name evalFolder & evalFile As completedFolder & evalFile
+
+    evalFile = Dir
+Loop
+
+
+---
+
+✅ NEW (SAFE & CORRECT)
+
+Do While evalFile <> ""
+
+    Dim currentFile As String
+    Dim nextFile As String
+
+    currentFile = evalFile
+    nextFile = Dir   ' ← get next file FIRST
+
+    supplierCode = Left(currentFile, 6)
+
+    Set findCell = summaryWS.Range("N12:N" & summaryWS.Rows.Count) _
+                    .Find(What:=supplierCode, LookAt:=xlWhole)
+
+    If Not findCell Is Nothing Then
+
+        ' ===== process workbook =====
+        Set evalWB = Workbooks.Open(evalFolder & currentFile)
+        Set srcWS = evalWB.Sheets(1)
+
+        ' processing logic here...
+
+        evalWB.Close SaveChanges:=False
+
+        ' ===== delete old + move =====
+        DeleteExistingByPrefix completedFolder, supplierCode
+        Name evalFolder & currentFile As completedFolder & currentFile
+
+    Else
+        DeleteExistingByPrefix invalidFolder, supplierCode
+        Name evalFolder & currentFile As invalidFolder & currentFile
+    End If
+
+    evalFile = nextFile   ' ← resume safely
+Loop
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Step	Explanation
+
+Get nextFile first	Dir() state preserved
+Move/Delete current	Safe
+Resume loop	No broken handle
+
+
+✔ This is the only safe way to mix Dir + file operations
+✔ Microsoft VBA limitation, not your logic
+
+
+---
+
+🚫 WHAT NOT TO DO
+
+❌ On Error Resume Next (hides real bugs)
+❌ Calling Dir after Kill / Name
+❌ Re-running Dir(evalFolder & "*.xls*") mid-loop
+
+
+---
+
+🏁 FINAL SUMMARY
+
+Error is not your fault
+
+Caused by Dir + file system changes
+
+Fixed by pre-fetching next filename
+
+Industry-standard VBA solution
+
+
+
+---
+
+If you want, next I can:
+
+refactor to FileSystemObject (even safer)
+
+add rollback if move fails
+
+log deleted / moved files
+
+add progress bar
+
+
+Just say 👍
+
+
+
+**
+
+
+
 How can I count the number of files inside my “Completed” and “Invalid” folders, 
 and display the results in my Excel worksheet (for example: ‘2/4 forms completed’ and ‘1 invalid’)?
 
