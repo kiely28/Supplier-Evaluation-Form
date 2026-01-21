@@ -1,3 +1,132 @@
+Perfect 👍
+Since each supplier occupies one row in summaryWS Column N, the correct total supplier count should come from Column N, not from folders.
+
+Below is the clean and correct way to do it.
+
+
+---
+
+✅ RULE (FINAL)
+
+Total suppliers = number of non-blank cells in
+summaryWS!N12:N(last row)
+
+Completed count = files in Completed folder
+
+Invalid count = files in Invalid folder
+
+
+This guarantees: ✔ Accurate total
+✔ Independent of file movement
+✔ Matches your summary table
+
+
+---
+
+✅ STEP 1: COUNT TOTAL SUPPLIERS FROM COLUMN N
+
+Add this helper function (once):
+
+Function CountSuppliersInSummary(ws As Worksheet) As Long
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "N").End(xlUp).Row
+
+    If lastRow < 12 Then
+        CountSuppliersInSummary = 0
+    Else
+        CountSuppliersInSummary = WorksheetFunction.CountA(ws.Range("N12:N" & lastRow))
+    End If
+End Function
+
+
+---
+
+✅ STEP 2: UPDATE YOUR STATUS DISPLAY CODE
+
+Place this after file processing (same place you display counts):
+
+Dim completedCount As Long
+Dim invalidCount As Long
+Dim totalSuppliers As Long
+
+completedCount = CountExcelFiles(completedFolder)
+invalidCount = CountExcelFiles(invalidFolder)
+
+totalSuppliers = CountSuppliersInSummary(summaryWS)
+
+' Display results (adjust cells as needed)
+summaryWS.Range("B2").Value = completedCount & "/" & totalSuppliers & " forms completed"
+summaryWS.Range("B3").Value = invalidCount & " invalid"
+
+
+---
+
+🧠 EXAMPLE RESULT IN EXCEL
+
+Assume:
+
+Column N has 4 suppliers
+
+Completed folder has 2 files
+
+Invalid folder has 1 file
+
+
+Cell	Display
+
+B2	2/4 forms completed
+B3	1 invalid
+
+
+✔ Remaining = not yet submitted / pending
+
+
+---
+
+🔥 OPTIONAL (VERY USEFUL)
+
+Show pending count
+
+summaryWS.Range("B4").Value = _
+    (totalSuppliers - completedCount - invalidCount) & " pending"
+
+Bold and color
+
+summaryWS.Range("B2:B4").Font.Bold = True
+
+If invalidCount > 0 Then
+    summaryWS.Range("B3").Font.Color = RGB(255, 0, 0)
+End If
+
+
+---
+
+🏁 SUMMARY
+
+✔ Total count comes from Column N (source of truth)
+✔ Folder counts used only for status
+✔ Robust even if files are missing
+✔ Matches your business logic
+
+If you want next:
+
+auto-update dashboard
+
+percentage completion bar
+
+per-category completion counts
+
+warning if completed > total
+
+
+Just say the word 👍
+
+
+
+
+**
+
+
 
 Great question 👍
 This is easy and clean to do, especially since you are already using FileSystemObject (FSO).
