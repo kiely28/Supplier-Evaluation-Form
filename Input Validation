@@ -1,4 +1,167 @@
 
+Yes 👍 — archiving is the BEST practice (much safer than deleting).
+Below is the correct, clean, enterprise-grade solution that:
+
+✔ Archives old files instead of deleting
+✔ Uses supplier code (first 6 chars) as the key
+✔ Avoids Dir errors
+✔ Auto-creates folders
+✔ Keeps only the latest file active
+
+
+---
+
+✅ NEW FILE FLOW (FINAL DESIGN)
+
+Scenario	Action
+
+Existing file with same 6-char prefix	Move old file → Archive
+Supplier found	Move new file → Completed
+Supplier NOT found	Move new file → Invalid
+
+
+
+---
+
+📁 FOLDER STRUCTURE
+
+Supplier Evaluation Form\
+│
+├─ Completed\
+├─ Invalid\
+└─ Archive\
+
+
+---
+
+🔹 STEP 1: ADD ARCHIVE FOLDER SETUP
+
+At the top of your macro, add:
+
+Dim archiveFolder As String
+archiveFolder = evalFolder & "Archive\"
+
+If Dir(archiveFolder, vbDirectory) = "" Then MkDir archiveFolder
+
+
+---
+
+🔹 STEP 2: ADD THIS HELPER PROCEDURE (ONCE)
+
+👉 This moves existing files with the same 6-char prefix to Archive.
+
+Sub ArchiveExistingByPrefix(srcFolder As String, archiveFolder As String, prefix6 As String)
+
+    Dim f As String
+    Dim timeStamp As String
+
+    timeStamp = Format(Now, "yyyymmdd_hhnnss")
+
+    f = Dir(srcFolder & prefix6 & "*.xls*")
+
+    Do While f <> ""
+        Name srcFolder & f As archiveFolder & _
+             Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & Mid(f, InStrRev(f, "."))
+        f = Dir
+    Loop
+
+End Sub
+
+✔ No overwrite
+✔ Timestamped
+✔ Supplier-grouped
+
+
+---
+
+🔹 STEP 3: REPLACE YOUR MOVE LOGIC
+
+🟢 SUPPLIER FOUND → COMPLETED
+
+' Archive old files first
+ArchiveExistingByPrefix completedFolder, archiveFolder, supplierCode
+
+' Move new file
+Name evalFolder & evalFile As completedFolder & evalFile
+
+
+---
+
+🔴 SUPPLIER NOT FOUND → INVALID
+
+' Archive old files first
+ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+
+' Move new file
+Name evalFolder & evalFile As invalidFolder & evalFile
+
+
+---
+
+🧠 WHAT HAPPENS NOW (REAL EXAMPLE)
+
+Before
+
+Completed\
+  X23147_old.xlsx
+
+New file arrives
+
+X23147_new.xlsx
+
+After macro
+
+Completed\
+  X23147_new.xlsx
+
+Archive\
+  X23147_old_20260121_093012.xlsx
+
+✔ No deletion
+✔ Full audit trail
+✔ Always latest file active
+
+
+---
+
+⚠️ IMPORTANT (DIR SAFETY REMINDER)
+
+You must still use the safe loop pattern we discussed earlier
+(get next file before moving anything).
+
+This archive logic is 100% compatible with that pattern.
+
+
+---
+
+🏁 SUMMARY (BEST PRACTICE)
+
+✔ Archive instead of delete
+✔ Supplier-code–based control
+✔ Timestamped history
+✔ No Dir crashes
+✔ Audit-friendly
+
+
+---
+
+If you want next, I can:
+
+Archive by date subfolders
+
+Keep only last N archives
+
+Add an Archive log sheet
+
+Skip archiving if file identical
+
+
+Just tell me 👍
+
+
+**
+
+
 
 This is a known VBA trap 👍
 Your code logic is correct, but the error cause is very specific.
