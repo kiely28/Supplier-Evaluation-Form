@@ -1,4 +1,8 @@
+If the srcWS process is done, then after copying, please move the file to a folder named "Completed". If the folder does not exist, please create it.
+If the file cannot be found in summaryWS, please move it to a folder named "Invalid". If the folder does not exist, please create it.
 
+
+***
 
 Below is a COMPLETE, CLEAN, COPY-PASTE-READY VBA SOLUTION that includes everything we discussed, written in a safe, enterprise-grade pattern.
 
