@@ -1,3 +1,130 @@
+
+Good question 👍
+The issue happens because your counters are not being reset before counting, so when the folder is empty, Excel keeps the previous value.
+
+Below is the correct and safe way to auto-reset counts when the folder is empty.
+
+
+---
+
+✅ KEY RULE (IMPORTANT)
+
+> Always reset the counter to 0 BEFORE looping files
+
+
+
+This way:
+
+Empty folder → result = 0
+
+With files → correct count
+
+
+
+---
+
+✅ SAFE FILE COUNT FUNCTION (AUTO-RESETS)
+
+🔹 Count files in a folder (xls / xlsx)
+
+Function CountFilesInFolder(folderPath As String) As Long
+
+    Dim fileName As String
+    Dim fileCount As Long
+
+    fileCount = 0   ' <<< RESET FIRST
+
+    If Dir(folderPath, vbDirectory) = "" Then
+        CountFilesInFolder = 0
+        Exit Function
+    End If
+
+    fileName = Dir(folderPath & "*.xls*")
+
+    Do While fileName <> ""
+        fileCount = fileCount + 1
+        fileName = Dir
+    Loop
+
+    CountFilesInFolder = fileCount
+
+End Function
+
+
+---
+
+✅ USE IT IN YOUR MAIN MACRO
+
+Dim completedCount As Long
+Dim invalidCount As Long
+
+completedCount = CountFilesInFolder("D:\Supplier Evaluation Form\Completed\")
+invalidCount = CountFilesInFolder("D:\Supplier Evaluation Form\Invalid\")
+
+
+---
+
+✅ DISPLAY RESULT IN SUMMARY SHEET
+
+With summaryWS
+    .Range("B6").Value = completedCount & " forms completed"
+    .Range("B7").Value = invalidCount & " invalid"
+End With
+
+
+---
+
+🧪 RESULT BEHAVIOR
+
+Folder Status	Output
+
+Empty	0 forms completed
+1 file	1 forms completed
+244 files	244 forms completed
+Files deleted	Automatically resets to 0
+
+
+
+---
+
+⚠️ COMMON MISTAKE (CAUSE OF YOUR ISSUE)
+
+❌ This causes wrong counts:
+
+completedCount = completedCount + 1
+
+✔ Correct approach:
+
+completedCount = CountFilesInFolder(path)
+
+
+---
+
+✅ OPTIONAL: COUNT ALL FILE TYPES
+
+If you want all files, not just Excel:
+
+fileName = Dir(folderPath & "*.*")
+
+
+---
+
+✅ NEXT OPTIONAL IMPROVEMENTS
+
+I can help you add:
+
+✔ Live progress counter
+
+✔ Expected vs actual supplier count validation
+
+✔ Auto-reset + timestamp when folders change
+
+✔ Error log sheet
+
+
+Just tell me 😊
+
+
 Below is a clean, safe, copy-paste ready VBA pattern you can integrate into your existing macro to track:
 
 ✅ Start Date
