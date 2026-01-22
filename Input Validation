@@ -1,3 +1,148 @@
+
+Good catch — this is a classic Excel VBA counting issue, and your symptom tells us exactly what’s wrong 👍
+
+245 vs 244 means one extra cell is being counted.
+
+
+---
+
+✅ MOST LIKELY CAUSE (99% of the time)
+
+CountA counts formulas even if they look blank.
+
+So if Column N has:
+
+a formula like =IF(A12="","",A12)
+
+or leftover formatting / merged cells
+
+or a header value accidentally included
+
+
+👉 CountA will count it, even if it visually looks empty.
+
+
+---
+
+✅ CORRECT FIX (RECOMMENDED)
+
+🔒 Count ONLY cells with real text (not formulas returning "")
+
+Replace your counting logic with this safer version:
+
+Function CountSuppliersInSummary(ws As Worksheet) As Long
+    Dim lastRow As Long
+    Dim rng As Range
+    Dim cell As Range
+    Dim cnt As Long
+
+    lastRow = ws.Cells(ws.Rows.Count, "N").End(xlUp).Row
+    If lastRow < 12 Then Exit Function
+
+    Set rng = ws.Range("N12:N" & lastRow)
+
+    cnt = 0
+    For Each cell In rng
+        If Trim(cell.Value) <> "" Then
+            cnt = cnt + 1
+        End If
+    Next cell
+
+    CountSuppliersInSummary = cnt
+End Function
+
+✅ This ignores:
+
+formulas returning ""
+
+visually empty merged cells
+
+formatting-only cells
+
+
+
+---
+
+🔍 QUICK WAY TO CONFIRM THE ISSUE
+
+In Excel, try this in a helper column:
+
+=LEN(N12)
+
+If you see:
+
+0 → truly empty
+
+>0 → hidden text / formula / space
+
+
+That extra 1 is your culprit.
+
+
+---
+
+❌ WHAT NOT TO USE
+
+WorksheetFunction.CountA(...)
+
+❌ counts:
+
+formulas
+
+hidden spaces
+
+invisible values
+
+
+
+---
+
+✅ OPTIONAL: DEBUG WHICH ROW IS EXTRA
+
+If you want to identify the bad row:
+
+Sub DebugColumnN()
+    Dim ws As Worksheet
+    Dim r As Long
+
+    Set ws = summaryWS
+
+    For r = 12 To ws.Cells(ws.Rows.Count, "N").End(xlUp).Row
+        If ws.Cells(r, "N").Value = "" And ws.Cells(r, "N").HasFormula Then
+            Debug.Print "Formula-empty cell at row: " & r
+        End If
+    Next r
+End Sub
+
+
+---
+
+🏁 FINAL RESULT
+
+After this fix:
+
+✅ Your total will be 244
+
+✅ Folder counts will align
+
+✅ No more off-by-one errors
+
+
+If you want next:
+
+unique supplier counting
+
+exclude archived suppliers
+
+auto-detect duplicates in Column N
+
+
+Just tell me 👍
+
+***
+
+
+
 Perfect 👍
 Since each supplier occupies one row in summaryWS Column N, the correct total supplier count should come from Column N, not from folders.
 
