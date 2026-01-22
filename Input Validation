@@ -1,3 +1,146 @@
+Below is a clean, safe, copy-paste ready VBA pattern you can integrate into your existing macro to track:
+
+✅ Start Date
+
+✅ Start Time
+
+✅ End Date
+
+✅ End Time
+
+✅ Total Duration (hh:mm:ss)
+
+✅ Handles errors properly (End time always captured)
+
+
+
+---
+
+✅ WHERE TO STORE THE VALUES (Recommended)
+
+Example in SummaryWS:
+
+Cell	Value
+
+B2	Start Date
+C2	Start Time
+B3	End Date
+C3	End Time
+B4	Duration
+
+
+(You can change these anytime.)
+
+
+---
+
+✅ COMPLETE TIME TRACKING CODE (SAFE VERSION)
+
+Sub ProcessSuppliers_WithTiming()
+
+    Dim summaryWS As Worksheet
+    Dim startTime As Date
+    Dim endTime As Date
+    Dim duration As Double
+
+    Set summaryWS = ThisWorkbook.Sheets("Summary")
+
+    ' =========================
+    ' START TIME
+    ' =========================
+    startTime = Now
+
+    With summaryWS
+        .Range("B2").Value = DateValue(startTime)
+        .Range("C2").Value = TimeValue(startTime)
+        .Range("B2").NumberFormat = "yyyy-mm-dd"
+        .Range("C2").NumberFormat = "hh:mm:ss"
+    End With
+
+    On Error GoTo CleanExit
+
+    ' =========================
+    ' MAIN PROCESS HERE
+    ' =========================
+    ' >>> YOUR EXISTING CODE <<<
+    ' File looping
+    ' Mapping
+    ' Copying
+    ' Moving to Completed / Invalid
+    ' Counting suppliers
+    ' =========================
+
+
+CleanExit:
+    ' =========================
+    ' END TIME (ALWAYS RUNS)
+    ' =========================
+    endTime = Now
+    duration = endTime - startTime
+
+    With summaryWS
+        .Range("B3").Value = DateValue(endTime)
+        .Range("C3").Value = TimeValue(endTime)
+        .Range("B3").NumberFormat = "yyyy-mm-dd"
+        .Range("C3").NumberFormat = "hh:mm:ss"
+
+        .Range("B4").Value = duration
+        .Range("B4").NumberFormat = "[hh]:mm:ss"
+    End With
+
+    If Err.Number <> 0 Then
+        MsgBox "Process ended with error: " & Err.Description, vbExclamation
+    End If
+
+End Sub
+
+
+---
+
+✅ WHAT THIS SOLVES
+
+✔ Duration still records even if an error happens
+✔ Uses Now (date + time accurate)
+✔ Duration supports runs longer than 24 hours
+✔ No risk of missing End Time
+
+
+---
+
+🔍 EXAMPLE OUTPUT
+
+Start Date : 2026-01-22
+Start Time : 09:14:03
+
+End Date   : 2026-01-22
+End Time   : 09:18:47
+
+Duration   : 00:04:44
+
+
+---
+
+✅ OPTIONAL: LOG EACH RUN (HISTORY)
+
+If you want, I can add:
+
+a log table (each run recorded)
+
+file count vs duration
+
+average processing time per supplier
+
+
+Just tell me 👍
+
+
+
+
+
+**
+
+
+
 
 Good catch — this is a classic Excel VBA counting issue, and your symptom tells us exactly what’s wrong 👍
 
