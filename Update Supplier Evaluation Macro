@@ -1,3 +1,142 @@
+Perfect 👍 that fits nicely with your existing validation.
+
+You already highlight column O (status) in red when there’s a mismatch.
+Now we’ll add:
+
+> 🟡 Highlight the SUPPLIER column (Column N) in YELLOW
+when sheet name ≠ config sheet name (missing sheet → Invalid)
+
+
+
+
+---
+
+✅ What We’ll Do
+
+When a required sheet is missing:
+
+Move file to Invalid
+
+Highlight Supplier Code column (N) in yellow
+
+(Optional) Clear previous red status formatting to avoid confusion
+
+
+
+---
+
+🔧 Step-by-Step Changes
+
+
+---
+
+1️⃣ Define a Yellow Color (optional but cleaner)
+
+Const COLOR_YELLOW As Long = 65535   ' RGB(255,255,0)
+
+(You can also directly use RGB(255,255,0))
+
+
+---
+
+2️⃣ Inside the Config Loop – Detect Missing Sheet
+
+You already added this:
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For
+End If
+
+✔ Keep this as-is
+
+
+---
+
+3️⃣ Highlight Supplier Column When Missing Sheet
+
+Immediately after:
+
+Next r
+
+Add this block:
+
+If hasMissingSheet Then
+
+    ' Highlight Supplier Code column (N) in YELLOW
+    With summaryWS.Cells(destRow, "N")
+        .Interior.Color = RGB(255, 255, 0)
+        .Font.Color = xlAutomatic
+    End With
+
+    ' Optional: clear status color to avoid mixed signals
+    summaryWS.Cells(destRow, "O").Interior.Pattern = xlNone
+
+    evalWB.Close SaveChanges:=False
+
+    ' Archive old invalid files
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+
+---
+
+4️⃣ Make Sure You Have the Loop Label
+
+At the bottom of your file loop:
+
+NextFile:
+Next file
+
+
+---
+
+🧠 Final Result (Behavior Summary)
+
+Condition	Supplier (N)	Status (O)	File
+
+Valid file	Normal	Normal	Completed
+Category mismatch	Normal	🔴 Red	Completed
+Missing sheet	🟡 Yellow	Cleared	Invalid
+Supplier not found	No highlight	—	Invalid
+
+
+This gives users instant visual feedback on why the file was rejected.
+
+
+---
+
+⭐ Pro Tip (Optional Enhancement)
+
+If you want to be extra clear, you can add a comment:
+
+summaryWS.Cells(destRow, "N").AddComment "Invalid: Required sheet missing"
+
+(or modern Note instead of Comment)
+
+
+---
+
+If you want:
+
+Different colors per error type
+
+Error reason column
+
+Auto-clear highlights when reprocessed
+
+
+Just tell me — your macro is already very close to “enterprise-level” 👌
+
+
+
+***
+
+
+
 Got it 👍 — this is a very common (and good) validation case.
 
 Right now, when the sheet name from the Config does NOT exist in the evaluation file, you’re just skipping that mapping:
