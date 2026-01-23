@@ -1,3 +1,40 @@
+
+
+Got it 👍 Here’s a clear, professional reply email you can use for the QA testing concern. I’ll keep it concise and audit-friendly.
+
+Good day,
+
+During QA testing of the supplier evaluation files, we noted a classification discrepancy for the following suppliers:
+
+- Yuasa Trading – should be classified as Indirect
+- Yuasa PH – should be classified as Professional
+
+However, in the current files, both suppliers are tagged under the “Professional” classification.
+
+Please advise if this is the intended setup, or if the classification for Yuasa Trading needs to be corrected to Indirect to align with the supplier master data and evaluation rules.
+
+This clarification will help ensure the accuracy of the supplier evaluation summary and prevent misclassification during processing.
+
+Thank you, and we’ll await your confirmation before proceeding with further QA validation.
+
+Regards,
+KingIf you want, I can also:
+
+Make it more casual (internal team vibe)
+
+Add a table-style explanation
+
+Adjust tone for auditors / management / IT QA
+
+
+Just say the word 👌
+
+
+**
+
+
+
+
 please create a reply email about the files for qa testing, the yuasa trading is indirect classification and yuasa ph is professional classification, but in the file they both use professional as classification
 **
 
