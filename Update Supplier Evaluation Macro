@@ -1,3 +1,110 @@
+
+Got it 👍 — Column O (Status) should be YELLOW when the sheet name does NOT match / missing from config, not Column N.
+
+Here’s the clean, exact change you need.
+
+
+---
+
+✅ Rule Update
+
+When required sheet is missing:
+
+🟡 Column O → Yellow
+
+File → Invalid
+
+Skip Completed logic
+
+
+
+---
+
+🔧 Exact Code Change
+
+1️⃣ Keep your missing-sheet detection (no change)
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For
+End If
+
+
+---
+
+2️⃣ Highlight Column O in Yellow (replace previous logic)
+
+Right after:
+
+Next r
+
+Add this block:
+
+If hasMissingSheet Then
+
+    ' Highlight STATUS column (O) in YELLOW for missing sheet
+    With summaryWS.Cells(destRow, "O")
+        .Interior.Color = RGB(255, 255, 0)
+        .Font.Color = xlAutomatic
+    End With
+
+    evalWB.Close SaveChanges:=False
+
+    ' Archive old invalid files
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+
+---
+
+3️⃣ Ensure Loop Label Exists
+
+At the end of the file loop:
+
+NextFile:
+Next file
+
+
+---
+
+🧠 Final Behavior Summary
+
+Scenario	Column O
+
+Valid	Normal
+Category mismatch	🔴 Red
+Missing sheet	🟡 Yellow
+Supplier not found	No row update
+
+
+Yellow will now override red, so users instantly know it’s a structure issue, not a data mismatch.
+
+
+---
+
+💡 Optional (Nice UX)
+
+If you want yellow to be cleared automatically when file becomes valid later:
+
+summaryWS.Cells(destRow, "O").Interior.Pattern = xlNone
+
+(place in the normal-success path)
+
+
+---
+
+If you want: ✔ multiple error reasons
+✔ legend text on the sheet
+✔ auto logging
+
+Just say the word 👌
+
+***
+
+
 Perfect 👍 that fits nicely with your existing validation.
 
 You already highlight column O (status) in red when there’s a mismatch.
