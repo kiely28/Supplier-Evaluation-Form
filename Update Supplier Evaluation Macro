@@ -1,0 +1,133 @@
+Got it 👍 — this is a very common (and good) validation case.
+
+Right now, when the sheet name from the Config does NOT exist in the evaluation file, you’re just skipping that mapping:
+
+If srcWS Is Nothing Then GoTo NextMap
+
+But what you want is:
+
+> ❌ If ANY required sheet name is missing → move the whole file to INVALID
+
+
+
+
+---
+
+✅ Recommended Logic (Best Practice)
+
+Rule:
+If at least one required config sheet (for that material type) is missing →
+➡ stop processing
+➡ close the file
+➡ move it to Invalid
+
+
+---
+
+🔧 Minimal, Clean Fix (Fits Your Current Code)
+
+1️⃣ Add a flag at the top of the file loop
+
+Dim hasMissingSheet As Boolean
+hasMissingSheet = False
+
+Place this after hasMismatch = False.
+
+
+---
+
+2️⃣ Detect missing sheet and mark file as invalid
+
+Replace this part:
+
+On Error Resume Next
+Set srcWS = evalWB.Sheets(srcSheetName)
+On Error GoTo 0
+
+If srcWS Is Nothing Then GoTo NextMap
+
+✅ With this:
+
+Set srcWS = Nothing
+On Error Resume Next
+Set srcWS = evalWB.Sheets(srcSheetName)
+On Error GoTo 0
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For   ' stop config loop immediately
+End If
+
+✔ No GoTo
+✔ Faster
+✔ Clear intent
+
+
+---
+
+3️⃣ After config loop, move file to INVALID if needed
+
+Right after:
+
+Next r
+
+Add this block:
+
+If hasMissingSheet Then
+    evalWB.Close SaveChanges:=False
+    
+    ' Archive old invalid files
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    
+    file.Move invalidFolder & evalfile
+    GoTo NextFile   ' skip Completed logic
+End If
+
+
+---
+
+4️⃣ Add loop label at bottom
+
+Change:
+
+Next file
+
+To:
+
+NextFile:
+Next file
+
+
+---
+
+🧠 What This Achieves
+
+Scenario	Result
+
+Sheet name exists	✅ Process normally
+Sheet missing	❌ File → Invalid
+Partial mapping	❌ File → Invalid
+Prevents partial writes	✅ Yes
+
+
+This is exactly how enterprise validation should work.
+
+
+---
+
+🟢 Optional (Even Better)
+
+You can also:
+
+Highlight the supplier row in yellow
+
+Log missing sheet name into a Log sheet
+
+Add reason: "Missing sheet: " & srcSheetName
+
+
+If you want, I can: ✔ refactor this without GoTo
+✔ add a validation reason column
+✔ auto-count invalid reasons
+
+Just say the word 👌
