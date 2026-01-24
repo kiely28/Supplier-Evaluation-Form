@@ -1,5 +1,208 @@
 
 
+Good catch — this behavior actually tells us your logic is working, but only for a specific scope.
+Here’s what’s really happening 👇
+
+
+---
+
+🔍 What’s the REAL Problem?
+
+> You added a new sheet name in Config_Mapping!F,
+it does NOT exist in the evaluation file,
+only ONE supplier row turns yellow, others don’t.
+
+
+
+This usually happens because of one (or both) of these reasons:
+
+
+---
+
+🚨 Root Cause #1 (MOST COMMON)
+
+❌ The config row is filtered by Material Type
+
+This line limits which config rows are checked:
+
+If cfgWS.Cells(r, "A").Value = materialType Then
+
+Meaning:
+
+The missing sheet name is only validated for suppliers whose:
+
+Summary!L (Material Type) = Config_Mapping!A
+
+Other suppliers have different material types, so:
+
+That config row is skipped
+
+No missing-sheet check occurs
+
+No yellow highlight
+
+
+
+✅ This is expected behavior, not a bug.
+
+
+---
+
+🚨 Root Cause #2
+
+❌ Exit For stops checking other config rows for that supplier
+
+When this happens:
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For
+End If
+
+VBA immediately exits the config loop
+
+Only the first missing sheet is detected
+
+Other missing config sheets are never checked
+
+
+This is fine if your rule is:
+
+> “Any single missing required sheet = Invalid”
+
+
+
+But it explains why:
+
+Only some issues are detected
+
+Others are skipped
+
+
+
+---
+
+✅ How to CONFIRM Which Case You Have (Quick Test)
+
+Add this temporary debug line:
+
+Debug.Print supplierCode, materialType, srcSheetName
+
+You’ll see:
+
+The missing sheet is only checked for certain material types
+
+
+
+---
+
+🟢 SOLUTION OPTIONS (Pick What You Want)
+
+
+---
+
+✅ OPTION 1 (Recommended – Current Logic Is Correct)
+
+If:
+
+Each material type has different required sheets
+
+Missing sheet should only affect that material type
+
+
+👉 No code change needed
+
+Just ensure:
+
+Config_Mapping!A (Material Type) is correct
+
+Summary!L matches it exactly
+
+
+
+---
+
+⚠️ OPTION 2 – Force Sheet Validation for ALL Suppliers
+
+If:
+
+> “This sheet must exist for EVERY supplier, regardless of material type”
+
+
+
+🔧 Remove material filter for that row
+
+Add a special marker like ALL in column A:
+
+If cfgWS.Cells(r, "A").Value = materialType _
+   Or UCase(cfgWS.Cells(r, "A").Value) = "ALL" Then
+
+Now:
+
+Missing sheet applies to everyone
+
+Everyone turns yellow ❗
+
+
+
+---
+
+🧠 BEST PRACTICE (Enterprise-Grade)
+
+Sheet Type	Column A
+
+Material-specific	Actual material
+Mandatory for all	ALL
+
+
+This gives you: ✔ flexibility
+✔ clarity
+✔ no surprise behavior
+
+
+---
+
+🧪 Optional Debug Improvement
+
+If you want to log exactly why a file went invalid:
+
+summaryWS.Cells(destRow, "P").Value = "Missing sheet: " & srcSheetName
+
+
+---
+
+🏁 Summary
+
+Symptom	Cause
+
+Only one supplier yellow	Material filter
+Some missing sheets ignored	Exit For
+Code not broken	✅ Correct behavior
+
+
+If you want, I can:
+
+Rewrite this without Exit For
+
+Add per-supplier validation logs
+
+Validate all required sheets upfront
+
+
+Just tell me 👍
+
+
+
+
+
+
+**
+
+
+
+
+
+
 Got it 👍 Here’s a clear, professional reply email you can use for the QA testing concern. I’ll keep it concise and audit-friendly.
 
 Good day,
