@@ -1,3 +1,136 @@
+
+Ahh yes — this is a classic side-effect of adding subfolders 👍
+Your CountExcelFiles is not broken — it just counts only the root folder, not the new classification folders.
+
+
+---
+
+🔍 Why It’s Not Working Now
+
+Your current function:
+
+Function CountExcelFiles(folderPath As String) As Long
+    For Each f In fso.GetFolder(folderPath).Files
+
+This only counts files directly inside:
+
+Completed\
+
+But now your files live in:
+
+Completed\Direct\
+Completed\Indirect\
+Completed\Professional\
+
+👉 So Completed\ itself is empty → count = 0
+
+
+---
+
+✅ CORRECT FIX (Recursive Folder Count)
+
+We must count:
+
+Files in Completed\
+
+Files in all subfolders
+
+
+
+---
+
+🔧 REPLACE CountExcelFiles WITH THIS VERSION
+
+✅ Recursive & Safe (Recommended)
+
+Function CountExcelFiles(folderPath As String) As Long
+    Dim fso As Object
+    Dim fld As Object
+    Dim subFld As Object
+    Dim f As Object
+    Dim cnt As Long
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If Not fso.FolderExists(folderPath) Then
+        CountExcelFiles = 0
+        Exit Function
+    End If
+
+    Set fld = fso.GetFolder(folderPath)
+
+    ' Count files in current folder
+    For Each f In fld.Files
+        If LCase(fso.GetExtensionName(f.Name)) Like "xls*" Then
+            cnt = cnt + 1
+        End If
+    Next f
+
+    ' Count files in subfolders (recursive)
+    For Each subFld In fld.SubFolders
+        cnt = cnt + CountExcelFiles(subFld.Path)
+    Next subFld
+
+    CountExcelFiles = cnt
+End Function
+
+
+---
+
+🧠 What This Fixes
+
+Folder Structure	Count
+
+Completed only	✔
+Completed + subfolders	✔
+Future new folders	✔
+Direct / Indirect / Professional	✔
+
+
+No further changes needed anywhere else.
+
+
+---
+
+⭐ OPTIONAL: Count Per Classification (Nice Upgrade)
+
+If you want separate counts:
+
+directCount = CountExcelFiles(directFolder)
+indirectCount = CountExcelFiles(indirectFolder)
+professionalCount = CountExcelFiles(professionalFolder)
+
+Then display:
+
+Direct: 10
+Indirect: 5
+Professional: 8
+
+
+---
+
+🏁 Summary
+
+❌ Problem: function only counted root folder
+
+✅ Solution: recursive folder count
+
+🚀 Result: future-proof logic
+
+
+If you want, I can also: ✔ add a total = direct + indirect + professional check
+✔ auto-reset counts when folders are empty
+✔ log count mismatches
+
+Just say the word 👌
+
+
+
+
+***
+
+
+
 Perfect 👍 thanks for confirming.
 
 Below is the clean, exact update based on Classification = Column L.
