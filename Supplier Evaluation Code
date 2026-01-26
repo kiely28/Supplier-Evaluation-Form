@@ -1,4 +1,168 @@
+Nice enhancement 👍 this fits your workflow perfectly.
 
+I’ll show you exactly where and how to add it, and I’ll keep it safe + minimal, so you don’t break existing logic.
+
+
+---
+
+✅ Target Behavior
+
+After:
+
+Data copied to Summary
+
+File is considered VALID
+
+File is moved to Completed
+
+
+👉 The file should instead go to:
+
+Completed\
+ ├─ Direct\
+ ├─ Indirect\
+ └─ Professional\
+
+…based on the classification of the supplier.
+
+
+---
+
+⚠️ First (Important) Assumption
+
+You must already have the classification value somewhere, usually from:
+
+Summary worksheet (e.g. column M or K), OR
+
+Evaluation file header
+
+
+👉 I’ll assume classification is stored in Summary worksheet, same row as the supplier.
+
+📌 Example assumption
+Classification is in column M:
+
+classification = Trim(summaryWS.Cells(destRow, "M").Value)
+
+> If your column is different, just change "M".
+
+
+
+
+---
+
+🔧 Step 1: Define Subfolders
+
+Right after you define completedFolder, add:
+
+Dim directFolder As String
+Dim indirectFolder As String
+Dim professionalFolder As String
+
+directFolder = completedFolder & "Direct\"
+indirectFolder = completedFolder & "Indirect\"
+professionalFolder = completedFolder & "Professional\"
+
+
+---
+
+🔧 Step 2: Create Classification Folders (If Not Exist)
+
+Add this after your existing MkDir logic:
+
+If Dir(directFolder, vbDirectory) = "" Then MkDir directFolder
+If Dir(indirectFolder, vbDirectory) = "" Then MkDir indirectFolder
+If Dir(professionalFolder, vbDirectory) = "" Then MkDir professionalFolder
+
+
+---
+
+🔧 Step 3: Get Classification Before Moving File
+
+Right before this existing code:
+
+ArchiveExistingByPrefix completedFolder, archiveFolder, supplierCode
+file.Move completedFolder & evalfile
+
+Replace it with this 👇
+
+
+---
+
+✅ FINAL MOVE LOGIC (Classification-Aware)
+
+Dim classification As String
+Dim targetFolder As String
+
+classification = UCase(Trim(summaryWS.Cells(destRow, "M").Value))
+
+Select Case classification
+    Case "DIRECT"
+        targetFolder = directFolder
+    Case "INDIRECT"
+        targetFolder = indirectFolder
+    Case "PROFESSIONAL"
+        targetFolder = professionalFolder
+    Case Else
+        ' Fallback if classification is invalid
+        targetFolder = completedFolder
+End Select
+
+' Archive old files in target folder
+ArchiveExistingByPrefix targetFolder, archiveFolder, supplierCode
+
+' Move file to classified Completed folder
+file.Move targetFolder & evalfile
+
+
+---
+
+🧠 What This Solves
+
+Scenario	Result
+
+Valid + Direct	Completed\Direct
+Valid + Indirect	Completed\Indirect
+Valid + Professional	Completed\Professional
+Invalid classification	Completed (root)
+Missing sheet	Invalid (unchanged)
+
+
+✔ Clean
+✔ No duplicate files
+✔ Fully automated
+
+
+---
+
+⭐ Best Practice (Optional but Recommended)
+
+Normalize classification values
+
+To avoid issues like "professional " or "Prof":
+
+classification = Replace(classification, " ", "")
+classification = UCase(classification)
+
+Or enforce data validation in Summary sheet.
+
+
+---
+
+❓One Quick Check (Answer This)
+
+Before I fine-tune this further:
+
+👉 Which column contains the classification in your Summary sheet?
+(M, K, L, etc.)
+
+Once you confirm, I can:
+
+Lock it to that column
+
+Add validation (yellow if invalid classification)
+
+Auto-create future categories without code change
 
 
 ***
