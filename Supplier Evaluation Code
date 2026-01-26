@@ -1,3 +1,162 @@
+Perfect 👍 thanks for confirming.
+
+Below is the clean, exact update based on Classification = Column L.
+This plugs directly into your existing macro with minimal changes.
+
+
+---
+
+✅ Final Behavior (Confirmed)
+
+After a file is:
+
+✅ Successfully copied to Summary
+
+✅ Valid (no missing sheet)
+
+
+➡ It will be moved to:
+
+Completed\
+ ├─ Direct\
+ ├─ Indirect\
+ └─ Professional\
+
+…based on Summary!L (Classification)
+
+
+---
+
+🔧 1️⃣ Define Classification Folders
+
+Right after this part in your code:
+
+completedFolder = evalFolder & "Completed\"
+invalidFolder = evalFolder & "Invalid\"
+archiveFolder = evalFolder & "Archive\"
+
+👉 Add this:
+
+Dim directFolder As String
+Dim indirectFolder As String
+Dim professionalFolder As String
+
+directFolder = completedFolder & "Direct\"
+indirectFolder = completedFolder & "Indirect\"
+professionalFolder = completedFolder & "Professional\"
+
+
+---
+
+🔧 2️⃣ Create the Folders (If Not Exist)
+
+After your existing MkDir logic, add:
+
+If Dir(directFolder, vbDirectory) = "" Then MkDir directFolder
+If Dir(indirectFolder, vbDirectory) = "" Then MkDir indirectFolder
+If Dir(professionalFolder, vbDirectory) = "" Then MkDir professionalFolder
+
+
+---
+
+🔧 3️⃣ Replace the Existing “Move to Completed” Code
+
+❌ OLD CODE
+
+ArchiveExistingByPrefix completedFolder, archiveFolder, supplierCode
+file.Move completedFolder & evalfile
+
+
+---
+
+✅ NEW CODE (Classification-Based)
+
+Dim classification As String
+Dim targetFolder As String
+
+classification = UCase(Trim(summaryWS.Cells(destRow, "L").Value))
+
+Select Case classification
+    Case "DIRECT"
+        targetFolder = directFolder
+    Case "INDIRECT"
+        targetFolder = indirectFolder
+    Case "PROFESSIONAL"
+        targetFolder = professionalFolder
+    Case Else
+        ' Safety fallback
+        targetFolder = completedFolder
+End Select
+
+' Archive existing files in the target folder
+ArchiveExistingByPrefix targetFolder, archiveFolder, supplierCode
+
+' Move file into the classified Completed folder
+file.Move targetFolder & evalfile
+
+
+---
+
+🧠 Resulting Logic Summary
+
+Classification (Col L)	Destination
+
+DIRECT	Completed\Direct
+INDIRECT	Completed\Indirect
+PROFESSIONAL	Completed\Professional
+Blank / Invalid	Completed (root)
+
+
+✔ No overwriting
+✔ Clean structure
+✔ Easy to audit
+
+
+---
+
+⭐ Recommended (Optional Enhancements)
+
+1️⃣ Normalize Classification Text (Highly Recommended)
+
+Prevents issues like "Professional " or "prof":
+
+classification = Replace(classification, " ", "")
+classification = UCase(classification)
+
+
+---
+
+2️⃣ Highlight Status if Classification Is Invalid
+
+(Optional UX improvement)
+
+If targetFolder = completedFolder Then
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+End If
+
+
+---
+
+If you want next:
+
+🔹 auto-create new classifications without code change
+
+🔹 validation message like “Invalid classification”
+
+🔹 logging per supplier
+
+
+Just tell me — this macro is already very solid 💪
+
+
+
+
+**
+
+
+
+
+
 Nice enhancement 👍 this fits your workflow perfectly.
 
 I’ll show you exactly where and how to add it, and I’ll keep it safe + minimal, so you don’t break existing logic.
