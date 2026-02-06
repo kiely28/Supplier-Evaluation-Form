@@ -1,3 +1,232 @@
+Nice follow-up 👍
+Auto-clear is best done right before you log the new start time, so every run starts clean and you never mix old data with a new run.
+
+Below are two safe ways. Pick what fits your flow.
+
+
+---
+
+✅ Option 1: Auto-clear Start / End / Duration at Macro Start (Recommended)
+
+Clear before logging the new start time.
+
+🔹 Update your Main Macro
+
+Sub RunMainProcess()
+
+    ' Clear previous run
+    Call ClearTimeLog
+
+    ' Log start time
+    Call LogStartTime
+
+    ' ===== YOUR MAIN CODE GOES HERE =====
+    Application.Wait Now + TimeValue("00:00:05")
+    ' ===================================
+
+    ' Log end time and duration
+    Call LogEndTimeAndDuration
+
+End Sub
+
+
+---
+
+🔹 Clear Sub (Auto-Reset)
+
+Sub ClearTimeLog()
+
+    With ThisWorkbook.Sheets("Summary") ' change sheet name
+        .Range("A2:A4").ClearContents
+    End With
+
+End Sub
+
+📌 What this clears
+
+A2 → Start Date & Time
+
+A3 → End Date & Time
+
+A4 → Duration
+
+
+
+---
+
+✅ Option 2: Clear Only End Time & Duration (Keeps Last Start)
+
+Use this if you want the start time overwritten, but still reset old end/duration values.
+
+Sub ClearEndTimeOnly()
+
+    With ThisWorkbook.Sheets("Summary")
+        .Range("A3:A4").ClearContents
+    End With
+
+End Sub
+
+Call it before LogStartTime.
+
+
+---
+
+🧠 Best Practice Tip
+
+To avoid accidental clearing while debugging:
+
+If MsgBox("Start new run and clear previous time log?", _
+          vbYesNo + vbQuestion) = vbYes Then
+    Call ClearTimeLog
+End If
+
+(Use this only if needed.)
+
+
+---
+
+🔥 Pro Upgrade (Optional)
+
+If you want:
+
+auto-clear only when previous run is completed
+
+log per run (history table)
+
+start/end per processed file
+
+protect cells from manual edit
+
+
+Just say the word and tell me how you want it laid out 😉
+
+
+
+
+****
+
+
+
+
+Got it 👍 This is a very common (and useful) pattern in VBA:
+
+When macro starts → write Start Date & Time
+
+When macro ends → write End Date & Time + Duration
+
+
+Below is a clean, reusable sample you can copy-paste and adjust.
+
+
+---
+
+Sample Setup (Simple & Clear)
+
+Column A
+
+A2 → Start Date & Time
+
+A3 → End Date & Time
+
+A4 → Duration (hh:mm:ss)
+
+
+
+---
+
+1️⃣ Main Macro (Calls Start & End Subs)
+
+Sub RunMainProcess()
+
+    ' Log start time
+    Call LogStartTime
+
+    ' ===== YOUR MAIN CODE GOES HERE =====
+    Application.Wait Now + TimeValue("00:00:05") ' sample process
+    ' ===================================
+
+    ' Log end time and duration
+    Call LogEndTimeAndDuration
+
+End Sub
+
+
+---
+
+2️⃣ Sub to Log Start Date & Time
+
+Sub LogStartTime()
+
+    With ThisWorkbook.Sheets("Summary") ' change sheet name
+        .Range("A2").Value = Now
+        .Range("A2").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+    End With
+
+End Sub
+
+
+---
+
+3️⃣ Sub to Log End Date, Time & Duration
+
+Sub LogEndTimeAndDuration()
+
+    Dim ws As Worksheet
+    Dim startTime As Date
+    Dim endTime As Date
+
+    Set ws = ThisWorkbook.Sheets("Summary") ' change sheet name
+
+    startTime = ws.Range("A2").Value
+    endTime = Now
+
+    ws.Range("A3").Value = endTime
+    ws.Range("A3").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+
+    ws.Range("A4").Value = endTime - startTime
+    ws.Range("A4").NumberFormat = "[hh]:mm:ss"
+
+End Sub
+
+
+---
+
+🔍 What This Does
+
+Uses Now → system date & time
+
+Duration is calculated as:
+
+End Time – Start Time
+
+[hh]:mm:ss format allows durations longer than 24 hours
+
+
+
+---
+
+💡 Optional Enhancements (Tell me if you want these)
+
+Auto-clear time when macro restarts
+
+Write start/end time in same row dynamically
+
+Log per file or per run
+
+Prevent error if start time is missing
+
+Show duration in minutes or seconds only
+
+
+If you want it tied specifically to your supplier evaluation / attendance / file-processing macro, I can integrate it directly into your existing code 👌
+
+
+
+
+***
+
+
+
 Inform them that if they have any concerns or questions about the program, they may email me anytime.
 Mention that we are available for a short discussion if they prefer direct clarification.
 State that regarding the UAT results, we are available this Friday, February 6, anytime during the day for discussion.
