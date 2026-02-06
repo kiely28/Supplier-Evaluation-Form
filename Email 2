@@ -1,3 +1,307 @@
+Easy win 👍
+You just need to save the workbook right after the history log is written, so you’re guaranteed the run data is not lost even if Excel crashes.
+
+Below are safe and clean ways to do it.
+
+
+---
+
+✅ Option 1: Auto-Save After Logging (Most Common)
+
+🔹 Update your Main Macro
+
+Sub RunMainProcess()
+
+    Call ClearTimeLog
+    Call LogStartTime
+
+    ' ===== YOUR MAIN PROCESS =====
+    Application.Wait Now + TimeValue("00:00:05")
+    ' =============================
+
+    Call LogEndTimeAndDuration
+    Call LogRunHistory
+
+    ' Save workbook after logging
+    Call SaveAfterLog
+
+End Sub
+
+
+---
+
+🔹 Save Sub (Simple & Safe)
+
+Sub SaveAfterLog()
+
+    If ThisWorkbook.Saved = False Then
+        ThisWorkbook.Save
+    End If
+
+End Sub
+
+✔ Saves only if there are changes
+✔ No pop-ups
+✔ Works for manual or scheduled runs
+
+
+---
+
+✅ Option 2: Save with Timestamp Backup (Recommended for Audits)
+
+This creates a backup copy before saving.
+
+Sub SaveWithBackup()
+
+    Dim backupPath As String
+
+    backupPath = ThisWorkbook.Path & "\Backup_" & _
+                 Format(Now, "yyyymmdd_hhmmss") & ".xlsm"
+
+    ThisWorkbook.SaveCopyAs backupPath
+    ThisWorkbook.Save
+
+End Sub
+
+💡 Great if your macro is business-critical.
+
+
+---
+
+⚠️ Important Edge Case (First-Time Save)
+
+If the file was never saved before, ThisWorkbook.Path is empty. Use this safe version:
+
+Sub SaveAfterLogSafe()
+
+    If ThisWorkbook.Path = "" Then
+        MsgBox "Please save the workbook first before running the macro.", vbExclamation
+        Exit Sub
+    End If
+
+    ThisWorkbook.Save
+
+End Sub
+
+
+---
+
+🧠 Best Practice (What I Recommend)
+
+For production macros:
+
+Call LogRunHistory
+Call SaveAfterLogSafe
+
+This ensures: ✔ Run is logged
+✔ File is safely saved
+✔ No silent failures
+
+
+---
+
+🚀 Want to Level This Up?
+
+I can also add:
+
+Save only if run completed successfully
+
+Save only once per day
+
+Save to network / shared drive
+
+Auto-lock workbook after save
+
+Email log summary after save
+
+
+Just tell me how critical this macro is and where the file lives 👌
+
+
+
+*****
+
+Love this upgrade 🔥 — a run history table makes your macro feel professional-grade.
+
+Below is a clean, production-ready pattern:
+
+Auto-clear current run
+
+Log Start / End / Duration
+
+Append each run to a History table
+
+No overwriting, ever
+
+
+
+---
+
+📊 Suggested Layout
+
+Summary Sheet
+
+Cell	Purpose
+
+A2	Start Date & Time
+A3	End Date & Time
+A4	Duration
+
+
+
+---
+
+History Sheet
+
+Row 1 (Headers):
+
+A	B	C	D
+
+Run #	Start Date & Time	End Date & Time	Duration
+
+
+
+---
+
+1️⃣ Main Macro (Orchestrator)
+
+Sub RunMainProcess()
+
+    Call ClearTimeLog
+    Call LogStartTime
+
+    ' ===== YOUR MAIN PROCESS =====
+    Application.Wait Now + TimeValue("00:00:05") ' sample workload
+    ' =============================
+
+    Call LogEndTimeAndDuration
+    Call LogRunHistory
+
+End Sub
+
+
+---
+
+2️⃣ Clear Current Run (Auto Reset)
+
+Sub ClearTimeLog()
+
+    With ThisWorkbook.Sheets("Summary")
+        .Range("A2:A4").ClearContents
+    End With
+
+End Sub
+
+
+---
+
+3️⃣ Log Start Time
+
+Sub LogStartTime()
+
+    With ThisWorkbook.Sheets("Summary")
+        .Range("A2").Value = Now
+        .Range("A2").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+    End With
+
+End Sub
+
+
+---
+
+4️⃣ Log End Time + Duration
+
+Sub LogEndTimeAndDuration()
+
+    Dim ws As Worksheet
+    Dim startTime As Date
+    Dim endTime As Date
+
+    Set ws = ThisWorkbook.Sheets("Summary")
+
+    startTime = ws.Range("A2").Value
+    endTime = Now
+
+    ws.Range("A3").Value = endTime
+    ws.Range("A3").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+
+    ws.Range("A4").Value = endTime - startTime
+    ws.Range("A4").NumberFormat = "[hh]:mm:ss"
+
+End Sub
+
+
+---
+
+5️⃣ ⭐ Append Run to History Table (Core Feature)
+
+Sub LogRunHistory()
+
+    Dim wsSum As Worksheet
+    Dim wsHist As Worksheet
+    Dim nextRow As Long
+    Dim runNumber As Long
+
+    Set wsSum = ThisWorkbook.Sheets("Summary")
+    Set wsHist = ThisWorkbook.Sheets("History")
+
+    ' Find next empty row
+    nextRow = wsHist.Cells(wsHist.Rows.Count, "A").End(xlUp).Row + 1
+
+    ' Auto run number
+    If nextRow = 2 Then
+        runNumber = 1
+    Else
+        runNumber = wsHist.Cells(nextRow - 1, "A").Value + 1
+    End If
+
+    wsHist.Cells(nextRow, "A").Value = runNumber
+    wsHist.Cells(nextRow, "B").Value = wsSum.Range("A2").Value
+    wsHist.Cells(nextRow, "C").Value = wsSum.Range("A3").Value
+    wsHist.Cells(nextRow, "D").Value = wsSum.Range("A4").Value
+
+    wsHist.Columns("B:C").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+    wsHist.Columns("D").NumberFormat = "[hh]:mm:ss"
+
+End Sub
+
+
+---
+
+🧠 Why This Design Is Solid
+
+✔ Each run is append-only
+✔ No risk of overwriting previous logs
+✔ Duration supports >24 hours
+✔ Easy to export / audit / report
+✔ Safe even if macro runs multiple times per day
+
+
+---
+
+🚀 Optional Power-Ups (I can add any of these)
+
+Log user name (Environ("Username"))
+
+Log processed file count
+
+Log status (Completed / Error)
+
+Auto-create History sheet if missing
+
+Convert History into an Excel Table
+
+Auto-clear history after X runs
+
+
+Just tell me what you want next and how your workbook is structured 👌
+
+
+
+***
+
+
+
 Nice follow-up 👍
 Auto-clear is best done right before you log the new start time, so every run starts clean and you never mix old data with a new run.
 
