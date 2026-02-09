@@ -1,3 +1,195 @@
+
+Got it 👍
+You want a REUSABLE PROMPT that clearly describes the coding style / pattern you’ve been using for this ASP.NET Core MVC + EF Core + Stored Procedure–based transaction system, so you can reuse it for In / Out / Other transactions.
+
+Below is a clean, copy-paste ready PROMPT you can use anytime.
+
+
+---
+
+✅ STANDARD PROMPT – ASP.NET CORE MVC TRANSACTION STYLE
+
+> Prompt:
+
+
+
+> Please generate code using the following coding style and architecture:
+
+Framework: ASP.NET Core MVC (.NET 8.0)
+
+Data Access: EF Core (NO LINQ CRUD), Stored Procedures only
+
+Pattern:
+
+Controllers call methods from ApplicationDbContext
+
+ApplicationDbContext contains async methods that execute stored procedures using ExecuteSqlRawAsync / FromSqlRaw
+
+
+Async everywhere (async/await)
+
+
+Database Rules
+
+Tables use INT primary keys
+
+Insert / Update / Delete handled via stored procedures
+
+GetAll stored procedures must return joined display fields (e.g. CategoryName, LocationName)
+
+Business logic (e.g. ControlNo generation, series reset, validation) must be handled inside stored procedures
+
+
+Models
+
+Models are POCO classes
+
+Include:
+
+Foreign key IDs (e.g. CategoryId, LocationId)
+
+Display-only fields (e.g. CategoryName, LocationName)
+
+
+Do NOT use navigation properties
+
+
+Controller Rules
+
+Controller must be thin
+
+No SQL inside controller
+
+Call _context.MethodAsync() only
+
+On validation error, reload dropdown data
+
+After successful save:
+
+Return the same Create view
+
+Clear specific fields if required
+
+Focus specific input field (via ViewBag flag)
+
+
+
+View Rules (Create / Edit)
+
+Razor views (.cshtml)
+
+Dropdowns populated from database tables using ViewBag
+
+Dropdown <option> may include data-* attributes (e.g. data-uom)
+
+Client-side behavior handled with plain JavaScript
+
+Validation:
+
+DataAnnotations
+
+Custom server-side validation (e.g. SerialNo already exists)
+
+
+UX rules:
+
+Enter key moves to next field
+
+Enter submits only on last field
+
+Clear button clears fields via JavaScript
+
+Disabled fields still submit values using hidden inputs
+
+
+
+Special Behaviors
+
+ControlNo auto-generated in SQL:
+
+Format: CategoryCode-MMYY-XXX
+
+Series resets per Category + Month
+
+
+Quantity logic:
+
+If Category.Uom = 'pc' → Quantity = 1 and disabled
+
+Else → Quantity editable
+
+
+Focus handling:
+
+On SerialNo validation error → focus SerialNo
+
+After successful save → focus SerialNo
+
+
+
+Output Required
+
+SQL:
+
+Table changes
+
+Stored procedures (GetAll, Insert, Update, Delete)
+
+
+C#:
+
+Model classes
+
+ApplicationDbContext methods
+
+Controller actions
+
+
+Views:
+
+Create.cshtml / Edit.cshtml with JavaScript
+
+
+
+Use clean, production-ready code, consistent naming, and explain briefly where needed.
+
+
+
+
+---
+
+🏆 WHY THIS PROMPT WORKS
+
+✔ Matches your real production style
+✔ Prevents mixing LINQ + SP
+✔ Keeps controllers clean
+✔ Scales to In / Out / Transfer / Adjustment transactions
+✔ Easy to reuse for future modules
+
+
+---
+
+If you want, I can also:
+
+Shorten this to a one-paragraph ultra-compact prompt
+
+Customize it for Out Transaction
+
+Convert it into a company coding standard document
+
+
+Just tell me 💡
+
+
+
+
+
+****
+
+
+
+
+
 Here’s your revised email with the APO Account added, keeping everything else intact and clean:
 
 Hi Ma’am/Sir,
