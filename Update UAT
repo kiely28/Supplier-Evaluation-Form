@@ -1,0 +1,447 @@
+Great question — these three errors are connected, and they usually appear together in file-automation macros like yours.
+
+I’ll break this down in plain English, then give you exact, safe fixes you can paste into your project.
+
+
+---
+
+🔴 1. “The file couldn’t open in Protected View”
+
+Why this happens
+
+Excel blocks files that are:
+
+Downloaded from email / Teams / SharePoint
+
+From network or unknown locations
+
+Considered “unsafe”
+
+
+When VBA tries:
+
+Set evalWB = Workbooks.Open(path)
+
+Excel may block it before VBA can open it, which causes the next errors.
+
+
+---
+
+🔴 2. “Process ended with error: File not found”
+
+Why this happens
+
+Usually caused by:
+
+File was already moved (Completed / Invalid)
+
+VBA still tries to open it
+
+Or filename contains special characters
+
+Or Protected View blocked it
+
+
+
+---
+
+🔴 3. “Bad file name or number”
+
+Why this happens
+
+Triggered by:
+
+Workbooks.Open on a blocked file
+
+file.Move after file is already moved
+
+Invalid path or missing folder
+
+Illegal filename characters
+
+
+
+---
+
+✅ REQUIRED FIXES (DO ALL 4)
+
+
+---
+
+✅ FIX #1 — Disable Protected View PROGRAMMATICALLY (Safe Way)
+
+👉 Best practice: Put your evaluation folder in Trusted Locations
+
+Steps (One-Time Setup)
+
+1. Excel → File → Options
+
+
+2. Trust Center → Trust Center Settings
+
+
+3. Trusted Locations
+
+
+4. Add:
+
+
+
+D:\Supplier Evaluation Form\
+
+✔ Excel will open files without Protected View
+✔ VBA errors disappear
+✔ No security warnings
+
+⚠️ Do NOT rely on VBA to bypass Protected View — Excel blocks it by design.
+
+
+---
+
+✅ FIX #2 — Always Open Files with FULL PATH
+
+You already have:
+
+evalfile = file.Name
+
+🚨 This is risky.
+
+🔧 Change this:
+
+evalfile = file.Name
+Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+
+✅ To this (safer):
+
+Dim evalFilePath As String
+evalFilePath = file.Path
+
+Set evalWB = Workbooks.Open(evalFilePath, ReadOnly:=True)
+
+✔ Guaranteed correct file
+✔ No “file not found”
+
+
+---
+
+✅ FIX #3 — Prevent Double Move (Very Important)
+
+Before ANY file.Move, check:
+
+If fso.FileExists(file.Path) Then
+    file.Move targetFolder & file.Name
+End If
+
+✔ Prevents “Bad file name or number”
+
+
+---
+
+✅ FIX #4 — Wrap Workbooks.Open with Proper Error Handling
+
+Replace:
+
+Set evalWB = Workbooks.Open(evalFilePath, ReadOnly:=True)
+
+✅ With This:
+
+On Error Resume Next
+Set evalWB = Workbooks.Open(evalFilePath, ReadOnly:=True)
+On Error GoTo 0
+
+If evalWB Is Nothing Then
+    ' Cannot open file → INVALID
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    If fso.FileExists(file.Path) Then
+        file.Move invalidFolder & file.Name
+    End If
+
+    GoTo NextFile
+End If
+
+✔ No crash
+✔ Clear invalid handling
+✔ File safely moved
+
+
+---
+
+🟢 EXTRA HARDENING (Highly Recommended)
+
+🔹 Skip temp / lock files
+
+If Left(file.Name, 2) = "~$" Then GoTo NextFile
+
+🔹 Ensure folder paths end with \
+
+If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+
+🔹 Block weird extensions
+
+If Not LCase(file.Name) Like "*.xls*" Then GoTo NextFile
+
+
+---
+
+🧠 WHY THESE FIXES WORK
+
+Error	Root Cause	Fix
+
+Protected View	Excel security	Trusted Location
+File not found	Relative paths / moved file	file.Path
+Bad file name	Double move / blocked open	FileExists check
+
+
+
+---
+
+🏁 FINAL RECOMMENDATION (IMPORTANT)
+
+👉 Do NOT try to suppress Protected View via VBA
+👉 Always use:
+
+Trusted Locations
+
+Full file paths
+
+Defensive file checks
+
+
+Your macro is already enterprise-level — these fixes make it bulletproof.
+
+
+---
+
+If you want, I can:
+
+Add a Log sheet with exact error reason
+
+Detect Protected View explicitly
+
+Auto-retry failed opens
+
+Quarantine unreadable files
+
+
+Just say the word 💪
+
+
+***
+
+Perfect move 👍 — adding a Log sheet with exact error reasons will make this macro much easier to support and audit.
+
+Below is a clean, drop-in logging system that fits your existing code style and error cases.
+
+
+---
+
+✅ What the Log Sheet Will Capture
+
+For each file processed:
+
+Column	Content
+
+A	Date
+B	Time
+C	Supplier Code
+D	File Name
+E	Status
+F	Error Reason
+G	Details (optional)
+
+
+Examples:
+
+INVALID – Protected View / Cannot Open
+
+INVALID – Missing sheet: Evaluation_Form
+
+INVALID – File not found
+
+COMPLETED – Moved to Direct
+
+
+
+---
+
+🔧 STEP 1: Create / Get Log Sheet (Once)
+
+✅ Add this helper function
+
+Function GetLogSheet() As Worksheet
+    Dim ws As Worksheet
+    
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Process_Log")
+    On Error GoTo 0
+    
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        ws.Name = "Process_Log"
+        
+        ws.Range("A1:G1").Value = Array( _
+            "Date", "Time", "Supplier Code", _
+            "File Name", "Status", "Reason", "Details")
+        
+        ws.Rows(1).Font.Bold = True
+        ws.Columns("A:G").AutoFit
+    End If
+    
+    Set GetLogSheet = ws
+End Function
+
+
+---
+
+🔧 STEP 2: Add Log Writer Procedure
+
+Sub WriteLog(supplierCode As String, _
+             fileName As String, _
+             status As String, _
+             reason As String, _
+             Optional details As String = "")
+    
+    Dim logWS As Worksheet
+    Dim nextRow As Long
+    
+    Set logWS = GetLogSheet()
+    nextRow = logWS.Cells(logWS.Rows.Count, "A").End(xlUp).Row + 1
+    
+    With logWS
+        .Cells(nextRow, "A").Value = Date
+        .Cells(nextRow, "B").Value = Time
+        .Cells(nextRow, "C").Value = supplierCode
+        .Cells(nextRow, "D").Value = fileName
+        .Cells(nextRow, "E").Value = status
+        .Cells(nextRow, "F").Value = reason
+        .Cells(nextRow, "G").Value = details
+    End With
+End Sub
+
+
+---
+
+🔧 STEP 3: Call Logging at KEY ERROR POINTS
+
+Below are exact places you should log.
+
+
+---
+
+🔴 1️⃣ File Cannot Open (Protected View / Corrupt)
+
+Replace your open logic with:
+
+Dim evalFilePath As String
+evalFilePath = file.Path
+
+On Error Resume Next
+Set evalWB = Workbooks.Open(evalFilePath, ReadOnly:=True)
+On Error GoTo 0
+
+If evalWB Is Nothing Then
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+    
+    WriteLog supplierCode, file.Name, _
+             "INVALID", _
+             "Cannot open file (Protected View / Corrupt)", _
+             evalFilePath
+    
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    If fso.FileExists(file.Path) Then
+        file.Move invalidFolder & file.Name
+    End If
+    
+    GoTo NextFile
+End If
+
+
+---
+
+🔴 2️⃣ Missing Sheet from Config
+
+Inside your config loop:
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    missingSheetName = srcSheetName
+    Exit For
+End If
+
+Declare this earlier:
+
+Dim missingSheetName As String
+
+After Next r:
+
+If hasMissingSheet Then
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+    
+    WriteLog supplierCode, file.Name, _
+             "INVALID", _
+             "Missing required sheet", _
+             missingSheetName
+    
+    evalWB.Close SaveChanges:=False
+    
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & file.Name
+    
+    GoTo NextFile
+End If
+
+
+---
+
+🔴 3️⃣ Supplier Not Found in Summary
+
+In your Else block:
+
+WriteLog supplierCode, file.Name, _
+         "INVALID", _
+         "Supplier code not found in summary"
+
+ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+file.Move invalidFolder & evalfile
+
+
+---
+
+🟢 4️⃣ Successful Completion
+
+After moving to Completed\Direct / Indirect / Professional:
+
+WriteLog supplierCode, file.Name, _
+         "COMPLETED", _
+         "Moved to Completed", _
+         classification
+
+
+---
+
+🧠 What You Gain Immediately
+
+✔ Exact reason for every failure
+✔ Proof for audits
+✔ Faster debugging
+✔ No more guessing why a file is yellow / invalid
+
+
+---
+
+⭐ OPTIONAL (Nice Add-Ons)
+
+If you want next:
+
+Auto-clear log per run
+
+Filter by date
+
+Add Error Code column
+
+Log processing duration per file
+
+
+Just tell me — this logging setup is already enterprise-grade 💪
