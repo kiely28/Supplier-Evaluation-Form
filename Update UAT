@@ -1,3 +1,187 @@
+Got it — this is a classic VBA “File not found” trap, and in your code there are three real root causes, not just one. The macro still ends with “File updated successfully” because of how your error handling is structured, which makes this extra confusing.
+
+Let’s break it down cleanly and fix it properly. 👇
+
+
+---
+
+🔴 MAIN REASONS YOU’RE GETTING “File not found”
+
+1. evalFolder path is missing a trailing backslash
+
+You commented this:
+
+evalFolder = Trim(ThisWorkbook.Sheets("Sheet1").Range("B8").Value) ' "D:\Supplier Evaluation Form\"
+
+If B8 does NOT end with \, then this line later becomes invalid:
+
+Set evalWB = Workbooks.Open(evalFolder & evalfile)
+
+Example of what VBA sees (❌ wrong):
+
+D:\Supplier Evaluation FormABCDEF.xlsx
+
+✅ FIX (mandatory)
+
+Force the backslash:
+
+evalFolder = Trim(ThisWorkbook.Sheets("Sheet1").Range("B8").Value)
+If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+
+
+---
+
+2. You overwrite evalfile with only the filename
+
+At the top you do this (correct for summary file):
+
+evalfile = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+Set summaryWB = Workbooks.Open(evalfile)
+
+Later, inside the loop:
+
+evalfile = file.Name   ' <-- overwrites full path
+
+Now evalfile no longer contains a full path — only the filename.
+
+If anything else later expects the full path, VBA throws File not found.
+
+✅ FIX (best practice)
+
+Use different variables:
+
+Dim summaryFile As String
+Dim evalFileName As String
+
+summaryFile = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+Set summaryWB = Workbooks.Open(summaryFile)
+
+' inside loop
+evalFileName = file.Name
+Set evalWB = Workbooks.Open(evalFolder & evalFileName, ReadOnly:=True)
+
+This alone eliminates a LOT of random failures.
+
+
+---
+
+3. file.Move + open workbook timing
+
+You are doing this:
+
+Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+...
+evalWB.Close SaveChanges:=False
+file.Move completedFolder & evalfile
+
+This is correct, BUT if:
+
+the file is still open (even momentarily),
+
+OR Excel Protected View grabbed it,
+
+OR Windows hasn’t released the file handle yet,
+
+
+👉 VBA throws File not found or Bad file name or number.
+
+✅ FIX (safe & reliable)
+
+Add a check before opening:
+
+If Dir(evalFolder & evalFileName) = "" Then
+    GoTo NextFile
+End If
+
+And after closing, force release:
+
+Set evalWB = Nothing
+DoEvents
+
+
+---
+
+🔴 WHY YOU STILL SEE “File updated successfully”
+
+This is important.
+
+In ValidatePaths you have:
+
+On Error GoTo CleanExit
+UpdateSupplierEvaluationSummary
+
+Then at the end:
+
+If Err.Number <> 0 Then
+    MsgBox "Process ended with error: " & Err.Description, vbExclamation
+End If
+
+MsgBox "File updated successfully."
+
+⚠️ Even when an error occurs, execution continues to the success message.
+
+
+---
+
+✅ PROPER ERROR HANDLING FIX
+
+Replace this part:
+
+On Error GoTo CleanExit
+UpdateSupplierEvaluationSummary
+
+With this:
+
+On Error GoTo ErrHandler
+UpdateSupplierEvaluationSummary
+GoTo CleanExit
+
+ErrHandler:
+    MsgBox "Process ended with error: " & Err.Description, vbCritical
+    Exit Sub
+
+And keep only one success message at the very end.
+
+
+---
+
+🧠 QUICK SUMMARY (TL;DR)
+
+You are getting File not found because:
+
+1. ❌ Folder path sometimes has no trailing \
+
+
+2. ❌ evalfile variable is reused incorrectly
+
+
+3. ❌ Files are moved while Excel still touches them
+
+
+4. ❌ Error handling always shows success even on failure
+
+
+
+
+---
+
+✅ If you want
+
+I can:
+
+Add a Log sheet that records exact filename + exact error
+
+Add Protected View detection
+
+Make the process 100% crash-proof (no false success message)
+
+
+Just tell me 👍
+
+****
+
+
+
 Yep — that behavior is 100% expected with your current error flow, and it’s actually a logic issue, not a mysterious Excel bug 👍
 Let’s break it down cleanly and then I’ll show you the exact fix.
 
