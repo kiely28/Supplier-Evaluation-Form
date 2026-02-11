@@ -1,0 +1,165 @@
+Good question — this is exactly where most people get tripped up 👍
+I’ll show you exactly where each fix goes, line-by-line, using your code.
+
+
+---
+
+✅ 1. Where to put the trailing backslash fix
+
+Put this IMMEDIATELY AFTER you read B8
+👉 inside UpdateSupplierEvaluationSummary
+
+🔧 BEFORE
+
+evalFolder = Trim(ThisWorkbook.Sheets("Sheet1").Range("B8").Value)
+
+✅ AFTER (paste this right below it)
+
+evalFolder = Trim(ThisWorkbook.Sheets("Sheet1").Range("B8").Value)
+If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+
+📍 Exact location
+
+' ===== PATHS =====
+evalfile = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+evalFolder = Trim(ThisWorkbook.Sheets("Sheet1").Range("B8").Value)
+
+If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+
+completedFolder = evalFolder & "Completed\"
+invalidFolder = evalFolder & "Invalid\"
+archiveFolder = evalFolder & "Archive\"
+
+
+---
+
+✅ 2. Where to split evalfile into two variables
+
+This is important and must be done near the top of the macro.
+
+🔧 ADD THESE DECLARATIONS (top of the sub)
+
+Dim summaryFile As String
+Dim evalFileName As String
+
+🔧 REPLACE this line:
+
+evalfile = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+
+✅ WITH:
+
+summaryFile = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+
+🔧 REPLACE:
+
+Set summaryWB = Workbooks.Open(evalfile)
+
+✅ WITH:
+
+Set summaryWB = Workbooks.Open(summaryFile)
+
+
+---
+
+✅ 3. Where to update the file loop (For Each file)
+
+Inside this block:
+
+🔧 BEFORE
+
+evalfile = file.Name
+supplierCode = Trim(Left(evalfile, 6))
+
+✅ AFTER
+
+evalFileName = file.Name
+supplierCode = Trim(Left(evalFileName, 6))
+
+
+---
+
+✅ 4. Where to safely open the evaluation file
+
+Replace this line:
+
+Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+
+✅ WITH THIS (right before opening the file)
+
+If Dir(evalFolder & evalFileName) = "" Then GoTo NextFile
+Set evalWB = Workbooks.Open(evalFolder & evalFileName, ReadOnly:=True)
+
+
+---
+
+✅ 5. Where to release the workbook before moving
+
+Every time you close the evaluation file, add these lines right after:
+
+🔧 BEFORE
+
+evalWB.Close SaveChanges:=False
+file.Move completedFolder & evalfile
+
+✅ AFTER
+
+evalWB.Close SaveChanges:=False
+Set evalWB = Nothing
+DoEvents
+
+file.Move completedFolder & evalFileName
+
+📌 Apply this same pattern to Completed and Invalid moves.
+
+
+---
+
+✅ 6. Where to fix the false “File updated successfully”
+
+This is in ValidatePaths, not the main macro.
+
+🔧 REPLACE THIS:
+
+On Error GoTo CleanExit
+UpdateSupplierEvaluationSummary
+
+✅ WITH THIS:
+
+On Error GoTo ErrHandler
+UpdateSupplierEvaluationSummary
+GoTo CleanExit
+
+ErrHandler:
+    MsgBox "Process ended with error: " & Err.Description, vbCritical
+    Exit Sub
+
+✔️ Now success only shows if no error happened
+
+
+---
+
+🧠 Final Mental Map (so it sticks)
+
+Fix	Where
+
+Add trailing \	After reading B8
+Separate filenames	Top of UpdateSupplierEvaluationSummary
+Use evalFileName	Inside For Each file
+Check file exists	Right before Workbooks.Open
+Release file handle	Right after evalWB.Close
+Fix success message	ValidatePaths
+
+
+
+---
+
+If you want, I can:
+
+Paste a fully cleaned, ready-to-run version of your macro
+
+Add a Log sheet showing which file failed and why
+
+Add line-level error trapping per supplier file
+
+
+Just say the word 👌
