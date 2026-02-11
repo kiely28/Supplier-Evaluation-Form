@@ -1,3 +1,266 @@
+Alright, I went through this line by line 👍
+Overall: your macro logic is solid and well-structured, but there are a few real issues that explain the errors you’ve been seeing (File not found, Bad file name or number, false “File updated successfully”), plus some cleanup improvements to make it safer.
+
+I’ll break this down into what’s correct, actual problems, and exact fixes (with code snippets you can paste).
+
+
+---
+
+✅ What’s already GOOD
+
+You did a lot of things right here:
+
+✔ Option Explicit (love this)
+
+✔ Folder auto-creation
+
+✔ Proper use of FileSystemObject
+
+✔ Clean config-driven mapping
+
+✔ Early exit on missing sheets
+
+✔ Archiving old files by prefix
+
+✔ Validation + timing wrapper (ValidatePaths)
+
+✔ Separation of helper functions
+
+
+This is not beginner code. The issues are edge-cases and sequencing.
+
+
+---
+
+❌ REAL PROBLEMS (and why errors happen)
+
+1️⃣ You overwrite evalfile (critical bug)
+
+At the top:
+
+evalfile = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+
+Later inside the loop:
+
+evalfile = file.Name
+
+But you also do this before looping:
+
+Set summaryWB = Workbooks.Open(evalfile)
+
+💥 Problem:
+
+evalfile first means summary file path
+
+then it becomes supplier filename
+
+same variable, two meanings
+
+
+This causes:
+
+Bad file name or number
+
+File not found
+
+random behavior depending on execution order
+
+
+✅ FIX (mandatory)
+
+Use two different variables:
+
+Dim summaryFilePath As String
+Dim supplierFileName As String
+
+Then update:
+
+summaryFilePath = Trim(ThisWorkbook.Sheets("Sheet1").Range("B5").Value)
+Set summaryWB = Workbooks.Open(summaryFilePath)
+
+Inside the loop:
+
+supplierFileName = file.Name
+supplierCode = Trim(Left(supplierFileName, 6))
+Set evalWB = Workbooks.Open(evalFolder & supplierFileName, ReadOnly:=True)
+
+And replace all evalfile references accordingly.
+
+
+---
+
+2️⃣ file.Move while looping folder.Files (classic trap)
+
+You’re doing:
+
+For Each file In folder.Files
+    ...
+    file.Move completedFolder & evalfile
+
+💥 Problem:
+
+You are modifying the folder while iterating it
+
+This can trigger:
+
+File not found
+
+skipped files
+
+unpredictable loop behavior
+
+
+
+✅ FIX (safe approach)
+
+Store file path first:
+
+Dim filePath As String
+filePath = file.Path
+
+Then move using FSO:
+
+fso.MoveFile filePath, completedFolder & supplierFileName
+
+Do this everywhere instead of file.Move.
+
+
+---
+
+3️⃣ Missing trailing backslash risk
+
+If user enters:
+
+D:\Supplier Evaluation Form
+
+Your code builds:
+
+D:\Supplier Evaluation FormCompleted\
+
+💥 File not found.
+
+✅ FIX (simple + safe)
+
+After reading evalFolder:
+
+If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+
+Put this once, right after B8 is read.
+
+
+---
+
+4️⃣ Error handler still shows “File updated successfully”
+
+In ValidatePaths:
+
+On Error GoTo CleanExit
+UpdateSupplierEvaluationSummary
+...
+If Err.Number <> 0 Then
+    MsgBox "Process ended with error: " & Err.Description
+End If
+
+MsgBox "File updated successfully."
+
+💥 Problem:
+
+Error occurs → jumps to CleanExit
+
+Message box still shows success
+
+
+✅ FIX (clean and correct)
+
+Change the end part to:
+
+If Err.Number <> 0 Then
+    MsgBox "Process ended with error: " & Err.Description, vbExclamation
+Else
+    MsgBox "File updated successfully." & vbCrLf & filePath, vbInformation
+End If
+
+And remove any extra success MsgBox.
+
+
+---
+
+5️⃣ ArchiveExistingByPrefix can fail silently
+
+If archive folder doesn’t exist yet → Name fails.
+
+✅ FIX (defensive)
+
+Add this at the top of the sub:
+
+If Dir(archiveFolder, vbDirectory) = "" Then MkDir archiveFolder
+
+
+---
+
+6️⃣ Minor logic improvement (not a bug, but safer)
+
+Instead of:
+
+If LCase(fso.GetExtensionName(file.Name)) Like "xls*" Then
+
+Use:
+
+Select Case LCase(fso.GetExtensionName(file.Name))
+    Case "xls", "xlsx", "xlsm"
+
+This avoids weird matches.
+
+
+---
+
+🔧 Summary of MUST-DO FIXES (priority order)
+
+1. 🔴 Split evalfile into two variables
+
+
+2. 🔴 Do not use file.Move directly in loop
+
+
+3. 🔴 Force trailing \ in folder path
+
+
+4. 🟠 Fix success message after errors
+
+
+5. 🟠 Ensure archive folder exists
+
+
+6. 🟡 Optional cleanup for extensions
+
+
+
+
+---
+
+💬 Final honest take
+
+Your macro is 80–90% production-ready.
+The errors you’re seeing are not logic errors, they’re file handling pitfalls that bite even experienced VBA devs.
+
+If you want, next we can:
+
+Add a Log sheet with exact filename + reason
+
+Add Try/Catch-style error tagging per file
+
+Convert this into a fully resumable batch processor
+
+
+Just tell me 👍
+
+
+
+
+
+****
+
+
 Perfect — let’s do only No. 5 and No. 6, very concrete, no extra theory.
 You can literally copy–paste these.
 
