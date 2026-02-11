@@ -1,3 +1,145 @@
+Perfect — let’s do only No. 5 and No. 6, very concrete, no extra theory.
+You can literally copy–paste these.
+
+
+---
+
+✅ NO. 5 — Release the file before Move
+
+Where: inside UpdateSupplierEvaluationSummary
+Why: prevents File not found / Bad file name or number
+
+
+---
+
+🔧 A. COMPLETED path update
+
+❌ FIND THIS (Completed block)
+
+evalWB.Close SaveChanges:=False
+
+' Archive old files first
+ArchiveExistingByPrefix completedFolder, archiveFolder, supplierCode
+file.Move completedFolder & evalfile
+
+✅ REPLACE WITH THIS
+
+evalWB.Close SaveChanges:=False
+Set evalWB = Nothing
+DoEvents   ' allow Windows to release file lock
+
+' Archive old files first
+ArchiveExistingByPrefix completedFolder, archiveFolder, supplierCode
+file.Move completedFolder & evalFileName
+
+
+---
+
+🔧 B. INVALID path update (missing sheet / supplier not found)
+
+❌ FIND THIS (Invalid block)
+
+evalWB.Close SaveChanges:=False
+
+ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+file.Move invalidFolder & evalfile
+
+✅ REPLACE WITH THIS
+
+evalWB.Close SaveChanges:=False
+Set evalWB = Nothing
+DoEvents
+
+ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+file.Move invalidFolder & evalFileName
+
+📌 Important:
+Make sure you are using evalFileName, not evalfile.
+
+
+---
+
+✅ NO. 6 — Fix false “File updated successfully”
+
+Where: inside ValidatePaths
+
+
+---
+
+🔧 A. FIND THIS
+
+On Error GoTo CleanExit
+
+UpdateSupplierEvaluationSummary
+
+
+---
+
+✅ B. REPLACE WITH THIS
+
+On Error GoTo ErrHandler
+
+UpdateSupplierEvaluationSummary
+GoTo CleanExit
+
+
+---
+
+✅ C. ADD THIS BLOCK (just BEFORE CleanExit:)
+
+ErrHandler:
+    MsgBox "Process ended with error: " & Err.Description, vbCritical
+    Exit Sub
+
+
+---
+
+🔧 D. FINAL RESULT STRUCTURE
+
+Your bottom part should look like this:
+
+On Error GoTo ErrHandler
+UpdateSupplierEvaluationSummary
+GoTo CleanExit
+
+ErrHandler:
+    MsgBox "Process ended with error: " & Err.Description, vbCritical
+    Exit Sub
+
+CleanExit:
+    ' END TIME / DURATION CODE HERE
+
+    MsgBox "File updated successfully." & vbCrLf & filePath, vbInformation
+
+
+---
+
+🧠 Quick checklist
+
+✔ File closed
+✔ File handle released
+✔ File moved safely
+✔ Error stops success message
+
+
+---
+
+If you want next:
+
+I can highlight the exact lines in your pasted code
+
+Or add a per-file try/catch so one bad file won’t stop the rest
+
+Or log failures to a Log sheet with timestamp + filename
+
+
+Just tell me 👍
+
+
+
+***
+
+
 Good question — this is exactly where most people get tripped up 👍
 I’ll show you exactly where each fix goes, line-by-line, using your code.
 
