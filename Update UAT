@@ -1,4 +1,274 @@
 
+You’re very close already 👍
+What you need now is surgical integration, not a rewrite.
+
+Below I’ll show exactly WHAT to add, WHERE to add it, and WHAT to replace, based on your current code.
+
+
+---
+
+✅ GOAL (Applied to YOUR Code)
+
+Add a Process_Log sheet that records:
+
+File name
+
+Supplier code
+
+Status (COMPLETED / INVALID)
+
+Exact error reason
+
+Details (missing sheet name, cannot open, etc.)
+
+
+WITHOUT breaking your existing logic.
+
+
+---
+
+🧩 STEP 1 — ADD LOG HELPERS (NEW CODE)
+
+👉 Paste these at the very bottom of the module
+(after CountSuppliersInSummary)
+
+
+---
+
+🔹 1. Get or Create Log Sheet
+
+Function GetLogSheet() As Worksheet
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Process_Log")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        ws.Name = "Process_Log"
+
+        ws.Range("A1:G1").Value = Array( _
+            "Date", "Time", "Supplier Code", _
+            "File Name", "Status", "Reason", "Details")
+
+        ws.Rows(1).Font.Bold = True
+        ws.Columns("A:G").AutoFit
+    End If
+
+    Set GetLogSheet = ws
+End Function
+
+
+---
+
+🔹 2. Write Log Entry
+
+Sub WriteLog(supplierCode As String, _
+             fileName As String, _
+             status As String, _
+             reason As String, _
+             Optional details As String = "")
+
+    Dim logWS As Worksheet
+    Dim nextRow As Long
+
+    Set logWS = GetLogSheet()
+    nextRow = logWS.Cells(logWS.Rows.Count, "A").End(xlUp).Row + 1
+
+    With logWS
+        .Cells(nextRow, "A").Value = Date
+        .Cells(nextRow, "B").Value = Time
+        .Cells(nextRow, "C").Value = supplierCode
+        .Cells(nextRow, "D").Value = fileName
+        .Cells(nextRow, "E").Value = status
+        .Cells(nextRow, "F").Value = reason
+        .Cells(nextRow, "G").Value = details
+    End With
+End Sub
+
+
+---
+
+🧩 STEP 2 — SAFELY OPEN FILE (IMPORTANT FIX)
+
+❌ CURRENT (RISKY)
+
+Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+
+✅ REPLACE WITH THIS
+
+Dim evalFilePath As String
+evalFilePath = file.Path
+
+On Error Resume Next
+Set evalWB = Workbooks.Open(evalFilePath, ReadOnly:=True)
+On Error GoTo 0
+
+If evalWB Is Nothing Then
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+
+    WriteLog supplierCode, file.Name, _
+             "INVALID", _
+             "Cannot open file (Protected View / Corrupt)", _
+             evalFilePath
+
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & file.Name
+    GoTo NextFile
+End If
+
+📌 This fixes:
+
+Protected View
+
+File not found
+
+Bad file name or number
+
+
+
+---
+
+🧩 STEP 3 — LOG MISSING SHEET ERROR
+
+🔹 Add variable (near hasMissingSheet)
+
+Dim missingSheetName As String
+
+
+---
+
+🔹 Modify missing sheet detection
+
+Replace:
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For
+End If
+
+With:
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    missingSheetName = srcSheetName
+    Exit For
+End If
+
+
+---
+
+🔹 Enhance your existing block (KEEP YOUR LOGIC)
+
+Replace your hasMissingSheet block with this:
+
+If hasMissingSheet Then
+
+    summaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+
+    WriteLog supplierCode, file.Name, _
+             "INVALID", _
+             "Missing required sheet", _
+             missingSheetName
+
+    evalWB.Close SaveChanges:=False
+
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+
+---
+
+🧩 STEP 4 — LOG SUPPLIER NOT FOUND
+
+In this block:
+
+Else
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & evalfile
+End If
+
+👉 Update to:
+
+Else
+    WriteLog supplierCode, file.Name, _
+             "INVALID", _
+             "Supplier code not found in summary"
+
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & evalfile
+End If
+
+
+---
+
+🧩 STEP 5 — LOG SUCCESS (COMPLETED)
+
+After this line:
+
+file.Move completedFolder & evalfile
+
+👉 Add:
+
+WriteLog supplierCode, file.Name, _
+         "COMPLETED", _
+         "File processed successfully"
+
+
+---
+
+🧠 FINAL RESULT (What You Get)
+
+✔ No crashes
+✔ Exact reason per failure
+✔ Audit-ready log
+✔ Easy troubleshooting
+
+Example Log Rows
+
+Status	Reason	Details
+
+INVALID	Missing required sheet	Evaluation_Form
+INVALID	Cannot open file	D:...\ABC123.xlsx
+COMPLETED	File processed successfully	
+
+
+
+---
+
+⭐ STRONGLY RECOMMENDED (NEXT STEP)
+
+Your CountExcelFiles will break again once you add subfolders.
+
+I strongly suggest replacing it with the recursive version we discussed earlier.
+
+
+---
+
+If you want next:
+
+Per-classification logging (Direct / Indirect / Professional)
+
+Duration per file
+
+Auto-clear log per run
+
+Error legend in Summary sheet
+
+
+Just tell me — your macro is now enterprise-grade 💪
+
+
+
+
+****
+
+
+
 Option Explicit
 
 Sub UpdateSupplierEvaluationSummary()
