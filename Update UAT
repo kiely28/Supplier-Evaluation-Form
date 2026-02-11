@@ -1,3 +1,156 @@
+Yep — that behavior is 100% expected with your current error flow, and it’s actually a logic issue, not a mysterious Excel bug 👍
+Let’s break it down cleanly and then I’ll show you the exact fix.
+
+
+---
+
+Why you see BOTH messages
+
+What’s happening right now
+
+In ValidatePaths, you have this structure:
+
+On Error GoTo CleanExit
+
+UpdateSupplierEvaluationSummary
+
+CleanExit:
+    ...
+    If Err.Number <> 0 Then
+        MsgBox "Process ended with error: " & Err.Description, vbExclamation
+    End If
+
+    MsgBox "File updated successfully.", vbInformation
+
+The problem
+
+When any error happens inside UpdateSupplierEvaluationSummary
+
+VBA jumps to CleanExit
+
+You show the error message ✅
+
+Then execution continues
+
+And you always show:
+
+
+MsgBox "File updated successfully."
+
+So Excel is basically saying:
+
+> ❌ Something failed
+✅ Everything is successful
+
+
+
+…which is confusing (and dangerous 😅)
+
+
+---
+
+✅ Correct behavior you actually want
+
+You want:
+
+❌ Error → show only the error
+
+✅ No error → show success
+
+
+
+---
+
+🔧 FIX 1 (minimal, safe, recommended)
+
+Modify the bottom of ValidatePaths like this:
+
+If Err.Number <> 0 Then
+    MsgBox "Process ended with error: " & Err.Description, vbExclamation
+    Exit Sub
+End If
+
+MsgBox "File updated successfully." & vbCrLf & filePath, vbInformation
+
+Result
+
+Scenario	Message
+
+Error happens	❌ “Process ended with error…”
+No error	✅ “File updated successfully”
+Both	❌❌ impossible
+
+
+
+---
+
+🔧 FIX 2 (cleaner & more professional)
+
+Track success explicitly:
+
+Dim hasError As Boolean
+hasError = False
+
+On Error GoTo CleanExit
+
+UpdateSupplierEvaluationSummary
+GoTo Done
+
+CleanExit:
+    hasError = True
+
+Done:
+    ' End time logging here...
+
+If hasError Then
+    MsgBox "Process ended with error: " & Err.Description, vbExclamation
+Else
+    MsgBox "File updated successfully." & vbCrLf & filePath, vbInformation
+End If
+
+This is enterprise-grade VBA pattern 👌
+(You’re already writing at that level.)
+
+
+---
+
+🔥 Why the actual error is “Bad file name or number”
+
+This confirms one of these is happening:
+
+A file is being moved twice
+
+Name or file.Move is executed on a missing file
+
+Invalid characters / duplicate filename during archive
+
+
+So the error message is real — your success message is just lying 😄
+
+
+---
+
+💡 Strong recommendation (next step)
+
+Add per-file error trapping inside UpdateSupplierEvaluationSummary so one bad file doesn’t fail the whole run.
+
+If you want, I can:
+
+Add a Status column = “Invalid – Locked / Bad name / Protected”
+
+Add error logging per filename
+
+Refactor file handling into a single safe function
+
+
+Just tell me which one you want next 👍
+
+
+
+
+****
+
+
 
 You’re very close already 👍
 What you need now is surgical integration, not a rewrite.
