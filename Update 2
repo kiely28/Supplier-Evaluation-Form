@@ -1,3 +1,203 @@
+Nice request — this is the right next upgrade for a macro like this 👍
+We’ll add a Log sheet that records every file, with exact filename + reason, without breaking your existing logic.
+
+Below is a clean, production-safe logging system you can paste directly.
+
+
+---
+
+✅ What the Log Sheet Will Capture
+
+For each processed file:
+
+Date/Time	Filename	Supplier Code	Status	Reason
+
+
+
+Examples:
+
+Completed – No mismatch
+
+Completed with mismatch – Category mismatch
+
+Invalid – Supplier not found
+
+Invalid – Missing sheet: SheetName
+
+Error – Bad file name or number
+
+
+
+---
+
+🔧 STEP 1: Add a Log Sheet Initializer
+
+Paste this once (anywhere in the module):
+
+Sub InitLogSheet()
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Log")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        ws.Name = "Log"
+
+        ws.Range("A1:E1").Value = Array("Date/Time", "Filename", "Supplier Code", "Status", "Reason")
+        ws.Rows(1).Font.Bold = True
+        ws.Columns("A:E").AutoFit
+    End If
+End Sub
+
+
+---
+
+🔧 STEP 2: Add the Log Writer Procedure
+
+Paste this below InitLogSheet:
+
+Sub WriteLog(fileName As String, supplierCode As String, status As String, reason As String)
+    Dim ws As Worksheet
+    Dim nextRow As Long
+
+    Set ws = ThisWorkbook.Sheets("Log")
+    nextRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+
+    ws.Cells(nextRow, "A").Value = Now
+    ws.Cells(nextRow, "B").Value = fileName
+    ws.Cells(nextRow, "C").Value = supplierCode
+    ws.Cells(nextRow, "D").Value = status
+    ws.Cells(nextRow, "E").Value = reason
+End Sub
+
+
+---
+
+🔧 STEP 3: Initialize Log Sheet at Start
+
+At the TOP of UpdateSupplierEvaluationSummary, add:
+
+Call InitLogSheet
+
+
+---
+
+🔧 STEP 4: Log Each Scenario (MOST IMPORTANT PART)
+
+🟢 COMPLETED – No mismatch
+
+Replace this block:
+
+If hasMismatch Then
+    summaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 0, 0)
+Else
+    summaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+End If
+
+With:
+
+If hasMismatch Then
+    summaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 0, 0)
+    WriteLog supplierFileName, supplierCode, "Completed", "Category mismatch found"
+Else
+    summaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+    WriteLog supplierFileName, supplierCode, "Completed", "No issues"
+End If
+
+
+---
+
+🟡 INVALID – Missing Sheet
+
+Inside this block:
+
+If hasMissingSheet Then
+
+Add before moving the file:
+
+WriteLog supplierFileName, supplierCode, "Invalid", "Missing sheet: " & srcSheetName
+
+
+---
+
+🔴 INVALID – Supplier Not Found
+
+In the Else block:
+
+Else
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    file.Move invalidFolder & supplierFileName
+End If
+
+Change to:
+
+Else
+    WriteLog supplierFileName, supplierCode, "Invalid", "Supplier code not found in summary"
+    ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+    fso.MoveFile file.Path, invalidFolder & supplierFileName
+End If
+
+
+---
+
+❌ ERROR – File Open Failure (optional but recommended)
+
+Wrap this line:
+
+Set evalWB = Workbooks.Open(evalFolder & supplierFileName, ReadOnly:=True)
+
+With:
+
+On Error Resume Next
+Set evalWB = Workbooks.Open(evalFolder & supplierFileName, ReadOnly:=True)
+If Err.Number <> 0 Then
+    WriteLog supplierFileName, supplierCode, "Error", Err.Description
+    Err.Clear
+    On Error GoTo 0
+    GoTo NextFile
+End If
+On Error GoTo 0
+
+
+---
+
+🧪 RESULT
+
+After running, you’ll have a Log sheet that:
+
+Never overwrites old entries
+
+Shows exact file name
+
+Shows exact reason
+
+Helps you debug without re-running blindly
+
+
+
+---
+
+🔥 Optional Next Enhancements (tell me if you want)
+
+🔁 Log per mapping row (not just per file)
+
+📄 Auto-export Log to CSV
+
+🧹 Auto-clear Log per run with run ID
+
+📊 Dashboard counts from Log instead of folders
+
+
+You’re building this the right way — want the log grouped by run ID next?
+
+
+
+
+****
+
+
 Alright, I went through this line by line 👍
 Overall: your macro logic is solid and well-structured, but there are a few real issues that explain the errors you’ve been seeing (File not found, Bad file name or number, false “File updated successfully”), plus some cleanup improvements to make it safer.
 
