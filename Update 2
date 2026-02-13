@@ -1,3 +1,238 @@
+Got it — this is a very good catch, and you’re 100% right 👍
+What’s happening is not random VBA weirdness — it’s a filename collision / garbled name during the ArchiveExistingByPrefix step.
+
+Let’s fix this cleanly and safely, and also make sure:
+
+✅ ONLY INVALID files are logged
+
+✅ Archive filename errors are logged with the exact filename + reason
+
+✅ No “Completed” entries go into the Log sheet
+
+✅ No more misleading “Bad file name or number” mystery errors
+
+
+
+---
+
+🔥 ROOT CAUSE (Why filename becomes garbled)
+
+This line is the real culprit:
+
+Name srcFolder & f As archiveFolder & _
+     Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & Mid(f, InStrRev(f, "."))
+
+❌ Why it fails
+
+Name fails if:
+
+File is open
+
+File already exists in archive
+
+Filename contains invalid characters
+
+Path length is too long
+
+File was already moved earlier in the loop
+
+
+When Name fails:
+
+VBA throws Bad file name or number
+
+Your macro doesn’t know which file caused it
+
+
+
+---
+
+✅ SOLUTION STRATEGY
+
+We will:
+
+1. Wrap archive rename in error handling
+
+
+2. Log the exact filename + archive error
+
+
+3. Continue safely
+
+
+4. Log ONLY invalid files
+
+
+
+
+---
+
+🧱 STEP 1: Update ArchiveExistingByPrefix (MOST IMPORTANT)
+
+Replace your existing sub entirely with this safe version:
+
+Sub ArchiveExistingByPrefix(srcFolder As String, archiveFolder As String, prefix6 As String)
+    Dim f As String
+    Dim timeStamp As String
+    Dim srcPath As String
+    Dim destPath As String
+
+    ' Ensure archive folder exists
+    If Dir(archiveFolder, vbDirectory) = "" Then MkDir archiveFolder
+
+    timeStamp = Format(Now, "mmddyyyy_hhmmss")
+
+    f = Dir(srcFolder & prefix6 & "*.xls*")
+
+    Do While f <> ""
+        srcPath = srcFolder & f
+        destPath = archiveFolder & _
+                   Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & _
+                   Mid(f, InStrRev(f, "."))
+
+        On Error Resume Next
+        Name srcPath As destPath
+
+        If Err.Number <> 0 Then
+            ' 🔴 LOG ARCHIVE ERROR
+            WriteLog f, prefix6, "Invalid", _
+                     "Archive failed: " & Err.Description
+            Err.Clear
+        End If
+        On Error GoTo 0
+
+        f = Dir
+    Loop
+End Sub
+
+✔ This prevents crashes
+✔ Logs exact filename + archive error
+✔ Does not stop processing
+
+
+---
+
+🧾 STEP 2: Log ONLY INVALID FILES (remove completed logs)
+
+❌ REMOVE these lines (Completed logging)
+
+If you previously added:
+
+WriteLog supplierFileName, supplierCode, "Completed", ...
+
+👉 Delete them completely
+
+
+---
+
+✅ KEEP logging ONLY for INVALID cases
+
+🟡 Missing Sheet
+
+Inside:
+
+If hasMissingSheet Then
+
+Add:
+
+WriteLog supplierFileName, supplierCode, "Invalid", _
+         "Missing sheet: " & srcSheetName
+
+
+---
+
+🔴 Supplier Not Found
+
+Inside the Else block:
+
+WriteLog supplierFileName, supplierCode, "Invalid", _
+         "Supplier code not found in summary"
+
+
+---
+
+❌ File Open Error
+
+Wrap file open like this:
+
+On Error Resume Next
+Set evalWB = Workbooks.Open(evalFolder & supplierFileName, ReadOnly:=True)
+
+If Err.Number <> 0 Then
+    WriteLog supplierFileName, supplierCode, "Invalid", _
+             "Open failed: " & Err.Description
+    Err.Clear
+    On Error GoTo 0
+    GoTo NextFile
+End If
+On Error GoTo 0
+
+
+---
+
+📄 STEP 3: Log Sheet Will Now Contain ONLY INVALID FILES
+
+Date/Time	Filename	Supplier Code	Status	Reason
+
+02/13/26 11:42	123456_eval.xlsx	123456	Invalid	Missing sheet: QMS
+02/13/26 11:42	654321_eval.xlsx	654321	Invalid	Archive failed: Bad file name or number
+02/13/26 11:43	111111_eval.xlsx	111111	Invalid	Supplier code not found in summary
+
+
+✔ No completed noise
+✔ Archive issues are visible
+✔ You know exactly which filename broke
+
+
+---
+
+🛡️ OPTIONAL (HIGHLY RECOMMENDED SAFETY)
+
+Prevent invalid characters in archive filename
+
+Add this helper:
+
+Function SafeFileName(txt As String) As String
+    Dim badChars As Variant, c As Variant
+    badChars = Array("\", "/", ":", "*", "?", """", "<", ">", "|")
+
+    SafeFileName = txt
+    For Each c In badChars
+        SafeFileName = Replace(SafeFileName, c, "_")
+    Next c
+End Function
+
+Then in archive destination:
+
+destPath = archiveFolder & SafeFileName( _
+           Left(f, InStrRev(f, ".") - 1)) & "_" & timeStamp & _
+           Mid(f, InStrRev(f, "."))
+
+This eliminates garbled names completely.
+
+
+---
+
+🏁 FINAL RESULT
+
+✔ No more mysterious archive crashes
+✔ Every invalid file is logged with the real reason
+✔ Completed files stay clean
+✔ Log becomes a true audit trail
+
+If you want next:
+
+🔁 One Log entry per Run ID
+
+📊 Auto-summary from Log instead of folder count
+
+🧹 Auto-fix garbled names before move
+
+
+Just say the word 👌
+****
+
+
 Nice request — this is the right next upgrade for a macro like this 👍
 We’ll add a Log sheet that records every file, with exact filename + reason, without breaking your existing logic.
 
