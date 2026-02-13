@@ -1,0 +1,495 @@
+Option Explicit
+
+Sub UpdateSupplierEvaluationSummary()
+    Dim evalFolder As String, evalfile As String
+    Dim evalWB As Workbook
+    Dim summaryWB As Workbook, summaryWS As Worksheet
+    Dim cfgWS As Worksheet
+    Dim findCell As Range
+
+    Dim supplierCode As String
+    Dim materialType As String
+    Dim lastCfgRow As Long
+    Dim r As Long
+
+    Dim srcWS As Worksheet
+    Dim srcSheetName As String
+
+    Dim destRow As Long
+    Dim hasMismatch As Boolean
+    
+    Dim completedFolder As String
+    Dim invalidFolder As String
+    Dim archiveFolder As String
+
+    ' ===== PATHS =====
+    evalfile = Trim(ThisWorkbook.Sheets("Main").Range("B5").Value)
+    evalFolder = Trim(ThisWorkbook.Sheets("Main").Range("B8").Value) ' "D:\Supplier Evaluation Form\"
+    
+    If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+    
+    completedFolder = evalFolder & "Completed\"
+    invalidFolder = evalFolder & "Invalid\"
+    archiveFolder = evalFolder & "Archive\"
+    
+    ' ===== CREATE FOLDERS IF NOT EXIST =====
+    If Dir(completedFolder, vbDirectory) = "" Then MkDir completedFolder
+    If Dir(invalidFolder, vbDirectory) = "" Then MkDir invalidFolder
+    If Dir(archiveFolder, vbDirectory) = "" Then MkDir archiveFolder
+
+    Set summaryWB = Workbooks.Open(evalfile)
+    'Set summaryWS = summaryWB.Sheets(2)
+    Set summaryWS = summaryWB.Sheets("EPPI_Calculation Form")
+    Set cfgWS = ThisWorkbook.Sheets("Config Mapping")
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    Dim fso As Object
+    Dim folder As Object
+    Dim file As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set folder = fso.GetFolder(evalFolder)
+    
+    For Each file In folder.Files
+    
+        ' Only Excel files
+        If LCase(fso.GetExtensionName(file.Name)) Like "xls*" Then
+    
+            'Dim evalFile As String
+            evalfile = file.Name
+
+        supplierCode = Trim(Left(evalfile, 6))
+
+        Set findCell = summaryWS.Range("N12:N" & _
+            summaryWS.Cells(summaryWS.Rows.Count, "N").End(xlUp).Row) _
+            .Find(supplierCode, LookIn:=xlValues, LookAt:=xlWhole)
+
+        If Not findCell Is Nothing Then
+
+            destRow = findCell.Row
+            hasMismatch = False
+            
+            Dim hasMissingSheet As Boolean
+            hasMissingSheet = False
+
+            materialType = Trim(summaryWS.Cells(findCell.Row, "L").Value)
+
+            Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+
+            lastCfgRow = cfgWS.Cells(cfgWS.Rows.Count, "A").End(xlUp).Row
+
+            ' ==============================
+            ' LOOP CONFIG MAPPINGS
+            ' ==============================
+            For r = 2 To lastCfgRow
+
+                If cfgWS.Cells(r, "A").Value = materialType Then
+
+                    ' Skip mapping rows
+                    If cfgWS.Cells(r, "C").Value = 0 Then GoTo NextMap
+
+                        ' Get source sheet name
+                        srcSheetName = cfgWS.Cells(r, "F").Value
+    
+'                        On Error Resume Next
+'                        Set srcWS = evalWB.Sheets(srcSheetName)
+'                        On Error GoTo 0
+'
+'                        If srcWS Is Nothing Then GoTo NextMap
+
+                        Set srcWS = Nothing
+                        On Error Resume Next
+                        Set srcWS = evalWB.Sheets(srcSheetName)
+                        On Error GoTo 0
+                        
+                        If srcWS Is Nothing Then
+                            hasMissingSheet = True
+                            Exit For   ' stop config loop immediately
+                        End If
+    
+                            Dim cfgCategory As String
+                            Dim srcCategory As String
+                            Dim srcRow As Long
+                            Dim destCell As Range
+    
+                            srcRow = cfgWS.Cells(r, "C").Value
+                            Set destCell = summaryWS.Cells(findCell.Row, cfgWS.Cells(r, "E").Value)
+    
+                            ' Get category from config (e.g., M1)
+                            cfgCategory = Trim(cfgWS.Cells(r, "B").Value)
+    
+                            ' Get category from source sheet Column B
+                            srcCategory = ExtractCategory(srcWS.Cells(srcRow, "B").Value)
+    
+                            ' Copy value from merged C column
+                            destCell.Value = GetMergedValue(srcWS.Range("C" & srcRow))
+    
+                            ' Validation Check
+                            If UCase(cfgCategory) <> UCase(srcCategory) Then
+                                destCell.Font.Color = RGB(255, 0, 0)
+                                hasMismatch = True
+                            Else
+                                ' Reset formatting on success
+                                destCell.Font.ColorIndex = xlAutomatic
+                            End If
+                        End If
+NextMap:
+                Set srcWS = Nothing
+            Next r
+            
+'            If hasMissingSheet Then
+'                evalWB.Close SaveChanges:=False
+'
+'                ' Archive old invalid files
+'                ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+'
+'                file.Move invalidFolder & evalfile
+'                GoTo NextFile   ' skip Completed logic
+'            End If
+
+            If hasMissingSheet Then
+            
+                ' Highlight STATUS column (O) in YELLOW for missing sheet
+                With summaryWS.Cells(destRow, "O")
+                    .Interior.Color = RGB(255, 255, 0)
+                    '.Font.Color = xlAutomatic
+                End With
+            
+                evalWB.Close SaveChanges:=False
+            
+                ' Archive old invalid files
+                ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+                file.Move invalidFolder & evalfile
+            
+                GoTo NextFile
+            End If
+
+
+            If hasMismatch Then
+                summaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 0, 0)
+            Else
+                summaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+            End If
+
+            evalWB.Close SaveChanges:=False
+            
+            ' Archive old files first
+            ArchiveExistingByPrefix completedFolder, archiveFolder, supplierCode
+            file.Move completedFolder & evalfile
+
+        ' =============================
+        ' SUPPLIER NOT FOUND - INVALID
+        ' =============================
+        Else
+            ' Archive old files first
+            ArchiveExistingByPrefix invalidFolder, archiveFolder, supplierCode
+            file.Move invalidFolder & evalfile
+        End If
+    End If
+
+NextFile:
+Next file
+
+    summaryWB.Save
+
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+
+    'MsgBox "Supplier Periodic Evaluation Summary updated successfully!", vbInformation
+    
+    Dim completedCount As Long
+    Dim invalidCount As Long
+    Dim totalSuppliers As Long
+    
+    completedCount = CountExcelFiles(completedFolder)
+    invalidCount = CountExcelFiles(invalidFolder)
+    
+    totalSuppliers = CountSuppliersInSummary(summaryWS)
+    
+    ThisWorkbook.Sheets(1).Range("B13").Value = "Last updated: "
+    'ThisWorkbook.Sheets(1).Range("C13").Value = Format(Now, "mm/dd/yyyy    hh:mm:ss AM/PM")
+    ThisWorkbook.Sheets(1).Range("C13").Value = Format(Now, "mm/dd/yyyy    hh:mm:ss AM/PM")
+    ThisWorkbook.Sheets(1).Range("C13").HorizontalAlignment = xlLeft
+    
+    ' Display results (adjust cells as needed)
+    ThisWorkbook.Sheets(1).Range("B14").Value = "Completed:"
+    ThisWorkbook.Sheets(1).Range("C14").Value = completedCount & "/" & totalSuppliers & " form(s)"
+    
+    ThisWorkbook.Sheets(1).Range("B15").Value = "Invalid:"
+    ThisWorkbook.Sheets(1).Range("C15").Value = invalidCount & " form(s)"
+
+End Sub
+
+Sub ValidatePaths()
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim folderPath As String
+    Dim fileExt As String
+
+    Set ws = ThisWorkbook.Sheets(1)
+
+    filePath = Trim(ws.Range("B5").Value)
+    folderPath = Trim(ws.Range("B8").Value)
+
+    ' ===============================
+    ' Validate Excel File Path (B5)
+    ' ===============================
+    If filePath = "" Then
+        MsgBox "Excel file path (B5) is required.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    fileExt = LCase(Mid(filePath, InStrRev(filePath, ".") + 1))
+
+    If fileExt <> "xlsx" And fileExt <> "xls" Then
+        MsgBox "The file in B5 must be an Excel file (.xlsx or .xls).", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If Dir(filePath) = "" Then
+        MsgBox "The Excel file path in B5 does not exist.", vbCritical
+        ws.Range("B5:L5").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    ws.Range("B5:L5").Interior.Color = RGB(242, 242, 242)
+
+    ' ===============================
+    ' Validate Folder Path (B8)
+    ' ===============================
+    If folderPath = "" Then
+        MsgBox "Folder path (B8) is required.", vbCritical
+        ws.Range("B8:L8").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    If Dir(folderPath, vbDirectory) = "" Then
+        MsgBox "The folder path in B8 does not exist.", vbCritical
+        ws.Range("B8:L8").Interior.Color = RGB(255, 199, 206)
+        Exit Sub
+    End If
+
+    ws.Range("B8:L8").Interior.Color = RGB(242, 242, 242)
+    
+    
+'''    Dim startTime As Date
+'''    Dim endTime As Date
+'''    Dim duration As Double
+'''
+'''    ' =========================
+'''    ' START TIME
+'''    ' =========================
+'''    startTime = Now
+'''
+'''    With ws
+'''        .Range("H10").Value = "Start Date/Time:"
+'''        .Range("I10").Value = DateValue(startTime)
+'''        .Range("J10").Value = TimeValue(startTime)
+'''
+'''        .Range("I10").NumberFormat = "mm/dd/yyyy"
+'''        .Range("J10").NumberFormat = "hh:mm:ss AM/PM"
+'''    End With
+
+    Call ClearTimeLog
+    Call LogStartTime
+
+    On Error GoTo CleanExit
+
+    'Application.Wait Now + TimeValue("0:00:05")
+    Call UpdateSupplierEvaluationSummary
+    
+CleanExit:
+    ' =========================
+    ' END TIME
+    ' =========================
+'''    endTime = Now
+'''    duration = endTime - startTime
+'''
+'''    With ws
+'''        .Range("H11").Value = "End Date/Time:"
+'''        .Range("I11").Value = DateValue(endTime)
+'''        .Range("J11").Value = TimeValue(endTime)
+'''        .Range("I11").NumberFormat = "mm/dd/yyyy"
+'''        .Range("J11").NumberFormat = "hh:mm:ss AM/PM"
+'''
+'''        .Range("H12").Value = "Duration:"
+'''        .Range("I12").Value = duration
+'''        .Range("I12").NumberFormat = "[hh]:mm:ss"
+'''    End With
+
+    Call LogEndTimeAndDuration
+    Call LogRunHistory
+    Call SaveAfterLog
+    
+
+    If Err.Number <> 0 Then
+        MsgBox "Process ended with error: " & Err.Description, vbExclamation
+        Exit Sub
+    End If
+
+    'MsgBox "Excel file and folder paths are valid.", vbInformation
+    
+    'MsgBox "Supplier Periodic Evaluation Summary updated successfully!", vbInformation
+    MsgBox "File updated successfully." & vbCrLf & filePath, vbInformation
+End Sub
+
+Function GetMergedValue(rng As Range) As Variant
+    If rng.MergeCells Then
+        GetMergedValue = rng.MergeArea.Cells(1, 1).Value2
+    Else
+        GetMergedValue = rng.Value2
+    End If
+End Function
+
+Function ExtractCategory(val As String) As String
+    Dim re As Object
+    Dim m As Object
+
+    Set re = CreateObject("VBScript.RegExp")
+    re.Pattern = "^[A-Za-z]+[0-9]+"
+    re.Global = False
+    re.IgnoreCase = True
+
+    If re.Test(Trim(val)) Then
+        Set m = re.Execute(Trim(val))
+        ExtractCategory = m(0)
+    Else
+        ExtractCategory = ""
+    End If
+End Function
+
+Sub ArchiveExistingByPrefix(srcFolder As String, archiveFolder As String, prefix6 As String)
+    Dim f As String
+    Dim timeStamp As String
+
+    timeStamp = Format(Now, "mmddyyyy_hhmmss")
+
+    f = Dir(srcFolder & prefix6 & "*.xls*")
+
+    Do While f <> ""
+        Debug.Print "SRC: " & srcFolder & f
+        Debug.Print "DST: " & archiveFolder & _
+            Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & Mid(f, InStrRev(f, "."))
+
+    
+        Name srcFolder & f As archiveFolder & _
+             Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & Mid(f, InStrRev(f, "."))
+        f = Dir
+    Loop
+End Sub
+
+Function CountExcelFiles(folderPath As String) As Long
+    Dim fso As Object
+    Dim f As Object
+    Dim cnt As Long
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+
+    If fso.FolderExists(folderPath) = False Then
+        CountExcelFiles = 0
+        Exit Function
+    End If
+
+    For Each f In fso.GetFolder(folderPath).Files
+        If LCase(fso.GetExtensionName(f.Name)) Like "xls*" Then
+            cnt = cnt + 1
+        End If
+    Next f
+
+    CountExcelFiles = cnt
+End Function
+
+Function CountSuppliersInSummary(ws As Worksheet) As Long
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, "N").End(xlUp).Row
+
+    If lastRow < 13 Then
+        CountSuppliersInSummary = 0
+    Else
+        CountSuppliersInSummary = WorksheetFunction.CountA(ws.Range("N13:N" & lastRow))
+    End If
+End Function
+
+' Update 02/12/2026
+Sub ClearTimeLog()
+    With ThisWorkbook.Sheets(1)
+        .Range("B13:C15").ClearContents
+        .Range("H10:I12").ClearContents
+    End With
+End Sub
+
+Sub LogStartTime()
+    With ThisWorkbook.Sheets(1)
+        .Range("H10").Value = "Start Date/Time:"
+        .Range("I10").Value = Now
+        .Range("I10").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+    End With
+End Sub
+
+Sub LogEndTimeAndDuration()
+    Dim ws As Worksheet
+    Dim startTime As Date
+    Dim endTime As Date
+
+    Set ws = ThisWorkbook.Sheets(1)
+
+    startTime = ws.Range("I10").Value
+    endTime = Now
+
+    ws.Range("H11").Value = "End Date/Time:"
+    ws.Range("I11").Value = endTime
+    ws.Range("I11").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+
+    ws.Range("H12").Value = "Duration"
+    ws.Range("I12").Value = endTime - startTime
+    ws.Range("I12").NumberFormat = "[hh]:mm:ss"
+    
+    'Call LogRunHistory
+    
+'    If ThisWorkbook.Saved = False Then
+'        ThisWorkbook.Save
+'    End If
+    
+End Sub
+
+Sub LogRunHistory()
+    Dim wsSum As Worksheet
+    Dim wsHist As Worksheet
+    Dim nextRow As Long
+    Dim runNumber As Long
+
+    Set wsSum = ThisWorkbook.Sheets(1)
+    Set wsHist = ThisWorkbook.Sheets("Activity Log")
+
+    ' Find next empty row
+    nextRow = wsHist.Cells(wsHist.Rows.Count, "A").End(xlUp).Row + 1
+
+    ' Auto run number
+    If nextRow = 2 Then
+        runNumber = 1
+    Else
+        runNumber = wsHist.Cells(nextRow - 1, "A").Value + 1
+    End If
+
+    wsHist.Cells(nextRow, "A").Value = runNumber
+    wsHist.Cells(nextRow, "B").Value = wsSum.Range("I10").Value
+    wsHist.Cells(nextRow, "C").Value = wsSum.Range("I11").Value
+    wsHist.Cells(nextRow, "D").Value = wsSum.Range("I12").Value
+
+    wsHist.Columns("B:C").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+    wsHist.Columns("D").NumberFormat = "[hh]:mm:ss"
+
+End Sub
+
+
+Sub SaveAfterLog()
+    If ThisWorkbook.Saved = False Then
+        ThisWorkbook.Save
+    End If
+End Sub
