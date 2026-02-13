@@ -1,3 +1,117 @@
+Got it 👍
+You want the error message in ValidatePaths to also show where the file was last moved / renamed by the archive sub (the SRC path), so when something fails you immediately know which file and from where caused the problem.
+
+Right now, the archive routine only Debug.Prints the SRC/DST, so the Validate sub has no idea about it.
+
+✅ Clean & safe way to do this
+
+Use a global variable to store the last archive source path, then show it in the error MsgBox.
+
+
+---
+
+1️⃣ Add a PUBLIC variable (very important)
+
+Put this at the very top of a standard module (above all Subs):
+
+Public gLastArchiveSRC As String
+
+This makes the value accessible anywhere (including ValidatePaths).
+
+
+---
+
+2️⃣ Update ArchiveExistingByPrefix to capture SRC
+
+Modify your archive sub like this (only a small change 👇):
+
+Sub ArchiveExistingByPrefix(srcFolder As String, archiveFolder As String, prefix6 As String)
+    Dim f As String
+    Dim timeStamp As String
+
+    timeStamp = Format(Now, "mmddyyyy_hhmmss")
+
+    f = Dir(srcFolder & prefix6 & "*.xls*")
+
+    Do While f <> ""
+        gLastArchiveSRC = srcFolder & f   ' <<< STORE SRC PATH
+
+        Name srcFolder & f As archiveFolder & _
+             Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & Mid(f, InStrRev(f, "."))
+
+        f = Dir
+    Loop
+End Sub
+
+Now every time an archive happens, the exact source file path is remembered.
+
+
+---
+
+3️⃣ Enhance the ERROR MsgBox in ValidatePaths
+
+Replace this part:
+
+If Err.Number <> 0 Then
+    MsgBox "Process ended with error: " & Err.Description, vbExclamation
+    Exit Sub
+End If
+
+🔁 With this upgraded version:
+
+If Err.Number <> 0 Then
+    Dim msg As String
+
+    msg = "Process ended with error:" & vbCrLf & _
+          Err.Description
+
+    If gLastArchiveSRC <> "" Then
+        msg = msg & vbCrLf & vbCrLf & _
+              "Source file before archive:" & vbCrLf & _
+              gLastArchiveSRC
+    End If
+
+    MsgBox msg, vbCritical
+    Exit Sub
+End If
+
+
+---
+
+🎯 Result (What you’ll see)
+
+Example error message:
+
+Process ended with error:
+Bad file name or number
+
+Source file before archive:
+D:\Supplier Evaluation Form\Invalid\ABC123_SupplierEval.xlsx
+
+✔ No guessing
+✔ No digging in folders
+✔ Exact file + exact source path
+
+
+---
+
+💡 Optional upgrade (recommended)
+
+If you want multiple errors per run, next step would be:
+
+Append SRC + reason into an Error Log sheet
+
+Timestamped per file
+
+No Completed files logged (only Invalid / Archive issues)
+
+
+If you want that next, just say “add error log sheet only for invalid files” and I’ll wire it cleanly into your existing structure 😄
+
+
+***
+
+
 Option Explicit
 
 Sub UpdateSupplierEvaluationSummary()
