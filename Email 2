@@ -1,4 +1,194 @@
 
+
+Yes — that’s actually the best design choice 👍
+You’re thinking in the right direction.
+
+Creating a separate “finalization” Sub is exactly how you make this macro:
+
+reliable
+
+readable
+
+impossible to break by errors or MsgBoxes
+
+
+Below is a drop-in, minimal-change solution that fits your current code.
+
+
+---
+
+✅ What we’ll do
+
+We’ll create ONE new Sub that:
+
+1. Saves summaryWB
+
+
+2. Computes:
+
+Completed count
+
+Invalid count
+
+Total suppliers
+
+
+
+3. Writes results to B14 / B15
+
+
+4. Can be called even if errors occurred
+
+
+
+
+---
+
+1️⃣ Create GLOBAL variables (needed)
+
+At the very top of the module:
+
+Public gSummaryWB As Workbook
+Public gSummaryWS As Worksheet
+Public gCompletedFolder As String
+Public gInvalidFolder As String
+
+These allow the finalizer sub to run anytime, safely.
+
+
+---
+
+2️⃣ Assign them in UpdateSupplierEvaluationSummary
+
+Replace:
+
+Set summaryWB = Workbooks.Open(evalfile)
+Set summaryWS = summaryWB.Sheets("EPPI_Calculation Form")
+
+With:
+
+Set gSummaryWB = Workbooks.Open(evalfile)
+Set gSummaryWS = gSummaryWB.Sheets("EPPI_Calculation Form")
+
+And after folder setup:
+
+gCompletedFolder = completedFolder
+gInvalidFolder = invalidFolder
+
+
+---
+
+3️⃣ Create the NEW finalization Sub (this is the key)
+
+Sub FinalizeSummaryAndResults()
+    Dim completedCount As Long
+    Dim invalidCount As Long
+    Dim totalSuppliers As Long
+
+    On Error Resume Next
+
+    ' Save summary workbook
+    If Not gSummaryWB Is Nothing Then
+        gSummaryWB.Save
+    End If
+
+    ' Recompute counts
+    completedCount = CountExcelFiles(gCompletedFolder)
+    invalidCount = CountExcelFiles(gInvalidFolder)
+    totalSuppliers = CountSuppliersInSummary(gSummaryWS)
+
+    With ThisWorkbook.Sheets(1)
+        .Range("B14").Value = "Completed:"
+        .Range("C14").Value = completedCount & "/" & totalSuppliers & " form(s)"
+
+        .Range("B15").Value = "Invalid:"
+        .Range("C15").Value = invalidCount & " form(s)"
+    End With
+
+    On Error GoTo 0
+End Sub
+
+✔ Safe
+✔ Idempotent
+✔ Can run multiple times
+✔ Will not crash even if something failed earlier
+
+
+---
+
+4️⃣ Call it from BOTH places (important)
+
+🔹 At the END of UpdateSupplierEvaluationSummary
+
+(before End Sub):
+
+Call FinalizeSummaryAndResults
+
+🔹 ALSO call it in ValidatePaths → CleanExit
+
+CleanExit:
+    Call FinalizeSummaryAndResults
+
+This guarantees it runs:
+
+on success
+
+on partial failure
+
+after MsgBox
+
+after runtime errors
+
+
+
+---
+
+🧠 Why this works (and your old code didn’t)
+
+Old behavior	New behavior
+
+Error kills Sub	Error is isolated
+Save skipped	Save forced
+Counts skipped	Counts forced
+MsgBox blocks	MsgBox last
+Hard to debug	Clean separation
+
+
+
+---
+
+✅ What you gain immediately
+
+✔ B14 / B15 always updated
+✔ Summary workbook always saved
+✔ Errors no longer affect results
+✔ Code is cleaner & easier to maintain
+✔ You’re following real-world VBA architecture
+
+
+---
+
+⭐ Optional next upgrade (recommended)
+
+If you want, next step is:
+
+ErrorLog sheet
+
+File name + reason + timestamp
+
+Zero MsgBoxes during loop
+
+
+Just say:
+“Add Error Log sheet per file”
+and I’ll wire it perfectly into this structure 💪
+
+
+
+***
+
+
+
 Got it 👍
 You want a REUSABLE PROMPT that clearly describes the coding style / pattern you’ve been using for this ASP.NET Core MVC + EF Core + Stored Procedure–based transaction system, so you can reuse it for In / Out / Other transactions.
 
