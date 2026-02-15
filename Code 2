@@ -1,3 +1,203 @@
+Got it 👍 this is a clean logging requirement, and your structure is already solid. We’ll add a “Process Log” sheet and log only invalid cases, including yellow material mismatch, without touching completed files.
+
+Below is a drop-in solution that fits your current design and globals.
+
+
+---
+
+1️⃣ Create the Process Log sheet (one-time helper)
+
+Add this helper to ensure the sheet exists and has headers:
+
+Sub EnsureProcessLogSheet()
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Process Log")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        ws.Name = "Process Log"
+
+        With ws
+            .Range("A1:E1").Value = Array("No.", "Location / Filename", "OP Code", "Date / Time", "Reason")
+            .Rows(1).Font.Bold = True
+            .Columns("A").ColumnWidth = 6
+            .Columns("B").ColumnWidth = 55
+            .Columns("C").ColumnWidth = 12
+            .Columns("D").ColumnWidth = 22
+            .Columns("E").ColumnWidth = 40
+        End With
+    End If
+End Sub
+
+
+---
+
+2️⃣ Add the central logging routine
+
+This logs only invalid files as per your rules.
+
+Sub LogProcessInvalid(fullPath As String, opCode As String, reason As String)
+    Dim ws As Worksheet
+    Dim nextRow As Long
+    Dim logNo As Long
+
+    Call EnsureProcessLogSheet
+    Set ws = ThisWorkbook.Sheets("Process Log")
+
+    nextRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+
+    If nextRow = 2 Then
+        logNo = 1
+    Else
+        logNo = ws.Cells(nextRow - 1, "A").Value + 1
+    End If
+
+    ws.Cells(nextRow, "A").Value = logNo
+    ws.Cells(nextRow, "B").Value = fullPath
+    ws.Cells(nextRow, "C").Value = opCode
+    ws.Cells(nextRow, "D").Value = Now
+    ws.Cells(nextRow, "E").Value = reason
+
+    ws.Columns("D").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+End Sub
+
+
+---
+
+3️⃣ Track evaluated file material type (small addition)
+
+Inside your config loop, capture the evaluated file’s material type once:
+
+Dim evalMaterialType As String
+evalMaterialType = ""
+
+Then inside the mapping block, after extracting srcCategory:
+
+If evalMaterialType = "" Then
+    evalMaterialType = srcCategory
+End If
+
+This lets us log:
+
+Direct --> Indirect
+
+
+---
+
+4️⃣ Log INVALID due to missing sheet (yellow case)
+
+Inside this block:
+
+If hasMissingSheet Then
+
+Add logging before moving the file:
+
+Call LogProcessInvalid( _
+    evalFolder & evalfile, _
+    supplierCode, _
+    "Missing required sheet: " & srcSheetName _
+)
+
+✅ Result
+
+Logged
+
+Yellow status
+
+File goes to Invalid
+
+Completed untouched
+
+
+
+---
+
+5️⃣ Log INVALID due to material mismatch (yellow highlight rule)
+
+Replace this block:
+
+If hasMismatch Then
+    SummaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 0, 0)
+Else
+    SummaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+End If
+
+🔁 With this:
+
+If hasMismatch Then
+    SummaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 255, 0)
+
+    Call LogProcessInvalid( _
+        evalFolder & evalfile, _
+        supplierCode, _
+        materialType & " (summary file) --> " & evalMaterialType & " (Eval file)" _
+    )
+
+    evalWB.Close SaveChanges:=False
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+    GoTo NextFile
+Else
+    SummaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+End If
+
+✅ This exactly matches your example format:
+
+Direct (summary file) --> Indirect (Eval file)
+
+
+---
+
+6️⃣ Log INVALID when supplier not found
+
+Inside this block:
+
+Else
+    ' SUPPLIER NOT FOUND
+
+Add:
+
+Call LogProcessInvalid( _
+    evalFolder & evalfile, _
+    supplierCode, _
+    "Supplier code not found in summary" _
+)
+
+
+---
+
+✅ Final Behavior Summary
+
+Scenario	Logged?	Reason
+
+✅ Completed file	❌ No	Rule #1
+❌ Missing sheet	✅ Yes	Missing sheet name
+❌ Material mismatch (yellow)	✅ Yes	Summary --> Eval
+❌ Supplier not found	✅ Yes	Explicit reason
+❌ Bad / invalid file	✅ Yes	Error description
+
+
+
+---
+
+If you want next:
+
+🔁 Prevent duplicate logs per run
+
+🧹 Auto-clear Process Log per execution
+
+📊 Summary count by reason
+
+🧠 Auto-detect eval material more reliably
+
+
+Just say the word 👌
+
+***
+
 Got it 👍
 You want the error message in ValidatePaths to also show where the file was last moved / renamed by the archive sub (the SRC path), so when something fails you immediately know which file and from where caused the problem.
 
