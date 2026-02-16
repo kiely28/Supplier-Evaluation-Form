@@ -1,3 +1,179 @@
+Got it 👍 — this is a data-logic error, not a runtime crash, and you want it logged in the Error Log sheet when the file is moved to Invalid, specifically when:
+
+> Material Type in Summary = Indirect
+but Evaluation file = Direct (or vice-versa),
+usually detected via missing sheet name.
+
+
+
+Below is the cleanest way to do this using what you already have.
+
+
+---
+
+🎯 What we’ll add (behavior)
+
+When hasMissingSheet = True because the expected sheet (based on material type) does not exist:
+
+✔ File still goes to Invalid folder
+✔ Status cell still turns YELLOW
+✔ Error Log gets a row explaining:
+
+Supplier code
+
+Material type from Summary
+
+Expected sheet
+
+Actual evaluation classification (Direct vs Indirect inference)
+
+
+
+---
+
+1️⃣ Detect the mismatch reason clearly
+
+You already have this logic:
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For
+End If
+
+We’ll enhance it to capture why it’s missing.
+
+🔧 Add these variables near the top of the sub
+
+Dim missingSheetName As String
+Dim materialMismatchReason As String
+
+
+---
+
+2️⃣ Capture the missing sheet + reason
+
+Replace this block inside the config loop:
+
+🔴 CURRENT
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    Exit For
+End If
+
+✅ REPLACE WITH
+
+If srcWS Is Nothing Then
+    hasMissingSheet = True
+    missingSheetName = srcSheetName
+
+    materialMismatchReason = _
+        "Material type mismatch. Summary material type = " & materialType & _
+        ", but evaluation file does not contain required sheet '" & srcSheetName & "'."
+
+    Exit For
+End If
+
+This keeps it generic and future-proof.
+
+
+---
+
+3️⃣ Log this into Error Log when moving to Invalid
+
+Now update your hasMissingSheet handling block.
+
+🔴 CURRENT
+
+If hasMissingSheet Then
+
+    With SummaryWS.Cells(destRow, "O")
+        .Interior.Color = RGB(255, 255, 0)
+    End With
+
+    evalWB.Close SaveChanges:=False
+
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+
+---
+
+✅ REPLACE WITH (adds Error Log entry)
+
+If hasMissingSheet Then
+
+    With SummaryWS.Cells(destRow, "O")
+        .Interior.Color = RGB(255, 255, 0)
+    End With
+
+    ' 🔹 LOG MATERIAL TYPE / SHEET MISMATCH
+    Call LogRuntimeError( _
+        supplierCode, _
+        materialMismatchReason, _
+        "Invalid file - missing or wrong sheet (" & missingSheetName & ")")
+
+    evalWB.Close SaveChanges:=False
+
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+
+---
+
+4️⃣ Resulting Error Log entry (example)
+
+No.	Datetime	SupplierCode	Last Archive Src	Err Description	Remarks
+
+5	02/16/2026 14:22:11	ABC123	D:\Eval\Archive\ABC123_02162026.xls	Material type mismatch. Summary material type = Indirect, but evaluation file does not contain required sheet 'Indirect Evaluation'.	Invalid file - missing or wrong sheet (Indirect Evaluation)
+
+
+This tells you exactly what went wrong, without guessing later.
+
+
+---
+
+🧠 Why this design is correct
+
+❌ Not a VBA error → no MsgBox spam
+
+✅ Logged as data validation issue
+
+📂 Correctly tied to Invalid folder
+
+🔍 Root cause is preserved (material vs sheet)
+
+
+
+---
+
+🔜 Optional upgrades (easy next steps)
+
+If you want later:
+
+Explicitly detect Direct vs Indirect by sheet name group
+
+Add a column Expected Material Type
+
+Auto-suggest correct folder
+
+Prevent reprocessing of the same invalid file
+
+
+If you want, I can also refactor this into a reusable “InvalidateFile” procedure so all invalid reasons are handled consistently.
+
+
+
+***
+
+
+
 Perfect 👍 — that layout makes the log much more readable and audit-friendly.
 
 Below is a drop-in replacement. You only need to update two procedures.
