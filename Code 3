@@ -1,3 +1,236 @@
+Nice choice 👍 — a dedicated Invalid / Error Log sheet will make this macro much easier to audit and debug long-term.
+
+Below is a clean, minimal, and safe implementation that fits your existing structure without breaking anything.
+
+
+---
+
+🎯 What we’ll add
+
+A new worksheet: Invalid Log
+
+It will log only invalid/error cases, with:
+
+Column	Description
+
+A	Timestamp
+B	Supplier Code
+C	File Name
+D	Error Type
+E	Details / Reason
+F	Action Taken
+
+
+Examples:
+
+Missing Sheet
+
+Supplier Not Found
+
+Bad Filename
+
+File Open Error
+
+Archive Error
+
+
+
+---
+
+1️⃣ Create / ensure the Invalid Log sheet
+
+Add this helper once (anywhere in a standard module):
+
+Function GetInvalidLogSheet() As Worksheet
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Invalid Log")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        ws.Name = "Invalid Log"
+
+        ' Headers
+        ws.Range("A1:F1").Value = Array( _
+            "Timestamp", _
+            "Supplier Code", _
+            "File Name", _
+            "Error Type", _
+            "Details", _
+            "Action Taken")
+
+        ws.Rows(1).Font.Bold = True
+        ws.Columns("A:F").AutoFit
+    End If
+
+    Set GetInvalidLogSheet = ws
+End Function
+
+
+---
+
+2️⃣ Centralized logging procedure (IMPORTANT)
+
+This is the only procedure you’ll call when something goes invalid:
+
+Sub LogInvalidFile( _
+    supplierCode As String, _
+    fileName As String, _
+    errorType As String, _
+    details As String, _
+    actionTaken As String)
+
+    Dim ws As Worksheet
+    Dim nextRow As Long
+
+    Set ws = GetInvalidLogSheet()
+
+    nextRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+
+    ws.Cells(nextRow, "A").Value = Now
+    ws.Cells(nextRow, "B").Value = supplierCode
+    ws.Cells(nextRow, "C").Value = fileName
+    ws.Cells(nextRow, "D").Value = errorType
+    ws.Cells(nextRow, "E").Value = details
+    ws.Cells(nextRow, "F").Value = actionTaken
+
+    ws.Columns("A").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+End Sub
+
+This keeps all logging logic in one place.
+
+
+---
+
+3️⃣ Log missing sheet errors
+
+Replace this section in UpdateSupplierEvaluationSummary:
+
+🔴 EXISTING
+
+If hasMissingSheet Then
+
+    With SummaryWS.Cells(destRow, "O")
+        .Interior.Color = RGB(255, 255, 0)
+    End With
+
+    evalWB.Close SaveChanges:=False
+
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+✅ REPLACE WITH (adds logging)
+
+If hasMissingSheet Then
+
+    With SummaryWS.Cells(destRow, "O")
+        .Interior.Color = RGB(255, 255, 0)
+    End With
+
+    Call LogInvalidFile( _
+        supplierCode, _
+        evalfile, _
+        "Missing Sheet", _
+        "Required sheet not found: " & srcSheetName, _
+        "Moved to Invalid folder")
+
+    evalWB.Close SaveChanges:=False
+
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+
+    GoTo NextFile
+End If
+
+
+---
+
+4️⃣ Log supplier not found
+
+Replace this block:
+
+🔴 EXISTING
+
+Else
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+End If
+
+✅ REPLACE WITH
+
+Else
+    Call LogInvalidFile( _
+        supplierCode, _
+        evalfile, _
+        "Supplier Not Found", _
+        "Supplier code not found in summary (Column N)", _
+        "Moved to Invalid folder")
+
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+End If
+
+
+---
+
+5️⃣ (Optional but recommended) Log archive failures
+
+Inside ArchiveExistingByPrefix, wrap the rename:
+
+On Error Resume Next
+Name srcFolder & f As archiveFolder & _
+     Left(f, InStrRev(f, ".") - 1) & "_" & timeStamp & Mid(f, InStrRev(f, "."))
+If Err.Number <> 0 Then
+    Call LogInvalidFile( _
+        Left(f, 6), _
+        f, _
+        "Archive Error", _
+        Err.Description, _
+        "Archive skipped")
+    Err.Clear
+End If
+On Error GoTo 0
+
+This catches file lock / permission issues cleanly.
+
+
+---
+
+🧠 Resulting benefits
+
+✔ Clear audit trail
+✔ No more guessing why a file is invalid
+✔ Easy filtering by error type
+✔ Safe to expand later (email alerts, auto-summary, etc.)
+
+
+---
+
+🚀 Next upgrades (if you want)
+
+Auto-count Invalid Log by error type
+
+Add hyperlink to Invalid folder file
+
+Add “Resolved” column
+
+Export Invalid Log to CSV automatically
+
+
+If you want, I can merge this directly into your full code and send back a ready-to-paste version.
+
+
+
+
+****
+
+
+
 In my code:
 
 Option Explicit
