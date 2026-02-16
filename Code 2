@@ -1,3 +1,312 @@
+Alright — thanks for your patience. Below is a COMPLETE, CONSOLIDATED, READY-TO-PASTE VBA MODULE that includes:
+
+✅ Your existing logic
+✅ The Process Log sheet
+✅ Correct logging rules
+✅ Proper placement (nothing missing, nothing duplicated)
+✅ Safe flow (Completed files are NEVER logged)
+
+You can replace your entire module with this.
+
+
+---
+
+✅ COMPLETE VBA MODULE (WITH PROCESS LOG)
+
+Option Explicit
+
+' =========================
+' GLOBAL VARIABLES
+' =========================
+Public gLastArchiveSRC As String
+Public SummaryWB As Workbook
+Public SummaryWS As Worksheet
+Public CompletedFolder As String
+Public InvalidFolder As String
+
+' =========================
+' MAIN PROCESS
+' =========================
+Sub UpdateSupplierEvaluationSummary()
+
+    Dim evalFolder As String, evalfile As String
+    Dim evalWB As Workbook
+    Dim cfgWS As Worksheet
+    Dim findCell As Range
+
+    Dim supplierCode As String
+    Dim materialType As String
+    Dim evalMaterialType As String
+    Dim lastCfgRow As Long
+    Dim r As Long
+
+    Dim srcWS As Worksheet
+    Dim srcSheetName As String
+
+    Dim destRow As Long
+    Dim hasMismatch As Boolean
+    Dim hasMissingSheet As Boolean
+
+    Dim archiveFolder As String
+
+    ' ===== PATHS =====
+    evalfile = Trim(ThisWorkbook.Sheets(1).Range("B5").Value)
+    evalFolder = Trim(ThisWorkbook.Sheets(1).Range("B8").Value)
+
+    If Right(evalFolder, 1) <> "\" Then evalFolder = evalFolder & "\"
+
+    CompletedFolder = evalFolder & "Completed\"
+    InvalidFolder = evalFolder & "Invalid\"
+    archiveFolder = evalFolder & "Archive\"
+
+    If Dir(CompletedFolder, vbDirectory) = "" Then MkDir CompletedFolder
+    If Dir(InvalidFolder, vbDirectory) = "" Then MkDir InvalidFolder
+    If Dir(archiveFolder, vbDirectory) = "" Then MkDir archiveFolder
+
+    Set SummaryWB = Workbooks.Open(evalfile)
+    Set SummaryWS = SummaryWB.Sheets("EPPI_Calculation Form")
+    Set cfgWS = ThisWorkbook.Sheets("Config Mapping")
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    Dim fso As Object, folder As Object, file As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set folder = fso.GetFolder(evalFolder)
+
+    For Each file In folder.Files
+
+        If LCase(fso.GetExtensionName(file.Name)) Like "xls*" Then
+
+            evalfile = file.Name
+            supplierCode = Trim(Left(evalfile, 6))
+
+            Set findCell = SummaryWS.Range("N12:N" & _
+                SummaryWS.Cells(SummaryWS.Rows.Count, "N").End(xlUp).Row) _
+                .Find(supplierCode, LookIn:=xlValues, LookAt:=xlWhole)
+
+            ' =============================
+            ' SUPPLIER FOUND
+            ' =============================
+            If Not findCell Is Nothing Then
+
+                destRow = findCell.Row
+                materialType = Trim(SummaryWS.Cells(destRow, "L").Value)
+
+                hasMismatch = False
+                hasMissingSheet = False
+                evalMaterialType = ""
+
+                Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+
+                lastCfgRow = cfgWS.Cells(cfgWS.Rows.Count, "A").End(xlUp).Row
+
+                For r = 2 To lastCfgRow
+
+                    If cfgWS.Cells(r, "A").Value = materialType Then
+
+                        If cfgWS.Cells(r, "C").Value = 0 Then GoTo NextMap
+
+                        srcSheetName = cfgWS.Cells(r, "F").Value
+                        Set srcWS = Nothing
+
+                        On Error Resume Next
+                        Set srcWS = evalWB.Sheets(srcSheetName)
+                        On Error GoTo 0
+
+                        If srcWS Is Nothing Then
+                            hasMissingSheet = True
+                            Exit For
+                        End If
+
+                        Dim srcRow As Long
+                        Dim destCell As Range
+                        Dim cfgCategory As String
+                        Dim srcCategory As String
+
+                        srcRow = cfgWS.Cells(r, "C").Value
+                        Set destCell = SummaryWS.Cells(destRow, cfgWS.Cells(r, "E").Value)
+
+                        cfgCategory = Trim(cfgWS.Cells(r, "B").Value)
+                        srcCategory = ExtractCategory(srcWS.Cells(srcRow, "B").Value)
+
+                        If evalMaterialType = "" Then evalMaterialType = srcCategory
+
+                        destCell.Value = GetMergedValue(srcWS.Range("C" & srcRow))
+
+                        If UCase(cfgCategory) <> UCase(srcCategory) Then
+                            hasMismatch = True
+                            destCell.Font.Color = RGB(255, 0, 0)
+                        Else
+                            destCell.Font.ColorIndex = xlAutomatic
+                        End If
+                    End If
+NextMap:
+                Next r
+
+                ' ===== INVALID : MISSING SHEET =====
+                If hasMissingSheet Then
+
+                    SummaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+
+                    LogProcessInvalid evalFolder & evalfile, supplierCode, _
+                        "Missing required sheet: " & srcSheetName
+
+                    evalWB.Close False
+                    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+                    file.Move InvalidFolder & evalfile
+                    GoTo NextFile
+                End If
+
+                ' ===== INVALID : MATERIAL MISMATCH =====
+                If hasMismatch Then
+
+                    SummaryWS.Cells(destRow, "O").Interior.Color = RGB(255, 255, 0)
+
+                    LogProcessInvalid evalFolder & evalfile, supplierCode, _
+                        materialType & " (summary file) --> " & _
+                        evalMaterialType & " (Eval file)"
+
+                    evalWB.Close False
+                    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+                    file.Move InvalidFolder & evalfile
+                    GoTo NextFile
+                End If
+
+                ' ===== COMPLETED (NO LOGGING) =====
+                SummaryWS.Cells(destRow, "O").Interior.Pattern = xlNone
+                evalWB.Close False
+                ArchiveExistingByPrefix CompletedFolder, archiveFolder, supplierCode
+                file.Move CompletedFolder & evalfile
+
+            ' =============================
+            ' SUPPLIER NOT FOUND
+            ' =============================
+            Else
+                LogProcessInvalid evalFolder & evalfile, supplierCode, _
+                    "Supplier code not found in summary"
+
+                ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+                file.Move InvalidFolder & evalfile
+            End If
+        End If
+NextFile:
+    Next file
+
+    SummaryWB.Save
+
+CleanExit:
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+End Sub
+
+' =========================
+' PROCESS LOG
+' =========================
+Sub EnsureProcessLogSheet()
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Process Log")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add
+        ws.Name = "Process Log"
+        ws.Range("A1:E1").Value = Array("No.", "Location / Filename", "OP Code", "Date / Time", "Reason")
+        ws.Rows(1).Font.Bold = True
+        ws.Columns("B").ColumnWidth = 60
+        ws.Columns("E").ColumnWidth = 45
+    End If
+End Sub
+
+Sub LogProcessInvalid(fullPath As String, opCode As String, reason As String)
+    Dim ws As Worksheet
+    Dim r As Long
+
+    Call EnsureProcessLogSheet
+    Set ws = ThisWorkbook.Sheets("Process Log")
+
+    r = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+
+    ws.Cells(r, "A").Value = r - 1
+    ws.Cells(r, "B").Value = fullPath
+    ws.Cells(r, "C").Value = opCode
+    ws.Cells(r, "D").Value = Now
+    ws.Cells(r, "E").Value = reason
+
+    ws.Columns("D").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+End Sub
+
+' =========================
+' HELPERS
+' =========================
+Function GetMergedValue(rng As Range) As Variant
+    If rng.MergeCells Then
+        GetMergedValue = rng.MergeArea.Cells(1, 1).Value
+    Else
+        GetMergedValue = rng.Value
+    End If
+End Function
+
+Function ExtractCategory(val As String) As String
+    Dim re As Object
+    Set re = CreateObject("VBScript.RegExp")
+    re.Pattern = "^[A-Za-z]+[0-9]+"
+    re.IgnoreCase = True
+    If re.Test(val) Then ExtractCategory = re.Execute(val)(0)
+End Function
+
+Sub ArchiveExistingByPrefix(srcFolder As String, archiveFolder As String, prefix6 As String)
+    Dim f As String, ts As String
+    ts = Format(Now, "mmddyyyy_hhmmss")
+
+    f = Dir(srcFolder & prefix6 & "*.xls*")
+    Do While f <> ""
+        gLastArchiveSRC = srcFolder & f
+        Name srcFolder & f As archiveFolder & _
+            Left(f, InStrRev(f, ".") - 1) & "_" & ts & Mid(f, InStrRev(f, "."))
+        f = Dir
+    Loop
+End Sub
+
+
+---
+
+✅ WHAT THIS CODE GUARANTEES
+
+✔ Completed files → NO log
+✔ Invalid files → ALWAYS logged
+✔ Yellow status → logged with material comparison
+✔ Missing sheet → logged
+✔ Supplier not found → logged
+✔ Safe file movement & archiving
+✔ No duplicate logging for completed files
+
+
+---
+
+If you want next upgrades:
+
+🔒 Prevent duplicate logs per run
+
+📊 Summary by reason
+
+🧪 Dry-run / test mode
+
+🧹 Auto-clear Process Log
+
+
+Just tell me 👍
+
+
+
+
+******
+
+
 Perfect question — this is the right time to ask it 👍
 I’ll walk you through exactly where each update goes, step by step, so you don’t have to guess.
 
