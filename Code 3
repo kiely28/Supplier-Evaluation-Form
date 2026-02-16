@@ -1,3 +1,215 @@
+Perfect — I understand exactly what you want now 👍
+
+👉 Keep your existing error MsgBox behavior
+👉 BUT additionally log that runtime error into a sheet
+👉 Do NOT change the flow or suppress the MsgBox
+
+Below is the cleanest and safest way to do this with minimal changes to your current code.
+
+
+---
+
+🎯 What will happen after this change
+
+When ANY error occurs and your code reaches:
+
+MsgBox msg, vbExclamation
+
+It will ALSO:
+
+Write one row to an Error Log sheet
+
+Capture:
+
+Timestamp
+
+Error number
+
+Error description
+
+Last archived source (if any)
+
+Procedure name
+
+
+
+
+---
+
+1️⃣ Create the Error Log sheet helper
+
+Add this once (standard module):
+
+Function GetErrorLogSheet() As Worksheet
+    Dim ws As Worksheet
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Sheets("Error Log")
+    On Error GoTo 0
+
+    If ws Is Nothing Then
+        Set ws = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+        ws.Name = "Error Log"
+
+        ws.Range("A1:F1").Value = Array( _
+            "Timestamp", _
+            "Procedure", _
+            "Error Number", _
+            "Error Description", _
+            "Last Archive Source", _
+            "Remarks")
+
+        ws.Rows(1).Font.Bold = True
+        ws.Columns("A:F").AutoFit
+    End If
+
+    Set GetErrorLogSheet = ws
+End Function
+
+
+---
+
+2️⃣ Central logging procedure for runtime errors
+
+Add this new Sub:
+
+Sub LogRuntimeError( _
+    procName As String, _
+    errNum As Long, _
+    errDesc As String)
+
+    Dim ws As Worksheet
+    Dim nextRow As Long
+
+    Set ws = GetErrorLogSheet()
+
+    nextRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row + 1
+
+    ws.Cells(nextRow, "A").Value = Now
+    ws.Cells(nextRow, "B").Value = procName
+    ws.Cells(nextRow, "C").Value = errNum
+    ws.Cells(nextRow, "D").Value = errDesc
+    ws.Cells(nextRow, "E").Value = gLastArchiveSRC
+    ws.Cells(nextRow, "F").Value = "Unhandled runtime error"
+
+    ws.Columns("A").NumberFormat = "mm/dd/yyyy hh:mm:ss"
+End Sub
+
+This does nothing visible to the user — logging only.
+
+
+---
+
+3️⃣ Modify ONLY the error block in ValidatePaths
+
+🔴 EXISTING CODE
+
+If Err.Number <> 0 Then
+    Dim msg As String
+
+    msg = "Process ended with error: " & Err.Description
+
+    If gLastArchiveSRC <> "" Then
+        msg = msg & vbCrLf & vbCrLf & _
+              "Source file before archive:" & vbCrLf & _
+              gLastArchiveSRC
+    End If
+
+    MsgBox msg, vbExclamation
+    Call FinalizeSummaryAndResults
+    Call SaveAfterLog
+    Exit Sub
+Else
+
+
+---
+
+✅ REPLACE WITH (adds logging, keeps MsgBox)
+
+If Err.Number <> 0 Then
+    Dim msg As String
+
+    ' 🔹 LOG THE ERROR (NEW)
+    Call LogRuntimeError( _
+        "ValidatePaths", _
+        Err.Number, _
+        Err.Description)
+
+    msg = "Process ended with error: " & Err.Description
+
+    If gLastArchiveSRC <> "" Then
+        msg = msg & vbCrLf & vbCrLf & _
+              "Source file before archive:" & vbCrLf & _
+              gLastArchiveSRC
+    End If
+
+    MsgBox msg, vbExclamation
+
+    Call FinalizeSummaryAndResults
+    Call SaveAfterLog
+    Exit Sub
+Else
+
+✔ Same MsgBox
+✔ Same behavior
+✔ Error is now persisted in a sheet
+
+
+---
+
+🧠 What gets logged (example)
+
+Timestamp	Procedure	Error Number	Error Description	Last Archive Source	Remarks
+
+02/16/2026 09:41:12	ValidatePaths	53	File not found	D:\Eval\Completed\ABC123.xls	Unhandled runtime error
+
+
+This is gold for troubleshooting.
+
+
+---
+
+🔒 Why this approach is safe
+
+No changes to your existing control flow
+
+No suppression of errors
+
+No double MsgBox
+
+No dependency on Invalid Log
+
+Can be reused in other subs easily
+
+
+
+---
+
+➕ Optional next (if you want later)
+
+Log the procedure stack (which Sub failed)
+
+Add a hyperlink to the file path
+
+Auto-highlight recurring errors
+
+Auto-clear Error Log per run
+
+
+If you want, I can also:
+
+Wire this into UpdateSupplierEvaluationSummary
+
+Or refactor error handling into a reusable pattern
+
+
+Just say 👍
+
+
+
+***
+
+
 Nice choice 👍 — a dedicated Invalid / Error Log sheet will make this macro much easier to audit and debug long-term.
 
 Below is a clean, minimal, and safe implementation that fits your existing structure without breaking anything.
