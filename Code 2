@@ -1,3 +1,214 @@
+Perfect question — this is the right time to ask it 👍
+I’ll walk you through exactly where each update goes, step by step, so you don’t have to guess.
+
+
+---
+
+✅ 1. Where to put the NEW helper procedures
+
+These go ANYWHERE in the same standard module, usually below your existing subs (best practice: near the bottom).
+
+Add these at the BOTTOM of the module
+
+Sub EnsureProcessLogSheet()
+    ' ... code ...
+End Sub
+
+Sub LogProcessInvalid(fullPath As String, opCode As String, reason As String)
+    ' ... code ...
+End Sub
+
+👉 They are helpers, so placement order doesn’t matter as long as they’re in the same module.
+
+
+---
+
+✅ 2. Where to add the evalMaterialType variable
+
+Inside UpdateSupplierEvaluationSummary, near your other variables:
+
+🔽 ADD HERE
+
+Dim hasMismatch As Boolean
+Dim evalMaterialType As String   ' <-- ADD THIS
+
+Then initialize it right after opening the eval file:
+
+Set evalWB = Workbooks.Open(evalFolder & evalfile, ReadOnly:=True)
+evalMaterialType = ""   ' <-- ADD THIS
+
+
+---
+
+✅ 3. Where to capture Evaluated File Material Type
+
+Inside your CONFIG LOOP, after this line:
+
+srcCategory = ExtractCategory(srcWS.Cells(srcRow, "B").Value)
+
+🔽 ADD IMMEDIATELY AFTER
+
+If evalMaterialType = "" Then
+    evalMaterialType = srcCategory
+End If
+
+This ensures:
+
+You capture it once
+
+You don’t overwrite it
+
+
+
+---
+
+✅ 4. Where to log MISSING SHEET (Invalid)
+
+Find this block in UpdateSupplierEvaluationSummary:
+
+If hasMissingSheet Then
+
+🔁 UPDATE IT TO THIS
+
+If hasMissingSheet Then
+
+    With SummaryWS.Cells(destRow, "O")
+        .Interior.Color = RGB(255, 255, 0)
+    End With
+
+    Call LogProcessInvalid( _
+        evalFolder & evalfile, _
+        supplierCode, _
+        "Missing required sheet: " & srcSheetName _
+    )
+
+    evalWB.Close SaveChanges:=False
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+    GoTo NextFile
+End If
+
+
+---
+
+✅ 5. Where to log MATERIAL MISMATCH (Yellow rule)
+
+Find this EXISTING block:
+
+If hasMismatch Then
+    SummaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 0, 0)
+Else
+    SummaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+End If
+
+❌ REMOVE IT
+
+✅ REPLACE WITH THIS
+
+If hasMismatch Then
+
+    SummaryWS.Cells(findCell.Row, "O").Interior.Color = RGB(255, 255, 0)
+
+    Call LogProcessInvalid( _
+        evalFolder & evalfile, _
+        supplierCode, _
+        materialType & " (summary file) --> " & evalMaterialType & " (Eval file)" _
+    )
+
+    evalWB.Close SaveChanges:=False
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+    GoTo NextFile
+
+Else
+    SummaryWS.Cells(findCell.Row, "O").Interior.Pattern = xlNone
+End If
+
+⚠️ Important:
+
+This forces mismatch to INVALID
+
+Prevents the file from going to Completed
+
+
+
+---
+
+✅ 6. Where to log SUPPLIER NOT FOUND
+
+Find this block:
+
+Else
+    ' Archive old files first
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+End If
+
+🔽 ADD LOGGING BEFORE MOVING
+
+Else
+    Call LogProcessInvalid( _
+        evalFolder & evalfile, _
+        supplierCode, _
+        "Supplier code not found in summary" _
+    )
+
+    ArchiveExistingByPrefix InvalidFolder, archiveFolder, supplierCode
+    file.Move InvalidFolder & evalfile
+End If
+
+
+---
+
+✅ 7. Where to initialize the Process Log
+
+At the START of ValidatePaths, just before this line:
+
+Call ClearTimeLog
+
+🔽 ADD THIS
+
+Call EnsureProcessLogSheet
+
+This guarantees the log exists before processing begins.
+
+
+---
+
+🧭 Final Mental Model (so it sticks)
+
+Code Type	Goes Where
+
+Helper subs	Bottom of module
+New variables	Top of main sub
+Eval material capture	Inside config loop
+Missing sheet log	Inside hasMissingSheet block
+Material mismatch log	Replace mismatch block
+Supplier not found	Inside Else block
+Log sheet init	Start of ValidatePaths
+
+
+
+---
+
+If you want, next I can:
+
+🧪 Walk through one file end-to-end
+
+🧹 Add per-run log grouping
+
+🔒 Prevent duplicate logs
+
+📊 Add summary counts by reason
+
+
+Just tell me 👌
+
+
+
+****
+
+
 Got it 👍 this is a clean logging requirement, and your structure is already solid. We’ll add a “Process Log” sheet and log only invalid cases, including yellow material mismatch, without touching completed files.
 
 Below is a drop-in solution that fits your current design and globals.
