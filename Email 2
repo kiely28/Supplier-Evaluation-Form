@@ -1,3 +1,295 @@
+Nice work — this is already a solid, production-grade macro 👍
+You’ve clearly thought about logging, recovery, archiving, validation, and UX, which is not common in typical VBA scripts.
+
+Below are focused, practical improvements that will make this cleaner, safer, and easier to maintain — without changing your business logic.
+
+
+---
+
+✅ What you’re already doing well
+
+Before nitpicking, credit where it’s due:
+
+✔ Centralized logging system (time log, activity log, error log)
+
+✔ Clear Completed / Invalid / Archive workflow
+
+✔ Defensive checks (missing sheet, material mismatch)
+
+✔ Good use of Option Explicit
+
+✔ Avoiding Select / Activate
+
+✔ Smart use of global state (SummaryWB, CompletedFolder, etc.)
+
+✔ Read-only opening of supplier files (great!)
+
+
+This is not beginner VBA — it’s already “application-level” code.
+
+
+---
+
+🔧 Key Improvements (High Impact)
+
+1️⃣ Remove excessive Globals (tighten scope)
+
+Right now these globals are over-used:
+
+Public SummaryWB As Workbook
+Public SummaryWS As Worksheet
+Public CompletedFolder As String
+Public InvalidFolder As String
+Public supplierCode As String
+
+Why this matters
+
+Makes debugging harder
+
+Can cause incorrect values during error handling
+
+Breaks reusability
+
+
+✅ Recommended Keep only what is truly cross-procedure:
+
+Public gLastArchiveSRC As String
+Public CompletedFolder As String
+Public InvalidFolder As String
+
+Then pass the rest explicitly:
+
+Call FinalizeSummaryAndResults(SummaryWB, SummaryWS)
+
+This alone improves reliability a lot.
+
+
+---
+
+2️⃣ Centralize Excel Application State Handling
+
+You disable settings here:
+
+Application.ScreenUpdating = False
+Application.EnableEvents = False
+Application.Calculation = xlCalculationManual
+
+But if an error happens early, Excel can get stuck.
+
+✅ Best-practice pattern Wrap once, restore once:
+
+Sub WithAppState(ByVal enable As Boolean)
+    Application.ScreenUpdating = enable
+    Application.EnableEvents = enable
+    Application.Calculation = IIf(enable, xlCalculationAutomatic, xlCalculationManual)
+End Sub
+
+Usage:
+
+WithAppState False
+On Error GoTo CleanFail
+
+' main logic
+
+CleanExit:
+WithAppState True
+Exit Sub
+
+CleanFail:
+LogRuntimeError supplierCode, Err.Description
+Resume CleanExit
+
+This guarantees Excel is never left broken.
+
+
+---
+
+3️⃣ Kill GoTo NextMap (use structured flow)
+
+This block:
+
+If cfgWS.Cells(r, "C").Value = 0 Then GoTo NextMap
+
+Works — but it’s brittle.
+
+✅ Replace with:
+
+If cfgWS.Cells(r, "C").Value <> 0 Then
+    ' mapping logic
+End If
+
+Cleaner, safer, easier to read.
+
+
+---
+
+4️⃣ Stop Using On Error Resume Next for Logic
+
+Example:
+
+On Error Resume Next
+Set srcWS = evalWB.Sheets(srcSheetName)
+On Error GoTo 0
+
+This hides real bugs.
+
+✅ Safer pattern:
+
+If SheetExists(evalWB, srcSheetName) Then
+    Set srcWS = evalWB.Sheets(srcSheetName)
+Else
+    hasMissingSheet = True
+    Exit For
+End If
+
+Helper:
+
+Function SheetExists(wb As Workbook, sheetName As String) As Boolean
+    On Error Resume Next
+    SheetExists = Not wb.Sheets(sheetName) Is Nothing
+    On Error GoTo 0
+End Function
+
+
+---
+
+5️⃣ Improve Supplier Code Extraction
+
+Current:
+
+supplierCode = Trim(Left(evalfile, 6))
+
+⚠ Risky if filename changes.
+
+✅ Safer:
+
+If evalfile Like "######*" Then
+    supplierCode = Left(evalfile, 6)
+Else
+    supplierCode = ""
+End If
+
+Then log invalid filename properly.
+
+
+---
+
+6️⃣ Avoid Opening the Summary Workbook Inside Logic
+
+You open it here:
+
+Set SummaryWB = Workbooks.Open(evalfile)
+
+Better pattern:
+
+Open once
+
+Pass reference
+
+Close explicitly
+
+
+Also add protection:
+
+If SummaryWB.ReadOnly Then
+    MsgBox "Summary file is already open.", vbCritical
+    Exit Sub
+End If
+
+
+---
+
+7️⃣ Make Error Logging More Informative
+
+Your LogRuntimeError is good — upgrade it slightly:
+
+LogRuntimeError supplierCode, _
+    Err.Number & " - " & Err.Description, _
+    "Procedure: UpdateSupplierEvaluationSummary"
+
+This gives traceability later.
+
+
+---
+
+8️⃣ Use Constants for Magic Columns
+
+Example:
+
+Const COL_SUPPLIER As String = "N"
+Const COL_MATERIAL As String = "L"
+Const COL_STATUS As String = "O"
+
+Then:
+
+materialType = SummaryWS.Cells(destRow, COL_MATERIAL).Value
+
+Future-you will thank present-you 😄
+
+
+---
+
+9️⃣ Archive Routine: Guard Against File Locks
+
+Your archive logic is strong, but add safety:
+
+If Dir(srcFolder & f) <> "" Then
+    Name srcFolder & f As archivePath
+End If
+
+Prevents crash if file is locked by Excel/Windows.
+
+
+---
+
+🧹 Optional Cleanup (Low Risk)
+
+Remove commented legacy blocks (they’re useful now, but archive them in a separate .bas)
+
+Group related procedures into modules:
+
+modProcessing
+
+modLogging
+
+modUtilities
+
+
+Replace repeated ThisWorkbook.Sheets(1) with a named reference
+
+
+
+---
+
+🟢 Overall Verdict
+
+This is already enterprise-style VBA.
+With the changes above, you’ll have:
+
+Safer error recovery
+
+Easier maintenance
+
+Fewer hidden bugs
+
+Cleaner flow control
+
+
+If you want, next we can:
+
+Refactor this into class-based VBA
+
+Add unit-style test macros
+
+Or convert this logic into ASP.NET / C# flow (since you’re moving toward EPPI 👀)
+
+
+Just tell me where you want to level it up next 💪
+
+
+
+***
+
 Good day,
 
 This is to inform you that the development of EPPI has not yet started as priority is currently given to fixations in the Supplier Management Evaluation Program (macro).
