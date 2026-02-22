@@ -1,0 +1,210 @@
+Since you’re handling the Supplier Evaluation macro project, here’s a simple and clear explanation you can use during your meeting. This is easy English, especially helpful if you’re explaining to managers or Japanese members.
+
+
+---
+
+🧾 Supplier Evaluation Macro – Simple Explanation for Meeting
+
+1. Purpose of the Macro
+
+“The purpose of this macro is to automatically consolidate and update the Supplier Evaluation Summary file.
+It reduces manual work and prevents encoding errors.”
+
+
+---
+
+2. How the Process Works
+
+The system reads all supplier evaluation files from the assigned folder.
+
+It checks if the required sheet and data are complete.
+
+It validates the material type (Direct or Indirect).
+
+If the file is correct:
+
+Data is transferred to the Summary sheet.
+
+The file is moved to the Completed folder.
+
+
+If there is an error:
+
+The file is moved to the Invalid folder.
+
+The error details are recorded in the Error Log sheet.
+
+
+
+
+---
+
+3. Error Handling
+
+“If there is an issue such as missing sheet name, wrong material type, or archive error,
+the system will:
+
+Show an error message
+
+Record the error in the Error Log sheet
+
+Include:
+
+Timestamp
+
+Supplier Code
+
+Last Archive Source
+
+Error Description
+
+Remarks”
+
+
+
+This helps us monitor and trace issues easily.
+
+
+---
+
+4. Improvements Made
+
+Added dedicated Invalid folder handling
+
+Added detailed Error Log sheet
+
+Separated archive errors from validation errors
+
+Improved traceability using Supplier Code and timestamp
+
+
+
+---
+
+5. Benefits
+
+Faster processing
+
+Less manual checking
+
+Better monitoring of invalid files
+
+More accurate supplier evaluation summary
+
+
+
+---
+
+If you want, I can also:
+
+✅ Make it shorter (1–2 minute explanation)
+
+✅ Make it more formal for management
+
+✅ Make a presentation script version
+
+✅ Help you prepare possible Q&A during the meeting
+
+
+Just tell me your meeting audience (manager? Japanese team? IT?).
+
+
+*****
+
+Here’s a simple explanation you can say in the meeting about the Config Mapping part of your Supplier Evaluation macro.
+
+
+---
+
+⚙️ Config Mapping – Simple Explanation
+
+1. What is Config Mapping?
+
+“The Config Mapping sheet is the control table of the macro.
+It tells the system where to get the data and where to put the data.”
+
+Instead of hardcoding cell addresses in VBA, we use the Config sheet to define:
+
+Source sheet name
+
+Source column or cell
+
+Target column in the Summary sheet
+
+Material type condition (Direct / Indirect)
+
+
+
+---
+
+2. How It Works
+
+“When the macro runs:”
+
+1. The system reads the Config Mapping sheet first.
+
+
+2. It checks each row of the mapping table.
+
+
+3. For each mapping:
+
+It gets the value from the source file (based on sheet and cell/column).
+
+It transfers the value to the correct column in the Summary sheet.
+
+
+
+4. It repeats this process until all mapped fields are completed.
+
+
+
+So basically:
+
+👉 Config Sheet = Instruction
+👉 Macro = Follows the instruction
+👉 Summary Sheet = Final output
+
+
+---
+
+3. Why We Use Config Mapping
+
+No need to edit VBA code if column changes
+
+Easy to maintain
+
+Flexible for new fields
+
+Less risk of coding error
+
+
+“If there are changes in format, we only update the Config sheet, not the macro.”
+
+
+---
+
+4. Simple Example You Can Say
+
+“For example, if Supplier Name is in Sheet1 cell B5,
+the Config Mapping tells the macro:
+
+Read Sheet1
+
+Get value from B5
+
+Put it in column ‘Supplier Name’ in Summary
+
+
+If next time the location changes, we only update the Config.”
+
+
+---
+
+If you want, I can also:
+
+Make a 30-second explanation version
+
+Or prepare a sample diagram explanation you can show on screen
+
+Or help you prepare possible questions from managers** 😊
