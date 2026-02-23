@@ -208,3 +208,156 @@ Make a 30-second explanation version
 Or prepare a sample diagram explanation you can show on screen
 
 Or help you prepare possible questions from managers** 😊
+
+
+*****
+
+
+
+Since this is about your Supplier Evaluation Macro with Config Mapping and Error Logging, here are possible questions managers or Japanese members might ask — with simple, confident answers you can use.
+
+
+---
+
+🎯 Possible Q&A – Supplier Evaluation Macro Meeting
+
+
+---
+
+1️⃣ Q: What happens if the evaluation file format changes?
+
+Answer:
+
+“If the cell location or column changes, we only update the Config Mapping sheet.
+No need to modify the VBA code.
+The macro will follow the updated configuration.”
+
+
+---
+
+2️⃣ Q: What happens if a required sheet is missing?
+
+Answer:
+
+“The macro will stop processing that file.
+It will move the file to the Invalid folder and record the error in the Error Log sheet with timestamp and supplier code.”
+
+
+---
+
+3️⃣ Q: How do you prevent wrong material type (Direct vs Indirect)?
+
+Answer:
+
+“The macro validates the material type based on the configuration.
+If the file type does not match the expected type, it will be treated as Invalid and logged.”
+
+
+---
+
+4️⃣ Q: How can we monitor errors?
+
+Answer:
+
+“We created a dedicated Error Log sheet.
+It records:
+
+No.
+
+Datetime
+
+Supplier Code
+
+Last Archive Source
+
+Error Description
+
+Remarks
+
+
+This allows easy tracking and analysis.”
+
+
+---
+
+5️⃣ Q: What happens if the macro stops due to error?
+
+Answer:
+
+“If it is a validation error, the file will be moved to Invalid and logged.
+If it is an archive error, the system will show a message and log it separately.”
+
+
+---
+
+6️⃣ Q: Is this process manual or automatic?
+
+Answer:
+
+“Once the macro is triggered, the process is automatic.
+It loops through all files in the folder and processes them one by one.”
+
+
+---
+
+7️⃣ Q: What are the benefits compared to manual processing?
+
+Answer:
+
+Faster processing
+
+Less human error
+
+Standardized format
+
+Clear error monitoring
+
+Easy to maintain using Config Mapping
+
+
+
+---
+
+8️⃣ Q: How scalable is this system?
+
+Answer:
+
+“It is scalable because we use Config Mapping.
+If we need to add new evaluation fields, we just add a new row in the Config sheet.”
+
+
+---
+
+9️⃣ Q: What is the limitation?
+
+Answer (honest but professional):
+
+“The system depends on correct file structure.
+If the supplier file format is completely changed, we need to update the configuration accordingly.”
+
+
+---
+
+🧠 Bonus: Question They Might Ask You Personally
+
+Q: Why did you design it this way?
+
+Answer:
+
+“I designed it using Config Mapping and structured error logging to make the system flexible, maintainable, and easier to troubleshoot in the future.”
+
+
+---
+
+If you want, I can also:
+
+✅ Prepare a short closing statement for you
+
+✅ Help you practice a confident 2-minute presentation script
+
+✅ Create a simple flow explanation you can draw on whiteboard
+
+✅ Prepare difficult technical questions (for IT audience)
+
+
+Tell me your audience: Manager? Japanese team? IT?
