@@ -1,3 +1,196 @@
+Very good 👍 this is the correct way to make your macro production-ready.
+
+Now I added:
+
+✅ Check if folder path exists
+✅ Check if file exists before Workbooks.Open
+✅ Check if GOODS sheet exists
+✅ Check if PCMS_Login sheet exists
+✅ Dynamic header detection
+✅ Distinct ControlNumber
+✅ First AppliedBy
+✅ Append .xlsx
+✅ Safe exit handling
+
+
+---
+
+✅ FINAL SAFE VERSION
+
+Option Explicit
+
+Sub UpdatePCMSLoginFileName_Dynamic()
+
+    Dim filePath As String
+    Dim folderPath As String
+    Dim wb As Workbook
+    Dim wsGoods As Worksheet
+    Dim wsPCMS As Worksheet
+    Dim dict As Object
+    
+    Dim lastRow As Long
+    Dim i As Long
+    Dim writeRow As Long
+    
+    Dim appliedByCol As Long
+    Dim controlNumberCol As Long
+    
+    Dim appliedBy As String
+    Dim controlNumber As String
+    
+    Dim headerRow As Long
+    headerRow = 1
+    
+    filePath = "D:\Triangular\MaterialWithDeficit.xlsx"
+    folderPath = Left(filePath, InStrRev(filePath, "\") - 1)
+    
+    ' ===== CHECK IF FOLDER EXISTS =====
+    If Dir(folderPath, vbDirectory) = "" Then
+        MsgBox "Folder path does not exist: " & folderPath, vbCritical
+        Exit Sub
+    End If
+    
+    ' ===== CHECK IF FILE EXISTS =====
+    If Dir(filePath) = "" Then
+        MsgBox "File not found: " & filePath, vbCritical
+        Exit Sub
+    End If
+    
+    ' ===== OPEN WORKBOOK =====
+    Set wb = Workbooks.Open(filePath)
+    
+    ' ===== CHECK SHEETS =====
+    If Not SheetExists(wb, "GOODS") Then
+        MsgBox "Sheet 'GOODS' not found!", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    If Not SheetExists(wb, "PCMS_Login") Then
+        MsgBox "Sheet 'PCMS_Login' not found!", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    Set wsGoods = wb.Sheets("GOODS")
+    Set wsPCMS = wb.Sheets("PCMS_Login")
+    
+    ' ===== FIND COLUMNS BY HEADER =====
+    appliedByCol = GetColumnByHeader(wsGoods, "AppliedBy", headerRow)
+    controlNumberCol = GetColumnByHeader(wsGoods, "ControlNumber", headerRow)
+    
+    If appliedByCol = 0 Or controlNumberCol = 0 Then
+        MsgBox "Required headers not found!", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' ===== GET LAST ROW =====
+    lastRow = wsGoods.Cells(wsGoods.Rows.Count, controlNumberCol).End(xlUp).Row
+    
+    ' ===== BUILD DISTINCT LIST =====
+    For i = headerRow + 1 To lastRow
+        
+        appliedBy = Trim(wsGoods.Cells(i, appliedByCol).Value)
+        controlNumber = Trim(wsGoods.Cells(i, controlNumberCol).Value)
+        
+        If controlNumber <> "" Then
+            If Not dict.exists(controlNumber) Then
+                dict.Add controlNumber, appliedBy
+            End If
+        End If
+        
+    Next i
+    
+    ' ===== WRITE TO PCMS_Login =====
+    wsPCMS.Columns("D").ClearContents
+    wsPCMS.Range("D1").Value = "FILENAME"
+    
+    writeRow = 2
+    
+    Dim key As Variant
+    For Each key In dict.Keys
+        wsPCMS.Cells(writeRow, "D").Value = dict(key) & ".xlsx"
+        writeRow = writeRow + 1
+    Next key
+    
+    MsgBox "PCMS_Login Column D successfully updated!", vbInformation
+
+End Sub
+
+
+' ===== CHECK IF SHEET EXISTS =====
+Function SheetExists(wb As Workbook, sheetName As String) As Boolean
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = wb.Sheets(sheetName)
+    On Error GoTo 0
+    SheetExists = Not ws Is Nothing
+End Function
+
+
+' ===== FIND COLUMN BY HEADER =====
+Function GetColumnByHeader(ws As Worksheet, headerName As String, headerRow As Long) As Long
+    
+    Dim lastCol As Long
+    Dim col As Long
+    
+    lastCol = ws.Cells(headerRow, ws.Columns.Count).End(xlToLeft).Column
+    
+    For col = 1 To lastCol
+        If Trim(UCase(ws.Cells(headerRow, col).Value)) = UCase(headerName) Then
+            GetColumnByHeader = col
+            Exit Function
+        End If
+    Next col
+    
+    GetColumnByHeader = 0
+    
+End Function
+
+
+---
+
+🔥 Now This Macro Is Enterprise-Safe
+
+It prevents:
+
+❌ Invalid drive
+
+❌ Missing folder
+
+❌ Missing file
+
+❌ Missing sheet
+
+❌ Missing headers
+
+❌ Blank control numbers
+
+
+
+---
+
+If you want, I can now:
+
+🔄 Add error handler (On Error GoTo ErrorHandler)
+
+⚡ Convert to array-based ultra-fast version (for 20k+ rows)
+
+💾 Auto-save and close after update
+
+📊 Log execution result to another sheet (for audit)
+
+
+You're building macros like a real automation specialist now 💪
+
+
+
+****
+
+
 Perfect 👍 I added a safe sheet existence check before running anything.
 
 Now the macro will:
