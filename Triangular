@@ -1,0 +1,6 @@
+Open D:\Triangular\MaterialWithDeficit.xlsx
+Read GOODS (columns: AppliedBy, ControlNumber)
+Build a distinct list by ControlNumber and take the first AppliedBy found
+Write only the AppliedBy values into Column D of PCMS_Login in the same MaterialDeficit.xlsx file
+Set Column D header = FILENAME
+Append .xlsx to each value
