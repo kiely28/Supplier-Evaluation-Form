@@ -1,3 +1,145 @@
+Great 👍 I’ll make it fully dynamic:
+
+✅ Detects AppliedBy and ControlNumber columns by header name
+✅ No fixed column letters
+✅ Builds distinct list by ControlNumber
+✅ Takes first AppliedBy found
+✅ Writes to Column D of PCMS_Login
+✅ Sets header = FILENAME
+✅ Appends .xlsx
+
+
+---
+
+✅ Dynamic Version (Header-Based Detection)
+
+Option Explicit
+
+Sub UpdatePCMSLoginFileName_Dynamic()
+
+    Dim wb As Workbook
+    Dim wsGoods As Worksheet
+    Dim wsPCMS As Worksheet
+    Dim dict As Object
+    
+    Dim lastRow As Long
+    Dim i As Long
+    Dim writeRow As Long
+    
+    Dim appliedByCol As Long
+    Dim controlNumberCol As Long
+    
+    Dim appliedBy As String
+    Dim controlNumber As String
+    
+    Dim headerRow As Long
+    headerRow = 1   ' Change if your header is not in row 1
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Open workbook
+    Set wb = Workbooks.Open("D:\Triangular\MaterialWithDeficit.xlsx")
+    
+    Set wsGoods = wb.Sheets("GOODS")
+    Set wsPCMS = wb.Sheets("PCMS_Login")
+    
+    ' ===== FIND COLUMNS BY HEADER NAME =====
+    appliedByCol = GetColumnByHeader(wsGoods, "AppliedBy", headerRow)
+    controlNumberCol = GetColumnByHeader(wsGoods, "ControlNumber", headerRow)
+    
+    If appliedByCol = 0 Or controlNumberCol = 0 Then
+        MsgBox "Required headers not found!", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Get last row based on ControlNumber column
+    lastRow = wsGoods.Cells(wsGoods.Rows.Count, controlNumberCol).End(xlUp).Row
+    
+    ' ===== BUILD DISTINCT LIST =====
+    For i = headerRow + 1 To lastRow
+        
+        appliedBy = Trim(wsGoods.Cells(i, appliedByCol).Value)
+        controlNumber = Trim(wsGoods.Cells(i, controlNumberCol).Value)
+        
+        If controlNumber <> "" Then
+            If Not dict.exists(controlNumber) Then
+                dict.Add controlNumber, appliedBy
+            End If
+        End If
+        
+    Next i
+    
+    ' ===== WRITE TO PCMS_Login =====
+    wsPCMS.Columns("D").ClearContents
+    
+    wsPCMS.Range("D1").Value = "FILENAME"
+    
+    writeRow = 2
+    
+    Dim key As Variant
+    For Each key In dict.Keys
+        wsPCMS.Cells(writeRow, "D").Value = dict(key) & ".xlsx"
+        writeRow = writeRow + 1
+    Next key
+    
+    MsgBox "PCMS_Login Column D successfully updated!", vbInformation
+
+End Sub
+
+
+' ===== FUNCTION TO FIND COLUMN BY HEADER =====
+Function GetColumnByHeader(ws As Worksheet, headerName As String, headerRow As Long) As Long
+    
+    Dim lastCol As Long
+    Dim col As Long
+    
+    lastCol = ws.Cells(headerRow, ws.Columns.Count).End(xlToLeft).Column
+    
+    For col = 1 To lastCol
+        If Trim(UCase(ws.Cells(headerRow, col).Value)) = UCase(headerName) Then
+            GetColumnByHeader = col
+            Exit Function
+        End If
+    Next col
+    
+    GetColumnByHeader = 0 ' Not found
+    
+End Function
+
+
+---
+
+🔥 Why This Is Better
+
+If columns move → macro still works
+
+Case insensitive (AppliedBy, appliedby, etc. OK)
+
+Prevents blank ControlNumber
+
+Clean and reusable function
+
+
+
+---
+
+If you want, I can also upgrade this to:
+
+🚀 Ultra-fast version (using arrays instead of cell-by-cell loop)
+
+📊 Auto-sort results
+
+💾 Auto-save and close file
+
+🔄 Merge with your existing Supplier Evaluation macro structure
+
+
+Just tell me your next step 😄
+
+****
+
+
+
 Open D:\Triangular\MaterialWithDeficit.xlsx
 Read GOODS (columns: AppliedBy, ControlNumber)
 Build a distinct list by ControlNumber and take the first AppliedBy found
