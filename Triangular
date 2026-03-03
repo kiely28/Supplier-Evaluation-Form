@@ -1,3 +1,177 @@
+Perfect 👍 I added a safe sheet existence check before running anything.
+
+Now the macro will:
+
+✅ Check if GOODS sheet exists
+✅ Check if PCMS_Login sheet exists
+✅ Stop safely if missing
+✅ Still dynamic header detection
+✅ Distinct by ControlNumber
+✅ First AppliedBy only
+✅ Write to Column D
+✅ Header = FILENAME
+✅ Append .xlsx
+
+
+---
+
+✅ Updated Macro (With Sheet Validation)
+
+Option Explicit
+
+Sub UpdatePCMSLoginFileName_Dynamic()
+
+    Dim wb As Workbook
+    Dim wsGoods As Worksheet
+    Dim wsPCMS As Worksheet
+    Dim dict As Object
+    
+    Dim lastRow As Long
+    Dim i As Long
+    Dim writeRow As Long
+    
+    Dim appliedByCol As Long
+    Dim controlNumberCol As Long
+    
+    Dim appliedBy As String
+    Dim controlNumber As String
+    
+    Dim headerRow As Long
+    headerRow = 1
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Open workbook
+    Set wb = Workbooks.Open("D:\Triangular\MaterialWithDeficit.xlsx")
+    
+    ' ===== CHECK IF SHEETS EXIST =====
+    If Not SheetExists(wb, "GOODS") Then
+        MsgBox "Sheet 'GOODS' not found!", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    If Not SheetExists(wb, "PCMS_Login") Then
+        MsgBox "Sheet 'PCMS_Login' not found!", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    Set wsGoods = wb.Sheets("GOODS")
+    Set wsPCMS = wb.Sheets("PCMS_Login")
+    
+    ' ===== FIND COLUMNS BY HEADER =====
+    appliedByCol = GetColumnByHeader(wsGoods, "AppliedBy", headerRow)
+    controlNumberCol = GetColumnByHeader(wsGoods, "ControlNumber", headerRow)
+    
+    If appliedByCol = 0 Or controlNumberCol = 0 Then
+        MsgBox "Required headers not found!", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    ' Get last row
+    lastRow = wsGoods.Cells(wsGoods.Rows.Count, controlNumberCol).End(xlUp).Row
+    
+    ' ===== BUILD DISTINCT LIST =====
+    For i = headerRow + 1 To lastRow
+        
+        appliedBy = Trim(wsGoods.Cells(i, appliedByCol).Value)
+        controlNumber = Trim(wsGoods.Cells(i, controlNumberCol).Value)
+        
+        If controlNumber <> "" Then
+            If Not dict.exists(controlNumber) Then
+                dict.Add controlNumber, appliedBy
+            End If
+        End If
+        
+    Next i
+    
+    ' ===== WRITE TO PCMS_Login =====
+    wsPCMS.Columns("D").ClearContents
+    
+    wsPCMS.Range("D1").Value = "FILENAME"
+    
+    writeRow = 2
+    
+    Dim key As Variant
+    For Each key In dict.Keys
+        wsPCMS.Cells(writeRow, "D").Value = dict(key) & ".xlsx"
+        writeRow = writeRow + 1
+    Next key
+    
+    MsgBox "PCMS_Login Column D successfully updated!", vbInformation
+
+End Sub
+
+
+' ===== CHECK IF SHEET EXISTS =====
+Function SheetExists(wb As Workbook, sheetName As String) As Boolean
+    Dim ws As Worksheet
+    On Error Resume Next
+    Set ws = wb.Sheets(sheetName)
+    On Error GoTo 0
+    SheetExists = Not ws Is Nothing
+End Function
+
+
+' ===== FIND COLUMN BY HEADER =====
+Function GetColumnByHeader(ws As Worksheet, headerName As String, headerRow As Long) As Long
+    
+    Dim lastCol As Long
+    Dim col As Long
+    
+    lastCol = ws.Cells(headerRow, ws.Columns.Count).End(xlToLeft).Column
+    
+    For col = 1 To lastCol
+        If Trim(UCase(ws.Cells(headerRow, col).Value)) = UCase(headerName) Then
+            GetColumnByHeader = col
+            Exit Function
+        End If
+    Next col
+    
+    GetColumnByHeader = 0
+    
+End Function
+
+
+---
+
+🔒 Now It Is Safe Against:
+
+Missing GOODS sheet
+
+Missing PCMS_Login sheet
+
+Missing headers
+
+Blank ControlNumber
+
+Accidental overwrite (file closes if error)
+
+
+
+---
+
+If you want next level improvement, I can:
+
+⚡ Convert to array-based (10x faster for 10k+ rows)
+
+💾 Auto-save after update
+
+📁 Skip opening if file already open
+
+🔁 Integrate into your existing Supplier Evaluation framework
+
+
+Since you're building automation tools regularly, I recommend we optimize it next 😉
+
+
+
+*****
+
+
+
 Great 👍 I’ll make it fully dynamic:
 
 ✅ Detects AppliedBy and ControlNumber columns by header name
