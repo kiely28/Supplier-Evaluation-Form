@@ -1,3 +1,16 @@
+Opens D:\Triangular\MaterialWithDeficit.xlsx
+Reads PCMS_LOGIN (Column A) for control numbers
+Looks them up in GOODS by the ControlNumber column
+Builds a distinct map of ControlNumber → first AppliedBy
+Writes only the AppliedBy values (with “.xlsx” appended) into Column D of PCMS_LOGIN
+Sets D1 header to FILENAME
+
+
+
+
+*****
+
+
 Very good 👍 this is the correct way to make your macro production-ready.
 
 Now I added:
