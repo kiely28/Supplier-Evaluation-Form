@@ -1,3 +1,185 @@
+
+Perfect 👍 I’ll modify the macro so that in GOODS sheet, the columns for:
+
+AppliedBy
+
+ControlNumber
+
+
+are detected dynamically by header name (Row 1), instead of assuming Column A and B.
+
+Everything else remains the same.
+
+
+---
+
+✅ Updated VBA Macro (Dynamic Header Detection in GOODS)
+
+Sub UpdatePCMSLoginFileName_Dynamic()
+
+    Dim wb As Workbook
+    Dim wsPCMS As Worksheet
+    Dim wsGoods As Worksheet
+    Dim filePath As String
+    Dim lastRowGoods As Long
+    Dim lastRowPCMS As Long
+    Dim dict As Object
+    Dim i As Long
+    Dim controlNum As String
+    Dim appliedBy As String
+    Dim colAppliedBy As Long
+    Dim colControlNum As Long
+    Dim headerCell As Range
+    
+    filePath = "D:\Triangular\MaterialWithDeficit.xlsx"
+    
+    ' Check if file exists
+    If Dir(filePath) = "" Then
+        MsgBox "File not found: " & filePath, vbExclamation
+        Exit Sub
+    End If
+    
+    ' Open workbook
+    Set wb = Workbooks.Open(filePath)
+    
+    ' Check sheets
+    On Error Resume Next
+    Set wsPCMS = wb.Sheets("PCMS_LOGIN")
+    Set wsGoods = wb.Sheets("GOODS")
+    On Error GoTo 0
+    
+    If wsPCMS Is Nothing Then
+        MsgBox "Sheet PCMS_LOGIN not found.", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    If wsGoods Is Nothing Then
+        MsgBox "Sheet GOODS not found.", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    ' ================================
+    ' Dynamic Column Detection (GOODS)
+    ' ================================
+    
+    colAppliedBy = 0
+    colControlNum = 0
+    
+    For Each headerCell In wsGoods.Rows(1).Cells
+        If Trim(UCase(headerCell.Value)) = "APPLIEDBY" Then
+            colAppliedBy = headerCell.Column
+        End If
+        
+        If Trim(UCase(headerCell.Value)) = "CONTROLNUMBER" Then
+            colControlNum = headerCell.Column
+        End If
+        
+        If colAppliedBy > 0 And colControlNum > 0 Then Exit For
+    Next headerCell
+    
+    If colAppliedBy = 0 Or colControlNum = 0 Then
+        MsgBox "Required headers (AppliedBy / ControlNumber) not found in GOODS sheet.", vbExclamation
+        wb.Close False
+        Exit Sub
+    End If
+    
+    ' ================================
+    ' Build Dictionary
+    ' ================================
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    lastRowGoods = wsGoods.Cells(wsGoods.Rows.Count, colControlNum).End(xlUp).Row
+    
+    For i = 2 To lastRowGoods
+        appliedBy = Trim(wsGoods.Cells(i, colAppliedBy).Value)
+        controlNum = Trim(wsGoods.Cells(i, colControlNum).Value)
+        
+        If controlNum <> "" Then
+            If Not dict.exists(controlNum) Then
+                dict.Add controlNum, appliedBy
+            End If
+        End If
+    Next i
+    
+    ' ================================
+    ' Update PCMS_LOGIN
+    ' ================================
+    
+    wsPCMS.Range("D1").Value = "FILENAME"
+    
+    lastRowPCMS = wsPCMS.Cells(wsPCMS.Rows.Count, "A").End(xlUp).Row
+    
+    For i = 2 To lastRowPCMS
+        controlNum = Trim(wsPCMS.Cells(i, 1).Value)
+        
+        If dict.exists(controlNum) Then
+            wsPCMS.Cells(i, 4).Value = dict(controlNum) & ".xlsx"
+        Else
+            wsPCMS.Cells(i, 4).Value = ""
+        End If
+    Next i
+    
+    MsgBox "Update completed successfully.", vbInformation
+
+End Sub
+
+
+---
+
+🔎 What Changed?
+
+Instead of assuming:
+
+Column A = AppliedBy
+Column B = ControlNumber
+
+The macro now:
+
+1. Scans Row 1 of GOODS
+
+
+2. Finds column where header = AppliedBy
+
+
+3. Finds column where header = ControlNumber
+
+
+4. Uses those column numbers dynamically
+
+
+
+So even if:
+
+| ControlNumber | Date | AppliedBy | Status |
+
+or
+
+| Status | AppliedBy | ControlNumber |
+
+It will still work ✅
+
+
+---
+
+If you want, next I can:
+
+🔥 Make PCMS_LOGIN also dynamic by header name
+
+🚀 Convert everything to array-based (super fast for 10k+ rows)
+
+🧠 Integrate this into your existing root macro structure (like your CheckPlantAndFilePath style)
+
+
+Just tell me which version you prefer.
+
+
+****
+
+
+
 Opens D:\Triangular\MaterialWithDeficit.xlsx
 Reads PCMS_LOGIN (Column A) for control numbers
 Looks them up in GOODS by the ControlNumber column
