@@ -1,4 +1,25 @@
 
+
+
+Reads a base folder path from cell A1 of the first sheet in ThisWorkbook.
+
+Opens a source workbook: D:\Triangular\MaterialWithDeficit.xlsx, specifically the GOODS sheet.
+
+Scans that sheet to build a mapping of ControlNumber → AppliedBy (using the first matching AppliedBy per ControlNumber).
+
+For each unique AppliedBy, it tries to open a workbook named <AppliedBy>.xlsx inside the base folder.
+
+In every opened AppliedBy workbook, it fills blank cells in Column C with values from Column P (for Sheet1).
+
+
+
+
+
+****
+
+
+
+
 Perfect 👍 I’ll modify the macro so that in GOODS sheet, the columns for:
 
 AppliedBy
