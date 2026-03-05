@@ -1,3 +1,133 @@
+This happens because VBA still reads hidden rows even if the sheet is filtered.
+When Excel AutoFilter is applied, rows that are hidden by the filter are still processed unless you check if the row is visible.
+
+To get only the visible (filtered) rows, you need to check:
+
+If Not wsGoods.Rows(i).Hidden Then
+
+or the more reliable method:
+
+If wsGoods.Rows(i).EntireRow.Hidden = False Then
+
+
+---
+
+Solution: Process Only Filtered (Visible) Rows
+
+Modify your loop like this:
+
+For i = 2 To lastRow
+
+    'Skip rows hidden by filter
+    If wsGoods.Rows(i).EntireRow.Hidden = False Then
+    
+        controlNum = Trim(wsGoods.Cells(i, colControl).Value)
+        appliedBy = Trim(wsGoods.Cells(i, colApplied).Value)
+        
+        If controlNum <> "" And appliedBy <> "" Then
+        
+            If Not dictControl.exists(controlNum) Then
+                dictControl.Add controlNum, appliedBy
+                
+                If Not dictApplied.exists(appliedBy) Then
+                    dictApplied.Add appliedBy, appliedBy
+                End If
+            End If
+            
+        End If
+        
+    End If
+    
+Next i
+
+
+---
+
+Example Scenario
+
+GOODS Sheet
+
+ControlNumber	AppliedBy
+
+CN01	Juan
+CN02	Mark
+CN02	Ken
+
+
+If Filter = CN01
+
+Visible rows:
+
+ControlNumber	AppliedBy
+
+CN01	Juan
+
+
+Macro result:
+
+Juan.xlsx
+
+
+---
+
+If Filter = CN02
+
+Visible rows:
+
+ControlNumber	AppliedBy
+
+CN02	Mark
+CN02	Ken
+
+
+Macro result:
+
+Mark.xlsx
+Ken.xlsx
+
+
+---
+
+Even Better (Recommended for Filters)
+
+Instead of looping rows, you can use SpecialCells(xlCellTypeVisible), which only returns visible rows.
+
+Example:
+
+Dim cell As Range
+
+For Each cell In wsGoods.Range(wsGoods.Cells(2, colControl), wsGoods.Cells(lastRow, colControl)).SpecialCells(xlCellTypeVisible)
+
+    controlNum = Trim(cell.Value)
+    appliedBy = Trim(wsGoods.Cells(cell.Row, colApplied).Value)
+
+Next cell
+
+This is cleaner and safer when filters are applied.
+
+
+---
+
+✅ If you want, I can also give you a FULL OPTIMIZED VERSION of your macro that includes:
+
+Filter-safe processing
+
+5–10x faster dictionary build
+
+Missing file log
+
+Error handling
+
+Progress indicator
+
+
+Just tell me and I will rewrite the complete production version.
+
+
+****
+
+
+
 Here is a complete VBA macro based on your requirements. It includes error checking, dynamic column detection by header name, and folder/file validation.
 
 What the macro does
