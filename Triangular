@@ -1,3 +1,226 @@
+Here is a complete VBA macro based on your requirements. It includes error checking, dynamic column detection by header name, and folder/file validation.
+
+What the macro does
+
+1. Reads the base folder path from A1 of Sheet1 in ThisWorkbook.
+
+
+2. Opens D:\Triangular\MaterialWithDeficit.xlsx.
+
+
+3. Reads Sheet GOODS.
+
+
+4. Dynamically finds columns ControlNumber and AppliedBy.
+
+
+5. Builds a unique list of AppliedBy (first occurrence per ControlNumber).
+
+
+6. For each AppliedBy:
+
+Opens <AppliedBy>.xlsx inside the base folder.
+
+In Sheet1, fills blank cells in Column C with values from Column P.
+
+
+
+7. Saves and closes the file.
+
+
+
+
+---
+
+VBA Macro
+
+Sub ProcessAppliedByFiles()
+
+    Dim baseFolder As String
+    Dim sourcePath As String
+    Dim wbSource As Workbook
+    Dim wsGoods As Worksheet
+    Dim lastRow As Long
+    Dim colControl As Long, colApplied As Long
+    Dim i As Long
+    
+    Dim dictControl As Object
+    Dim dictApplied As Object
+    
+    Dim controlNum As String
+    Dim appliedBy As String
+    
+    Dim wbTarget As Workbook
+    Dim wsTarget As Worksheet
+    Dim targetPath As String
+    Dim r As Long, lastRowTarget As Long
+    
+    'Source workbook path
+    sourcePath = "D:\Triangular\MaterialWithDeficit.xlsx"
+    
+    'Read base folder from A1
+    baseFolder = ThisWorkbook.Sheets(1).Range("A1").Value
+    
+    If baseFolder = "" Then
+        MsgBox "Base folder path in A1 is empty.", vbExclamation
+        Exit Sub
+    End If
+    
+    If Dir(baseFolder, vbDirectory) = "" Then
+        MsgBox "Base folder path does not exist: " & baseFolder, vbCritical
+        Exit Sub
+    End If
+    
+    If Dir(sourcePath) = "" Then
+        MsgBox "Source workbook not found: " & sourcePath, vbCritical
+        Exit Sub
+    End If
+    
+    'Open source workbook
+    Set wbSource = Workbooks.Open(sourcePath)
+    
+    'Check if GOODS sheet exists
+    On Error Resume Next
+    Set wsGoods = wbSource.Sheets("GOODS")
+    On Error GoTo 0
+    
+    If wsGoods Is Nothing Then
+        MsgBox "Sheet GOODS not found.", vbCritical
+        wbSource.Close False
+        Exit Sub
+    End If
+    
+    'Find column numbers dynamically
+    For i = 1 To wsGoods.Cells(1, wsGoods.Columns.Count).End(xlToLeft).Column
+        If Trim(wsGoods.Cells(1, i).Value) = "ControlNumber" Then colControl = i
+        If Trim(wsGoods.Cells(1, i).Value) = "AppliedBy" Then colApplied = i
+    Next i
+    
+    If colControl = 0 Or colApplied = 0 Then
+        MsgBox "Required columns not found in GOODS sheet.", vbCritical
+        wbSource.Close False
+        Exit Sub
+    End If
+    
+    'Create dictionaries
+    Set dictControl = CreateObject("Scripting.Dictionary")
+    Set dictApplied = CreateObject("Scripting.Dictionary")
+    
+    lastRow = wsGoods.Cells(wsGoods.Rows.Count, colControl).End(xlUp).Row
+    
+    'Build mapping ControlNumber → AppliedBy
+    For i = 2 To lastRow
+        controlNum = Trim(wsGoods.Cells(i, colControl).Value)
+        appliedBy = Trim(wsGoods.Cells(i, colApplied).Value)
+        
+        If controlNum <> "" And appliedBy <> "" Then
+            If Not dictControl.exists(controlNum) Then
+                dictControl.Add controlNum, appliedBy
+                
+                If Not dictApplied.exists(appliedBy) Then
+                    dictApplied.Add appliedBy, appliedBy
+                End If
+            End If
+        End If
+    Next i
+    
+    'Process each AppliedBy workbook
+    Dim key As Variant
+    
+    For Each key In dictApplied.Keys
+        
+        targetPath = baseFolder & "\" & key & ".xlsx"
+        
+        If Dir(targetPath) <> "" Then
+        
+            Set wbTarget = Workbooks.Open(targetPath)
+            
+            On Error Resume Next
+            Set wsTarget = wbTarget.Sheets("Sheet1")
+            On Error GoTo 0
+            
+            If Not wsTarget Is Nothing Then
+            
+                lastRowTarget = wsTarget.Cells(wsTarget.Rows.Count, "P").End(xlUp).Row
+                
+                For r = 2 To lastRowTarget
+                    If wsTarget.Cells(r, "C").Value = "" Then
+                        wsTarget.Cells(r, "C").Value = wsTarget.Cells(r, "P").Value
+                    End If
+                Next r
+                
+            End If
+            
+            wbTarget.Close SaveChanges:=True
+            
+        End If
+        
+    Next key
+    
+    wbSource.Close False
+    
+    MsgBox "Process completed successfully.", vbInformation
+
+End Sub
+
+
+---
+
+Example Setup
+
+ThisWorkbook → Sheet1
+
+A
+
+D:\Triangular\AppliedByFiles
+
+
+This means the macro will open files like:
+
+D:\Triangular\AppliedByFiles\Juan.xlsx
+D:\Triangular\AppliedByFiles\Mark.xlsx
+D:\Triangular\AppliedByFiles\Ken.xlsx
+
+Then inside each file:
+
+C	...	P
+
+(blank)		ABC123
+(blank)		DEF456
+
+
+After macro:
+
+C	...	P
+
+ABC123		ABC123
+DEF456		DEF456
+
+
+
+---
+
+✅ If you want, I can also improve this macro further, such as:
+
+Process only rows where Column P is not empty
+
+Speed optimization (array method — 50x faster for large files)
+
+Log missing <AppliedBy>.xlsx files
+
+Auto-create missing files
+
+Progress status bar
+
+
+Just tell me.
+
+
+
+
+
+*****
+
 
 
 
