@@ -1,0 +1,182 @@
+Below is the complete updated version of your txtCardSerial_TextChanged method where:
+
+✅ The system checks employee using EmployeeRecord.cs first
+✅ Uses EmployeeNo (strEmpNo) for attendance
+✅ Stops the process if the employee is not found in EmployeeRecord
+✅ Keeps your existing Tap In / Tap Out logic
+
+I kept the structure very close to your original code so it will be easier for you to review and explain during development.
+
+
+---
+
+Updated Complete Code
+
+protected void txtCardSerial_TextChanged(object sender, EventArgs e)
+{
+    string cardSerial = txtCardSerial.Text.Trim();
+    string meetingId = hfMeetingID.Value;
+
+    // Prefer real posted radio value; fallback to the hidden field (hfTapMode)
+    string tapMode = Request.Form["tapMode"];
+    if (string.IsNullOrEmpty(tapMode))
+        tapMode = hfTapMode.Value ?? "In";
+
+    if (string.IsNullOrEmpty(cardSerial))
+    {
+        ShowAlert("Invalid Tap", "Please place your card on the reader.", "", "alert-warning");
+        return;
+    }
+
+    string connStr = ConfigurationManager.ConnectionStrings["MeetingDb"].ConnectionString;
+    string conns = ConfigurationManager.ConnectionStrings["StrConn"].ConnectionString;
+
+    // Get employee information from EmployeeRecord.cs
+    EmployeeRecord empRec = new EmployeeRecord(conns);
+    empRec.GetEmployeeDetailsByEM(cardSerial);
+
+    string strEmpNo = empRec.EmployeeNo;
+
+    // Validate employee from EmployeeRecord
+    if (string.IsNullOrEmpty(strEmpNo))
+    {
+        txtCardSerial.Text = "";
+        ShowAlert("Employee Not Found", "Card not registered in Employee Record.", "", "alert-danger");
+        return;
+    }
+
+    try
+    {
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+
+            string empName = "";
+            string dept = "";
+
+            // Validate employee in Meeting DB
+            using (SqlCommand cmd = new SqlCommand("MA_CheckEmployeeByCard", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                    {
+                        txtCardSerial.Text = "";
+                        ShowAlert("Employee Not Registered", "", "", "alert-danger");
+                        return;
+                    }
+
+                    empName = (reader["FirstName"] ?? "").ToString().Trim() + " " +
+                              (reader["MiddleName"] ?? "").ToString().Trim() + " " +
+                              (reader["LastName"] ?? "").ToString().Trim();
+
+                    dept = (reader["DivisionName"] ?? "").ToString().Trim() + " " +
+                           (reader["DepartmentName"] ?? "").ToString().Trim() + " " +
+                           (reader["SectionName"] ?? "").ToString().Trim();
+                }
+            }
+
+            if (tapMode.Equals("In", StringComparison.OrdinalIgnoreCase))
+            {
+                using (SqlCommand insertCmd = new SqlCommand("MA_InsertAttendee", conn))
+                {
+                    insertCmd.CommandType = CommandType.StoredProcedure;
+
+                    insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                    insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+                    using (SqlDataReader reader = insertCmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            int result = Convert.ToInt32(reader["Result"]);
+
+                            if (result == 0)
+                                ShowAlert("Already Tapped In", "", "", "alert-danger");
+                            else if (result == 1)
+                                ShowAlert("You have tapped in successfully!", empName, dept, "alert-success");
+                            else
+                                ShowAlert("Tap-in failed", "", "", "alert-danger");
+                        }
+                    }
+                }
+            }
+            else // Tap Out
+            {
+                int rowsAffected = 0;
+
+                using (SqlCommand updateCmd = new SqlCommand("MA_UpdateAttendeeTimeout", conn))
+                {
+                    updateCmd.CommandType = CommandType.StoredProcedure;
+
+                    updateCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                    updateCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+                    rowsAffected = updateCmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                        ShowAlert("You have tapped out successfully!", empName, dept, "alert-success");
+                    else
+                        ShowAlert("Already tapped out or no tap-in found", "", "", "alert-danger");
+                }
+            }
+
+            // Reset input and focus
+            txtCardSerial.Text = "";
+            ScriptManager.RegisterStartupScript(this, GetType(), "setFocus",
+                $"document.getElementById('{txtCardSerial.ClientID}').focus();", true);
+        }
+    }
+    catch (Exception ex)
+    {
+        ShowAlert("Error", ex.Message, "", "alert-danger");
+    }
+}
+
+
+---
+
+What Changed (Summary)
+
+Before	After
+
+CardSerial used everywhere	EmployeeNo used
+EmployeeRecord called but unused	EmployeeRecord validated
+@CardSerialNo parameter	@EmployeeNo parameter
+No check if EmployeeRecord exists	Stops if employee not found
+
+
+
+---
+
+New Flow of Your System
+
+Tap Card
+   ↓
+EmployeeRecord.cs
+   ↓
+Get EmployeeNo
+   ↓
+Check Employee in Meeting DB
+   ↓
+Tap In / Tap Out
+
+This is better architecture because:
+
+✔ Card number can change
+✔ EmployeeNo stays permanent
+✔ System is more scalable
+
+
+---
+
+💡 Since I saw your Meeting Attendance system already uses Stored Procedures and Bootstrap, I can also show you a very useful upgrade used in production attendance systems:
+
+⭐ "Anti Double Tap Protection (2-second lock)"
+
+This prevents card reader double scanning which happens very often.
+
+If you want, I can show you how to add that in 5 lines only.
