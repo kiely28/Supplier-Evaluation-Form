@@ -1,3 +1,150 @@
+The error:
+
+Procedure or function 'MA_InsertAttendee' expects parameter '@____', which was not supplied
+
+means the stored procedure requires a parameter that your code did not pass.
+
+Earlier your system probably used:
+
+@MeetingId
+@CardSerialNo
+
+But now your code sends:
+
+@MeetingId
+@EmployeeNo
+
+So if the stored procedure still expects @CardSerialNo, SQL Server will throw this error.
+
+
+---
+
+Step 1 — Check the Stored Procedure
+
+Run this in SQL Server:
+
+sp_help MA_InsertAttendee
+
+or
+
+EXEC sp_helptext 'MA_InsertAttendee'
+
+Example result might show:
+
+CREATE PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @CardSerialNo NVARCHAR(50)
+AS
+
+If this is the case, your code must send:
+
+insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+NOT @EmployeeNo.
+
+
+---
+
+Solution Option 1 (Recommended)
+
+If your attendance table now uses EmployeeNo, update the stored procedure.
+
+Example:
+
+ALTER PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @EmployeeNo NVARCHAR(50)
+AS
+BEGIN
+    INSERT INTO MeetingAttendance
+    (
+        MeetingId,
+        EmployeeNo,
+        TimeIn
+    )
+    VALUES
+    (
+        @MeetingId,
+        @EmployeeNo,
+        GETDATE()
+    )
+
+    SELECT 1 AS Result
+END
+
+Then your code is correct:
+
+insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+
+---
+
+Solution Option 2 (Quick Fix)
+
+If you cannot change the stored procedure, keep using CardSerialNo.
+
+insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+But still use EmployeeRecord only for name and department display.
+
+
+---
+
+How to Know Exactly Which Parameter is Missing
+
+The full error usually says something like:
+
+Procedure or function 'MA_InsertAttendee' expects parameter '@CardSerialNo', which was not supplied
+
+or
+
+expects parameter '@EmployeeNo'
+
+That name tells you what the stored procedure requires.
+
+
+---
+
+Most Likely Cause in Your Case
+
+Since your original code used CardSerialNo, the procedure probably still expects it.
+
+So change back to:
+
+insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+instead of
+
+insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+
+---
+
+Best Long-Term Design (Recommended for your system)
+
+Use both:
+
+MeetingId
+EmployeeNo
+CardSerialNo
+TimeIn
+
+This makes the attendance traceable and more secure.
+
+
+---
+
+✅ If you want, you can paste your MA_InsertAttendee stored procedure, and I can show you exactly what parameter your code must pass and also improve the procedure for your meeting attendance system.
+
+
+
+
+*****
+
+
+
 Yes, you can implement it like this:
 
 Logic you want:
