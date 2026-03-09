@@ -1,0 +1,114 @@
+        protected void txtCardSerial_TextChanged(object sender, EventArgs e)
+        {
+            string cardSerial = txtCardSerial.Text.Trim();
+            string meetingId = hfMeetingID.Value;
+
+            // Prefer real posted radio value; fallback to the hidden field (hfTapMode)
+            string tapMode = Request.Form["tapMode"];
+            if (string.IsNullOrEmpty(tapMode))
+                tapMode = hfTapMode.Value ?? "In";
+
+            if (string.IsNullOrEmpty(cardSerial))
+            {
+                ShowAlert("Invalid Tap", "Please place your card on the reader.", "", "alert-warning");
+                return;
+            }
+
+            string connStr = ConfigurationManager.ConnectionStrings["MeetingDb"].ConnectionString;
+
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+
+                    // Validate employee first
+                    string empName = "";
+                    string dept = "";
+
+                    using (SqlCommand cmd = new SqlCommand("MA_CheckEmployeeByCard", conn))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (!reader.Read())
+                            {
+                                txtCardSerial.Text = "";
+                                ShowAlert("Card Not Registered", "", "", "alert-danger");
+                                return;
+                            }
+                            empName = (reader["FirstName"] ?? "").ToString().Trim() + " " + (reader["MiddleName"] ?? "").ToString().Trim() + " " + (reader["LastName"] ?? "").ToString().Trim();
+                            dept = (reader["DivisionName"] ?? "").ToString().Trim() + " " + (reader["DepartmentName"] ?? "").ToString().Trim() + " " + (reader["SectionName"] ?? "").ToString().Trim();
+                        }
+                    }
+
+                    if (tapMode.Equals("In", StringComparison.OrdinalIgnoreCase))
+                    {
+                        using (SqlCommand insertCmd = new SqlCommand("MA_InsertAttendee", conn))
+                        {
+                            insertCmd.CommandType = CommandType.StoredProcedure;
+                            insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                            insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+                            //object resObj = insertCmd.ExecuteScalar();
+                            //int res = (resObj != null && int.TryParse(resObj.ToString(), out int tmp)) ? tmp : -1;
+
+                            using (SqlDataReader reader = insertCmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    int result = Convert.ToInt32(reader["Result"]);
+
+                                    if (result == 0)
+                                        ShowAlert("Already Tapped In", "", "", "alert-danger");
+                                    else if (result == 1)
+                                        ShowAlert("You have tapped in successfully!", empName, dept, "alert-success");
+                                    else
+                                        ShowAlert("Tap-in failed", "", "", "alert-danger");
+                                }
+                            }
+
+                            //if (res == 0)
+                            //    ShowAlert("Already Tapped In", empName, dept, "alert-warning");
+                            //else if (res == 1)
+                            //    ShowAlert("You have tapped in successfully!", empName, dept, "alert-success");
+                            //else
+                            //    ShowAlert("Tap-in failed", empName, dept, "alert-danger");
+                        }
+                    }
+                    else // Out
+                    {
+                        int rowsAffected = 0;
+
+                        using (SqlCommand updateCmd = new SqlCommand("MA_UpdateAttendeeTimeout", conn))
+                        {
+                            updateCmd.CommandType = CommandType.StoredProcedure;
+                            updateCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                            updateCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+                            //object result = updateCmd.ExecuteScalar();
+                            //int rows = (result != null && int.TryParse(result.ToString(), out int r)) ? r : 0;
+
+                            //conn.Open();
+                            rowsAffected = updateCmd.ExecuteNonQuery(); // This returns the number of rows affected
+
+                            if (rowsAffected > 0)
+                                ShowAlert("You have tapped out successfully!", empName, dept, "alert-success");
+                            else
+                                ShowAlert("Already tapped out or no tap-in found", "", "", "alert-danger");
+                        }
+                    }
+
+                    // Reset input and focus
+                    txtCardSerial.Text = "";
+                    ScriptManager.RegisterStartupScript(this, GetType(), "setFocus",
+                        $"document.getElementById('{txtCardSerial.ClientID}').focus();", true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Temporary debugging; in production log this instead
+                ShowAlert("Error", ex.Message, "", "alert-danger");
+            }
+        }
