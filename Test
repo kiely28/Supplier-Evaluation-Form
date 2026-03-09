@@ -1,3 +1,195 @@
+Yes, that is also possible and it is a good fallback design.
+
+Your system logic will become:
+
+Tap Card
+   ↓
+Check EmployeeRecord.cs
+   ↓
+IF found → use EmployeeRecord details
+IF not found → check MA_CheckEmployeeByCard
+   ↓
+Tap In / Tap Out
+
+This means:
+
+Source	Purpose
+
+EmployeeRecord.cs	Primary employee source
+MA_CheckEmployeeByCard	Backup source
+
+
+
+---
+
+Updated Complete Code (With Fallback)
+
+protected void txtCardSerial_TextChanged(object sender, EventArgs e)
+{
+    string cardSerial = txtCardSerial.Text.Trim();
+    string meetingId = hfMeetingID.Value;
+
+    string tapMode = Request.Form["tapMode"];
+    if (string.IsNullOrEmpty(tapMode))
+        tapMode = hfTapMode.Value ?? "In";
+
+    if (string.IsNullOrEmpty(cardSerial))
+    {
+        ShowAlert("Invalid Tap", "Please place your card on the reader.", "", "alert-warning");
+        return;
+    }
+
+    string connStr = ConfigurationManager.ConnectionStrings["MeetingDb"].ConnectionString;
+    string conns = ConfigurationManager.ConnectionStrings["StrConn"].ConnectionString;
+
+    string strEmpNo = "";
+    string empName = "";
+    string dept = "";
+
+    // FIRST: Check EmployeeRecord.cs
+    EmployeeRecord empRec = new EmployeeRecord(conns);
+    empRec.GetEmployeeDetailsByEM(cardSerial);
+
+    if (!string.IsNullOrEmpty(empRec.EmployeeNo))
+    {
+        // Found in EmployeeRecord
+        strEmpNo = empRec.EmployeeNo;
+
+        empName = empRec.FirstName + " " + empRec.MiddleName + " " + empRec.LastName;
+        dept = empRec.DivisionName + " " + empRec.DepartmentName + " " + empRec.SectionName;
+    }
+
+    try
+    {
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+
+            // SECOND: If not found in EmployeeRecord, check Meeting DB
+            if (string.IsNullOrEmpty(strEmpNo))
+            {
+                using (SqlCommand cmd = new SqlCommand("MA_CheckEmployeeByCard", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            txtCardSerial.Text = "";
+                            ShowAlert("Card Not Registered", "", "", "alert-danger");
+                            return;
+                        }
+
+                        strEmpNo = (reader["EmployeeNo"] ?? "").ToString().Trim();
+
+                        empName = (reader["FirstName"] ?? "").ToString().Trim() + " " +
+                                  (reader["MiddleName"] ?? "").ToString().Trim() + " " +
+                                  (reader["LastName"] ?? "").ToString().Trim();
+
+                        dept = (reader["DivisionName"] ?? "").ToString().Trim() + " " +
+                               (reader["DepartmentName"] ?? "").ToString().Trim() + " " +
+                               (reader["SectionName"] ?? "").ToString().Trim();
+                    }
+                }
+            }
+
+            if (tapMode.Equals("In", StringComparison.OrdinalIgnoreCase))
+            {
+                using (SqlCommand insertCmd = new SqlCommand("MA_InsertAttendee", conn))
+                {
+                    insertCmd.CommandType = CommandType.StoredProcedure;
+
+                    insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                    insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+                    using (SqlDataReader reader = insertCmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            int result = Convert.ToInt32(reader["Result"]);
+
+                            if (result == 0)
+                                ShowAlert("Already Tapped In", "", "", "alert-danger");
+                            else if (result == 1)
+                                ShowAlert("You have tapped in successfully!", empName, dept, "alert-success");
+                            else
+                                ShowAlert("Tap-in failed", "", "", "alert-danger");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                using (SqlCommand updateCmd = new SqlCommand("MA_UpdateAttendeeTimeout", conn))
+                {
+                    updateCmd.CommandType = CommandType.StoredProcedure;
+
+                    updateCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                    updateCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+                    int rowsAffected = updateCmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                        ShowAlert("You have tapped out successfully!", empName, dept, "alert-success");
+                    else
+                        ShowAlert("Already tapped out or no tap-in found", "", "", "alert-danger");
+                }
+            }
+
+            txtCardSerial.Text = "";
+
+            ScriptManager.RegisterStartupScript(this, GetType(), "setFocus",
+                $"document.getElementById('{txtCardSerial.ClientID}').focus();", true);
+        }
+    }
+    catch (Exception ex)
+    {
+        ShowAlert("Error", ex.Message, "", "alert-danger");
+    }
+}
+
+
+---
+
+Final Logic (Simple)
+
+Tap Card
+   ↓
+EmployeeRecord.cs
+   ↓
+Found?
+ ├─ YES → Use EmployeeRecord data
+ └─ NO  → Check MA_CheckEmployeeByCard
+            ↓
+         Found?
+         ├─ YES → Continue attendance
+         └─ NO  → Card Not Registered
+
+
+---
+
+Advantage of This Design
+
+✔ Faster (EmployeeRecord checked first)
+✔ Backward compatible with existing meeting DB
+✔ No attendance disruption if EmployeeRecord is missing data
+
+
+---
+
+💡 One more improvement I recommend for your system (very useful for RFID tapping systems):
+
+Add duplicate tap protection (1–2 seconds) because card readers often send multiple scans automatically.
+
+If you want, I can show you a very clean enterprise version of this method (about 40% cleaner code) that will make your Meeting Attendance System production-ready.
+
+
+
+******
+
+
 Below is the complete updated version of your txtCardSerial_TextChanged method where:
 
 ✅ The system checks employee using EmployeeRecord.cs first
