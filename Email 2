@@ -1,3 +1,275 @@
+Below is a complete example showing how to capture the HostName of the PC/Laptop and save it when tapping IN or OUT in your Meeting Attendance system.
+
+I kept your logic but added the hostname and cleaned the flow slightly.
+
+
+---
+
+Complete ASP.NET Code (Code Behind)
+
+protected void txtCardSerial_TextChanged(object sender, EventArgs e)
+{
+    string cardSerial = txtCardSerial.Text.Trim();
+    string meetingId = hfMeetingID.Value;
+
+    string tapMode = Request.Form["tapMode"];
+    if (string.IsNullOrEmpty(tapMode))
+        tapMode = hfTapMode.Value ?? "In";
+
+    if (string.IsNullOrEmpty(cardSerial))
+    {
+        ShowAlert("Invalid Tap", "Please place your card on the reader.", "", "alert-warning");
+        return;
+    }
+
+    string connStr = ConfigurationManager.ConnectionStrings["MeetingDb"].ConnectionString;
+    string conns = ConfigurationManager.ConnectionStrings["StrConn"].ConnectionString;
+
+    string strEmpNo = "";
+    string empName = "";
+    string dept = "";
+
+    // GET HOSTNAME
+    string hostName = Environment.MachineName;
+
+    // ==========================
+    // GET EMPLOYEE FROM EmployeeRecord
+    // ==========================
+    EmployeeRecord empRec = new EmployeeRecord(conns);
+    empRec.GetEmployeeDetailsByEM(cardSerial);
+
+    if (!string.IsNullOrEmpty(empRec.EmployeeNo))
+    {
+        strEmpNo = empRec.EmployeeNo;
+
+        empName = empRec.FirstName + " " +
+                  empRec.MiddleName + " " +
+                  empRec.LastName;
+
+        dept = empRec.DivisionName + " " +
+               empRec.DepartmentName + " " +
+               empRec.SectionName;
+    }
+
+    try
+    {
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+
+            // ======================================
+            // IF NOT FOUND IN EmployeeRecord CHECK DB
+            // ======================================
+            if (string.IsNullOrEmpty(strEmpNo))
+            {
+                using (SqlCommand cmd = new SqlCommand("MA_CheckEmployeeByCard", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            txtCardSerial.Text = "";
+                            ShowAlert("Card Not Registered", "", "", "alert-danger");
+                            return;
+                        }
+
+                        strEmpNo = (reader["EmployeeNo"] ?? "").ToString().Trim();
+
+                        empName =
+                            (reader["FirstName"] ?? "").ToString().Trim() + " " +
+                            (reader["MiddleName"] ?? "").ToString().Trim() + " " +
+                            (reader["LastName"] ?? "").ToString().Trim();
+
+                        dept =
+                            (reader["DivisionName"] ?? "").ToString().Trim() + " " +
+                            (reader["DepartmentName"] ?? "").ToString().Trim() + " " +
+                            (reader["SectionName"] ?? "").ToString().Trim();
+                    }
+                }
+            }
+
+            // ==========================
+            // TAP IN
+            // ==========================
+            if (tapMode.Equals("In", StringComparison.OrdinalIgnoreCase))
+            {
+                using (SqlCommand insertCmd = new SqlCommand("MA_InsertAttendee", conn))
+                {
+                    insertCmd.CommandType = CommandType.StoredProcedure;
+
+                    insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                    insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+                    insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+                    insertCmd.Parameters.AddWithValue("@HostName", hostName);
+
+                    using (SqlDataReader reader = insertCmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            int result = Convert.ToInt32(reader["Result"]);
+
+                            if (result == 0)
+                                ShowAlert("Already Tapped In", "", "", "alert-danger");
+                            else if (result == 1)
+                                ShowAlert("You have tapped in successfully!", empName, dept, "alert-success");
+                            else
+                                ShowAlert("Tap-in failed", "", "", "alert-danger");
+                        }
+                    }
+                }
+            }
+            // ==========================
+            // TAP OUT
+            // ==========================
+            else
+            {
+                using (SqlCommand updateCmd = new SqlCommand("MA_UpdateAttendeeTimeout", conn))
+                {
+                    updateCmd.CommandType = CommandType.StoredProcedure;
+
+                    updateCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+                    updateCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+                    updateCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+                    updateCmd.Parameters.AddWithValue("@HostName", hostName);
+
+                    int rowsAffected = updateCmd.ExecuteNonQuery();
+
+                    if (rowsAffected > 0)
+                        ShowAlert("You have tapped out successfully!", empName, dept, "alert-success");
+                    else
+                        ShowAlert("Already tapped out or no tap-in found", "", "", "alert-danger");
+                }
+            }
+
+            txtCardSerial.Text = "";
+
+            ScriptManager.RegisterStartupScript(
+                this,
+                GetType(),
+                "setFocus",
+                $"document.getElementById('{txtCardSerial.ClientID}').focus();",
+                true
+            );
+        }
+    }
+    catch (Exception ex)
+    {
+        ShowAlert("Error", ex.Message, "", "alert-danger");
+    }
+}
+
+
+---
+
+SQL Stored Procedure Example
+
+MA_InsertAttendee
+
+ALTER PROCEDURE MA_InsertAttendee
+(
+    @MeetingId NVARCHAR(50),
+    @CardSerialNo NVARCHAR(50),
+    @EmployeeNo NVARCHAR(50),
+    @HostName NVARCHAR(100)
+)
+AS
+BEGIN
+
+IF EXISTS
+(
+    SELECT 1 
+    FROM MeetingAttendees
+    WHERE MeetingId = @MeetingId
+    AND CardSerialNo = @CardSerialNo
+    AND TimeOut IS NULL
+)
+BEGIN
+    SELECT 0 AS Result
+    RETURN
+END
+
+INSERT INTO MeetingAttendees
+(
+    MeetingId,
+    CardSerialNo,
+    EmployeeNo,
+    TimeIn,
+    HostName
+)
+VALUES
+(
+    @MeetingId,
+    @CardSerialNo,
+    @EmployeeNo,
+    GETDATE(),
+    @HostName
+)
+
+SELECT 1 AS Result
+
+END
+
+
+---
+
+Table Example
+
+ALTER TABLE MeetingAttendees
+ADD HostName NVARCHAR(100)
+
+Example data saved:
+
+MeetingID	EmployeeNo	CardSerialNo	TimeIn	TimeOut	HostName
+
+M001	10023	43214321	09:01	NULL	HR-PC01
+M001	10023	43214321	09:01	10:30	HR-PC01
+
+
+
+---
+
+💡 Recommended improvement for your system
+
+Also store:
+
+HostName
+
+IP Address
+
+Reader Location
+
+
+Example:
+
+string ipAddress = Request.UserHostAddress;
+
+Then you will know:
+
+Meeting	Card	Host	IP	Time
+
+M001	12345	HR-PC01	192.168.1.20	9:01
+
+
+
+---
+
+If you want, I can also show you a more advanced version of your tapping system used in enterprise attendance systems:
+
+✅ Prevent double tap in milliseconds
+✅ Display last 10 attendees live
+✅ Show tap status animation
+✅ Auto switch Tap In / Tap Out
+✅ Multi-reader support (multiple PCs)
+
+It will greatly improve your attendance system.
+
+
+*****
+
+
 Nice work — this is already a solid, production-grade macro 👍
 You’ve clearly thought about logging, recovery, archiving, validation, and UX, which is not common in typical VBA scripts.
 
