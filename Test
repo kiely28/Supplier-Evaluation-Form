@@ -1,3 +1,144 @@
+Yes. The error happens because your code and the stored procedure parameters do not match.
+
+The safest way to fix it is to make sure the parameters in your C# code are exactly the same as the parameters expected by MA_InsertAttendee.
+
+Below are the recommended steps.
+
+
+---
+
+1️⃣ Check the Stored Procedure Parameters
+
+Run this in SQL Server:
+
+sp_help MA_InsertAttendee
+
+or
+
+EXEC sp_helptext 'MA_InsertAttendee'
+
+Example output might show:
+
+CREATE PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @CardSerialNo NVARCHAR(50)
+
+or
+
+CREATE PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @EmployeeNo NVARCHAR(50)
+
+This tells you what parameters the procedure expects.
+
+
+---
+
+2️⃣ Match the Parameters in C# Code
+
+If the procedure expects @CardSerialNo
+
+Change your code to:
+
+insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+
+---
+
+If the procedure expects @EmployeeNo
+
+Then your current code is correct:
+
+insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+But you must also update the stored procedure.
+
+Example:
+
+ALTER PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @EmployeeNo NVARCHAR(50)
+AS
+BEGIN
+    INSERT INTO MeetingAttendance
+    (
+        MeetingId,
+        EmployeeNo,
+        TimeIn
+    )
+    VALUES
+    (
+        @MeetingId,
+        @EmployeeNo,
+        GETDATE()
+    )
+
+    SELECT 1 AS Result
+END
+
+
+---
+
+3️⃣ Best Fix for Your System (Recommended)
+
+Since your system now uses EmployeeRecord.cs, the better design is:
+
+Stored procedure parameters:
+
+@MeetingId
+@EmployeeNo
+
+Then your code remains:
+
+insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+
+This is cleaner and more future-proof.
+
+
+---
+
+4️⃣ Quick Debug Tip
+
+If you want to quickly see the missing parameter, wrap your insert code like this:
+
+foreach (SqlParameter p in insertCmd.Parameters)
+{
+    System.Diagnostics.Debug.WriteLine(p.ParameterName);
+}
+
+But usually the SQL error message already tells the missing parameter name.
+
+Example:
+
+Procedure or function MA_InsertAttendee expects parameter '@CardSerialNo', which was not supplied.
+
+
+---
+
+✅ My recommendation for your meeting attendance system:
+
+Keep these parameters:
+
+@MeetingId
+@EmployeeNo
+
+and update the stored procedure to use EmployeeNo instead of CardSerialNo.
+
+This will make the system independent from the card hardware.
+
+
+---
+
+💡 If you want, paste your MA_InsertAttendee stored procedure, and I can fix it for you in 1 clean version compatible with your new EmployeeRecord logic.
+
+
+
+*****
+
+
 The error:
 
 Procedure or function 'MA_InsertAttendee' expects parameter '@____', which was not supplied
