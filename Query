@@ -1,0 +1,36 @@
+		SELECT
+			[EmployeeNo], [FirstName], [MiddleName], [LastName],
+			[APOAccount], [DepartmentName], [DivisionName]
+		FROM [dbo].[TBL_M_USERMASTER]
+		WHERE 
+			CASE
+				WHEN LEN([EM]) > 10 THEN SUBSTRING([EM], 1 ,10) 
+				ELSE [EM] END = @EM
+		
+		*****
+
+
+		SELECT
+			[EmployeeNo], [FirstName], [MiddleName], [LastName],
+			[APOAccount], [DepartmentName], [DivisionName]
+		FROM [dbo].[TBL_M_USERMASTER]
+		WHERE 
+			[APOAccount] =
+				(SELECT TOP 1 [APOAccount] FROM [dbo].[vw_UserMaster_CardSerialNo]
+				WHERE [CardSerialNo] =  @EM)
+
+		
+		*****
+
+
+		SELECT 
+		h.EmployeeNo,
+		CONCAT(h.FirstName, ' ', COALESCE(h.MiddleName, ''), ' ', h.LastName) AS FullName,
+		h.Grade,
+		CONCAT(h.DivisionName, '/', h.DepartmentName, '/', h.SectionName) AS Department,
+		m.TapIn,
+		m.TapOut
+	FROM tbl_participants m
+	LEFT JOIN @TEMP h ON m.CardSerialNo = h.CardSerialNo
+	WHERE m.MeetingId = @meetingid
+	ORDER BY m.id DESC
