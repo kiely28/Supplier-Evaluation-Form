@@ -1,4 +1,94 @@
-		SELECT
+
+Since your report reads from tbl_participants and only has CardSerialNo, you need to resolve that card to the employee using both RFID rules:
+
+Old RFID → vw_UserMaster_CardSerialNo.CardSerialNo
+
+New RFID → TBL_M_USERMASTER.EM (first 10 characters sometimes)
+
+
+You can join both conditions when linking to TBL_M_USERMASTER.
+
+Recommended Reporting Query
+
+SELECT 
+    h.EmployeeNo,
+    CONCAT(h.FirstName, ' ', COALESCE(h.MiddleName, ''), ' ', h.LastName) AS FullName,
+    h.Grade,
+    CONCAT(h.DivisionName, '/', h.DepartmentName, '/', h.SectionName) AS Department,
+    m.TapIn,
+    m.TapOut
+FROM tbl_participants m
+LEFT JOIN dbo.TBL_M_USERMASTER h
+    ON 
+        -- New RFID match
+        (CASE 
+            WHEN LEN(h.EM) > 10 THEN SUBSTRING(h.EM,1,10)
+            ELSE h.EM
+        END = m.CardSerialNo)
+
+        OR
+
+        -- Old RFID match
+        EXISTS (
+            SELECT 1
+            FROM dbo.vw_UserMaster_CardSerialNo v
+            WHERE v.APOAccount = h.APOAccount
+            AND v.CardSerialNo = m.CardSerialNo
+        )
+
+WHERE m.MeetingId = @meetingid
+ORDER BY m.id DESC;
+
+How it Works
+
+When generating the report:
+
+1. tbl_participants.CardSerialNo is checked against new RFID (EM).
+
+
+2. If not matched, it checks old RFID (vw_UserMaster_CardSerialNo).
+
+
+3. If either matches, it retrieves the employee info.
+
+
+
+So your report supports both IDs used during tapping.
+
+Data Flow
+
+tbl_participants.CardSerialNo
+        │
+        ├─ New RFID → TBL_M_USERMASTER.EM
+        │
+        └─ Old RFID → vw_UserMaster_CardSerialNo → APOAccount → TBL_M_USERMASTER
+
+Benefit
+
+✔ Works for both old and new ID cards
+✔ Uses only tbl_participants.CardSerialNo (good for reports)
+✔ No temp table or union needed
+
+
+---
+
+💡 Optional (Much Cleaner & Faster Query)
+I can also show you a professional production query that uses two LEFT JOINs instead of OR/EXISTS, which is much faster for large attendance reports (thousands of taps).
+
+
+
+
+
+
+*****
+
+
+
+
+
+
+
+SELECT
 			[EmployeeNo], [FirstName], [MiddleName], [LastName],
 			[APOAccount], [DepartmentName], [DivisionName]
 		FROM [dbo].[TBL_M_USERMASTER]
