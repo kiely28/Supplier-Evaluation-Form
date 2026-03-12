@@ -1,0 +1,18 @@
+	SELECT 
+		mt.MeetingId,
+		mt.Title,
+
+		mt.StartDateTime,
+		mt.EndDateTime,
+
+		h.EmployeeNo,
+		CONCAT(h.FirstName, ' ', COALESCE(h.MiddleName, ''), ' ', h.LastName) AS FullName,
+		h.Grade,
+		CONCAT(h.DivisionName, ' / ', h.DepartmentName, ' / ', h.SectionName) AS Department,
+		m.TapIn,
+		COALESCE(m.TapOut, NULL) AS TapOut
+	FROM tbl_participants m
+	LEFT JOIN @TEMP h ON m.CardSerialNo = h.CardSerialNo
+	LEFT JOIN tbl_meetings mt ON m.MeetingId = mt.MeetingId
+	WHERE mt.CreatedBy = @CreatedBy
+	ORDER BY m.id DESC;
