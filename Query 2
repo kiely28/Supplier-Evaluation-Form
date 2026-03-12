@@ -1,4 +1,202 @@
 
+Your query is mostly correct and will work, but there are a few things you can simplify and improve for performance and clarity. I’ll explain the important parts and suggest a cleaner version.
+
+
+---
+
+1. Issue with COALESCE(m.TapOut, NULL)
+
+This part:
+
+COALESCE(m.TapOut, NULL) AS TapOut
+
+is unnecessary.
+
+COALESCE(x, NULL) will always return x, because NULL does not change anything.
+
+So this:
+
+COALESCE(m.TapOut, NULL)
+
+is exactly the same as:
+
+m.TapOut
+
+✔ Replace with:
+
+m.TapOut
+
+
+---
+
+2. Join Condition (RFID Matching)
+
+Your join logic is correct because you support:
+
+1️⃣ New RFID (first 10 characters of EM)
+2️⃣ Old RFID from vw_UserMaster_CardSerialNo
+
+But using OR EXISTS inside a JOIN can sometimes slow down queries if the tables are large.
+
+Your logic:
+
+(CASE 
+    WHEN LEN(h.EM) > 10 THEN SUBSTRING(h.EM,1,10)
+    ELSE h.EM
+END = m.CardSerialNo)
+
+OR EXISTS (
+    SELECT 1
+    FROM vw_UserMaster_CardSerialNo v
+    WHERE v.APOAccount = h.APOAccount
+    AND v.CardSerialNo = m.CardSerialNo
+)
+
+This is valid, but just be aware it may impact performance if your tables grow large.
+
+
+---
+
+3. Better Query Structure
+
+I recommend this cleaned version.
+
+SELECT 
+    mt.MeetingId,
+    mt.Title,
+    mt.StartDateTime,
+    mt.EndDateTime,
+
+    h.EmployeeNo,
+    CONCAT(h.FirstName, ' ', COALESCE(h.MiddleName, ''), ' ', h.LastName) AS FullName,
+    h.Grade,
+    CONCAT(h.DivisionName, ' / ', h.DepartmentName, ' / ', h.SectionName) AS Department,
+
+    m.TapIn,
+    m.TapOut
+
+FROM tbl_participants m
+
+LEFT JOIN [db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER] h
+    ON 
+        (
+            CASE 
+                WHEN LEN(h.EM) > 10 THEN SUBSTRING(h.EM,1,10)
+                ELSE h.EM
+            END = m.CardSerialNo
+        )
+        OR EXISTS
+        (
+            SELECT 1
+            FROM [db_EPPIIIP_New].[dbo].[vw_UserMaster_CardSerialNo] v
+            WHERE v.APOAccount = h.APOAccount
+            AND v.CardSerialNo = m.CardSerialNo
+        )
+
+LEFT JOIN tbl_meetings mt
+    ON m.MeetingId = mt.MeetingId
+
+WHERE mt.CreatedBy = @CreatedBy
+
+ORDER BY m.Id DESC;
+
+
+---
+
+4. Small Improvement (FullName spacing issue)
+
+If MiddleName is NULL you will get double spaces.
+
+Example:
+
+John  Doe
+
+Better version:
+
+CONCAT(
+    h.FirstName, ' ',
+    ISNULL(h.MiddleName + ' ', ''),
+    h.LastName
+) AS FullName
+
+
+---
+
+5. Final Optimized SELECT
+
+Best version I recommend:
+
+SELECT 
+    mt.MeetingId,
+    mt.Title,
+    mt.StartDateTime,
+    mt.EndDateTime,
+
+    h.EmployeeNo,
+    CONCAT(h.FirstName, ' ', ISNULL(h.MiddleName + ' ', ''), h.LastName) AS FullName,
+    h.Grade,
+    CONCAT(h.DivisionName, ' / ', h.DepartmentName, ' / ', h.SectionName) AS Department,
+
+    m.TapIn,
+    m.TapOut
+
+FROM tbl_participants m
+
+LEFT JOIN [db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER] h
+    ON (
+            CASE 
+                WHEN LEN(h.EM) > 10 THEN SUBSTRING(h.EM,1,10)
+                ELSE h.EM
+            END = m.CardSerialNo
+       )
+       OR EXISTS
+       (
+            SELECT 1
+            FROM [db_EPPIIIP_New].[dbo].[vw_UserMaster_CardSerialNo] v
+            WHERE v.APOAccount = h.APOAccount
+            AND v.CardSerialNo = m.CardSerialNo
+       )
+
+LEFT JOIN tbl_meetings mt
+    ON m.MeetingId = mt.MeetingId
+
+WHERE mt.CreatedBy = @CreatedBy
+
+ORDER BY m.Id DESC;
+
+
+---
+
+💡 Suggestion for your Meeting Attendance System
+
+Since you're already building a SQL Server + Stored Procedure attendance system, a better design is to store EmployeeNo in tbl_participants when tapping.
+
+Then you can avoid RFID matching every time in reports, making the query much faster.
+
+Example table improvement:
+
+tbl_participants
+-----------------
+Id
+MeetingId
+EmployeeNo
+CardSerialNo
+TapIn
+TapOut
+HostName
+
+Then your report query becomes 10x simpler.
+
+
+---
+
+If you want, I can also show you a PROFESSIONAL version used in large systems that avoids the OR EXISTS join and runs much faster in SQL Server. It’s a very useful trick for attendance systems.
+
+
+
+******
+
+
 
 
 	SELECT 
