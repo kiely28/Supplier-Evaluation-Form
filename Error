@@ -3,3 +3,30 @@ Employee not found
 Description: An unhandled exception occurred during the execution of the current web request. Please review the stack trace for more information about the error and where it originated in the code.
 
 Exception Details: System.Exception: Employee not found
+
+Source Error:
+
+An unhandled exception was generated during the execution of the current web request. Information regarding the origin and location of the exception can be identified using the exception stack trace below.
+
+Stack Trace:
+
+
+[Exception: Employee not found]
+   CommonClass.EmployeeRecord.GetEmployeeDetailsByEM(String strEM) in C:\Users\B014172\Desktop\Update1\meetingattendancetapping\meetingattendance\EmployeeRecord.cs:112
+   meetingattendance.meetingattendance.txtCardSerial_TextChanged(Object sender, EventArgs e) in C:\Users\B014172\Desktop\Update1\meetingattendancetapping\meetingattendance\meetingattendance.aspx.cs:151
+   System.Web.UI.WebControls.TextBox.OnTextChanged(EventArgs e) +139
+   System.Web.UI.Page.RaiseChangedEvents() +206
+   System.Web.UI.Page.ProcessRequestMain(Boolean includeStagesBeforeAsyncPoint, Boolean includeStagesAfterAsyncPoint) +1831
+
+Version Information: Microsoft .NET Framework Version:4.0.30319; ASP.NET Version:4.8.9316.0
+
+
+*******
+
+
+
+Server Error in '/meetingattendance' Application.
+Employee not found
+Description: An unhandled exception occurred during the execution of the current web request. Please review the stack trace for more information about the error and where it originated in the code.
+
+Exception Details: System.Exception: Employee not found
