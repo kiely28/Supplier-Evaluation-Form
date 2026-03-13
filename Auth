@@ -1,0 +1,176 @@
+You can automate the SAP GUI export to Excel (Spreadsheet → XLSX) using an Excel VBA macro with SAP GUI Scripting. The macro will:
+
+1. Connect to the open SAP GUI session
+
+
+2. Navigate to the Users by complex selection criteria screen
+
+
+3. Open the Role Assignment table
+
+
+4. Right-click the table
+
+
+5. Choose Spreadsheet
+
+
+6. Save the file automatically as .xlsx
+
+
+
+Below is a basic VBA macro template you can modify.
+
+
+---
+
+1. Requirements
+
+Before using the macro:
+
+1. SAP GUI Scripting must be enabled
+
+In SAP:
+Alt + F12 → Options → Accessibility & Scripting → Enable scripting
+
+
+
+2. Excel VBA enabled
+
+
+3. SAP session already open
+
+
+
+
+---
+
+2. VBA Macro Example
+
+Open Excel → VBA Editor (ALT + F11) → Module → Paste this code
+
+Sub ExportSAPRoleAssignment()
+
+    Dim SapGuiAuto As Object
+    Dim SAPApp As Object
+    Dim SAPCon As Object
+    Dim session As Object
+    
+    Dim SavePath As String
+    
+    'File save location
+    SavePath = "C:\SAPExports\RoleAssignment.xlsx"
+
+    'Connect to SAP
+    Set SapGuiAuto = GetObject("SAPGUI")
+    Set SAPApp = SapGuiAuto.GetScriptingEngine
+    Set SAPCon = SAPApp.Children(0)
+    Set session = SAPCon.Children(0)
+
+    'Make sure SAP window is active
+    session.findById("wnd[0]").maximize
+    
+    'Right click the Role Assignment table
+    session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").contextMenu
+    
+    'Select Spreadsheet export
+    session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").selectContextMenuItem "&XXL"
+    
+    'Choose XLSX format
+    session.findById("wnd[1]/usr/radRB_OTHERS").Select
+    
+    'Continue
+    session.findById("wnd[1]/tbar[0]/btn[0]").press
+    
+    'Save file path
+    session.findById("wnd[1]/usr/ctxtDY_PATH").Text = "C:\SAPExports"
+    session.findById("wnd[1]/usr/ctxtDY_FILENAME").Text = "RoleAssignment.xlsx"
+    
+    'Save
+    session.findById("wnd[1]/tbar[0]/btn[11]").press
+
+    MsgBox "Export completed!"
+
+End Sub
+
+
+---
+
+3. How to Get the Correct SAP Object IDs (Important)
+
+Every SAP system has different control IDs like:
+
+wnd[0]/usr/cntlGRID1/shellcont/shell
+
+To get the exact IDs:
+
+1. Open SAP
+
+
+2. Press Alt + F12
+
+
+3. Click Script Recording and Playback
+
+
+4. Click Record
+
+
+5. Perform:
+
+Right click Role Assignment table
+
+Spreadsheet
+
+Save
+
+
+
+6. Stop recording
+
+
+
+SAP will generate a .vbs script.
+You can copy the relevant lines into your Excel VBA.
+
+
+---
+
+4. Typical SAP Recorded Line for Spreadsheet Export
+
+Usually it looks like this:
+
+session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").pressToolbarContextButton "&MB_EXPORT"
+session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").selectContextMenuItem "&XXL"
+
+&XXL = Spreadsheet export.
+
+
+---
+
+5. Recommended Improvement
+
+Instead of overwriting the file, generate a timestamped filename:
+
+SavePath = "C:\SAPExports\RoleAssignment_" & Format(Now, "yyyymmdd_hhmmss") & ".xlsx"
+
+
+---
+
+✅ Since you are already working with Excel VBA macros for file automation, this approach fits well with your workflow.
+
+
+---
+
+💡 If you want, I can also show you a more advanced macro that:
+
+Runs SUIM → Users by Complex Selection Criteria automatically
+
+Exports Role Assignment
+
+Saves multiple reports automatically
+
+Combines them into one Excel file
+
+
+This is commonly used for SAP user audit reporting.
