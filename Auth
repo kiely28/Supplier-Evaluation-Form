@@ -1,4 +1,79 @@
 
+' Create Excel application object
+Dim xlApp, xlBook, xlSheet
+Set xlApp = CreateObject("Excel.Application")
+xlApp.Visible = True ' Make Excel visible
+
+' Open the target workbook
+Set xlBook = xlApp.Workbooks.Open("D:\DownloadGNSTblAuth\TBL_AUTH\YourWorkbook.xlsx")
+Set xlSheet = xlBook.Sheets(1) ' Select the first sheet
+
+' Paste clipboard contents at cell A1
+xlSheet.Range("A1").Select
+xlSheet.Paste
+
+' Delete the first row
+xlSheet.Rows("1:1").Delete Shift:=xlUp
+
+' Sort the data in column A from A to Z
+With xlSheet.Sort
+    .SortFields.Clear
+    .SortFields.Add2 Key:=xlSheet.Range("A1:A4441"), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+    .SetRange xlSheet.Range("A1:A4441")
+    .Header = xlNo
+    .MatchCase = False
+    .Orientation = xlTopToBottom
+    .SortMethod = xlPinYin
+    .Apply
+End With
+
+' Apply AutoFilter and clear specific contents
+xlSheet.Range("$A$1:$A$4442").AutoFilter Field:=1, Criteria1:="--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+xlSheet.Range("A1").Select
+xlSheet.Range(xlSheet.Range("A1"), xlSheet.Range("A1").End(xlDown)).ClearContents
+
+' Sort the data in column A from Z to A
+With xlSheet.Sort
+    .SortFields.Clear
+    .SortFields.Add2 Key:=xlSheet.Range("A1:A4442"), SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:=xlSortNormal
+    .SetRange xlSheet.Range("A1:A4442")
+    .Header = xlNo
+    .MatchCase = False
+    .Orientation = xlTopToBottom
+    .SortMethod = xlPinYin
+    .Apply
+End With
+
+' Convert text to columns using delimiter "|"
+xlSheet.Columns("A:A").TextToColumns Destination:=xlSheet.Range("A1"), DataType:=xlDelimited, _
+    TextQualifier:=xlDoubleQuote, ConsecutiveDelimiter:=False, Tab:=True, _
+    Semicolon:=False, Comma:=False, Space:=False, Other:=True, OtherChar:="|", _
+    FieldInfo:=Array(Array(1, 1), Array(2, 1), Array(3, 1), Array(4, 1), Array(5, 1), _
+    Array(6, 1), Array(7, 1), Array(8, 1), Array(9, 1), Array(10, 1), Array(11, 1)), _
+    TrailingMinusNumbers:=True
+
+' Delete the first column
+xlSheet.Columns("A:A").Delete Shift:=xlToLeft
+
+    xlSheet.Range("A1").Select
+    xlSheet.Range("A1").Value = "User Name"
+    xlSheet.Range("B1").Select
+    xlSheet.Range("B1").Value = "Complete name"
+    xlSheet.Range("E1").Select
+    xlSheet.Range("E1").Value = "Room Number"
+    xlSheet.Range("F1").Select
+    xlSheet.Range("F1").Value = "Valid through"
+
+' Save the workbook as CSV
+xlBook.SaveAs Filename:="D:\FINAL PAY\export1.csv", FileFormat:=xlCSVUTF8, CreateBackup:=False
+
+
+
+
+*****
+
+
+
 When SAP opens the Windows “Save As” dialog, normal SAP GUI scripting cannot control it because it is a Windows OS dialog, not part of SAP. To automate entering the file path and filename, you usually use VBA + SendKeys or Windows Script Host.
 
 Below are common methods.
