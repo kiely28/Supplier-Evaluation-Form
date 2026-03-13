@@ -1,3 +1,164 @@
+
+When SAP opens the Windows “Save As” dialog, normal SAP GUI scripting cannot control it because it is a Windows OS dialog, not part of SAP. To automate entering the file path and filename, you usually use VBA + SendKeys or Windows Script Host.
+
+Below are common methods.
+
+
+---
+
+Method 1 — Use VBA SendKeys (Simplest)
+
+After you click Spreadsheet, SAP opens the Windows Save As window.
+You can send keystrokes to fill the filename and press Save.
+
+Example VBA Macro
+
+Sub SAP_SaveAs_Automation()
+
+    Dim SapGuiAuto As Object
+    Dim SAPApp As Object
+    Dim SAPCon As Object
+    Dim session As Object
+    
+    Dim filePath As String
+    
+    filePath = "C:\SAPExports\RoleAssignment.xlsx"
+
+    Set SapGuiAuto = GetObject("SAPGUI")
+    Set SAPApp = SapGuiAuto.GetScriptingEngine
+    Set SAPCon = SAPApp.Children(0)
+    Set session = SAPCon.Children(0)
+
+    'Export spreadsheet
+    session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").pressToolbarContextButton "&MB_EXPORT"
+    session.findById("wnd[0]/usr/cntlGRID1/shellcont/shell").selectContextMenuItem "&XXL"
+
+    'Wait for Save As dialog
+    Application.Wait Now + TimeValue("0:00:02")
+
+    'Type path and filename
+    SendKeys filePath, True
+
+    'Press Save
+    SendKeys "{ENTER}", True
+
+End Sub
+
+How it works
+
+1. SAP opens Save As
+
+
+2. Macro waits 2 seconds
+
+
+3. SendKeys types full file path
+
+
+4. {ENTER} presses Save
+
+
+
+
+---
+
+Method 2 — Use WScript.Shell (More Reliable)
+
+This is better than plain SendKeys.
+
+Sub SAP_SaveAs_Automation()
+
+    Dim shell As Object
+    Set shell = CreateObject("WScript.Shell")
+
+    'Wait for Save As dialog
+    Application.Wait Now + TimeValue("0:00:02")
+
+    shell.SendKeys "C:\SAPExports\RoleAssignment.xlsx"
+    shell.SendKeys "{ENTER}"
+
+End Sub
+
+
+---
+
+Method 3 — Use SAP Built-in Export (BEST if available)
+
+Sometimes SAP still shows its own dialog first, which is scriptable.
+
+Example:
+
+session.findById("wnd[1]/usr/ctxtDY_PATH").Text = "C:\SAPExports"
+session.findById("wnd[1]/usr/ctxtDY_FILENAME").Text = "RoleAssignment.xlsx"
+session.findById("wnd[1]/tbar[0]/btn[11]").press
+
+If this dialog appears, you do NOT need SendKeys.
+
+
+---
+
+Important Tips
+
+1️⃣ Always add a delay
+
+Windows dialog takes time to open.
+
+Application.Wait Now + TimeValue("0:00:02")
+
+
+---
+
+2️⃣ Use full path
+
+Example:
+
+C:\SAPExports\Roles_20260313.xlsx
+
+
+---
+
+3️⃣ Prevent overwriting
+
+Add timestamp.
+
+filePath = "C:\SAPExports\Roles_" & Format(Now, "yyyymmdd_hhmmss") & ".xlsx"
+
+
+---
+
+Best Practice for SAP Automation
+
+Professional SAP automation normally uses:
+
+SAP GUI scripting
+
+Excel VBA
+
+Power Automate
+
+AutoHotkey
+
+
+because Windows Save As dialogs cannot be fully controlled by SAP scripting alone.
+
+
+---
+
+✅ If you want, I can also show a much cleaner SAP VBA automation used by auditors, where:
+
+SAP exports without showing the Save As window
+
+File path is controlled directly by VBA
+
+Multiple SUIM reports export automatically
+
+
+This approach is 10× more stable than SendKeys.
+
+
+****
+
+
 You can automate the SAP GUI export to Excel (Spreadsheet → XLSX) using an Excel VBA macro with SAP GUI Scripting. The macro will:
 
 1. Connect to the open SAP GUI session
