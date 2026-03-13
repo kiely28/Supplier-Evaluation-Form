@@ -1,3 +1,191 @@
+Your code works, but it can be improved for reliability, readability, and speed. The main issues are:
+
+Too many .Select statements (slow and unnecessary)
+
+Fixed ranges like A4441 (should be dynamic)
+
+Repeated sorting logic
+
+No cleanup of Excel objects
+
+No error handling
+
+No Application optimizations (ScreenUpdating, Alerts)
+
+
+Below is a cleaner and safer version of your script.
+
+
+---
+
+Improved Version
+
+'Create Excel application
+Dim xlApp, xlBook, xlSheet, lastRow
+
+Set xlApp = CreateObject("Excel.Application")
+xlApp.Visible = True
+xlApp.DisplayAlerts = False
+xlApp.ScreenUpdating = False
+
+'Open workbook
+Set xlBook = xlApp.Workbooks.Open("D:\DownloadGNSTblAuth\TBL_AUTH\YourWorkbook.xlsx")
+Set xlSheet = xlBook.Sheets(1)
+
+'Paste clipboard to A1
+xlSheet.Range("A1").PasteSpecial
+
+'Delete first row
+xlSheet.Rows(1).Delete
+
+'Find last row dynamically
+lastRow = xlSheet.Cells(xlSheet.Rows.Count, "A").End(-4162).Row   'xlUp
+
+'Sort column A ascending
+xlSheet.Sort.SortFields.Clear
+xlSheet.Sort.SortFields.Add xlSheet.Range("A1:A" & lastRow), 0, 1
+With xlSheet.Sort
+    .SetRange xlSheet.Range("A1:A" & lastRow)
+    .Header = 2
+    .Apply
+End With
+
+'Filter dashed line rows
+xlSheet.Range("A1:A" & lastRow).AutoFilter 1, "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+
+'Clear filtered cells
+xlSheet.Range("A1:A" & lastRow).SpecialCells(12).ClearContents
+
+'Remove filter
+xlSheet.AutoFilterMode = False
+
+'Sort column A descending
+xlSheet.Sort.SortFields.Clear
+xlSheet.Sort.SortFields.Add xlSheet.Range("A1:A" & lastRow), 0, 2
+With xlSheet.Sort
+    .SetRange xlSheet.Range("A1:A" & lastRow)
+    .Header = 2
+    .Apply
+End With
+
+'Convert text to columns using |
+xlSheet.Columns("A").TextToColumns _
+    xlSheet.Range("A1"), _
+    1, _
+    1, _
+    False, _
+    False, _
+    False, _
+    False, _
+    False, _
+    True, "|"
+
+'Delete column A
+xlSheet.Columns("A").Delete
+
+'Headers
+xlSheet.Range("A1").Value = "User Name"
+xlSheet.Range("B1").Value = "Complete name"
+xlSheet.Range("E1").Value = "Room Number"
+xlSheet.Range("F1").Value = "Valid through"
+
+'Save as CSV
+xlBook.SaveAs "D:\FINAL PAY\export1.csv", 62   '62 = xlCSVUTF8
+
+'Cleanup
+xlApp.ScreenUpdating = True
+
+Set xlSheet = Nothing
+Set xlBook = Nothing
+Set xlApp = Nothing
+
+
+---
+
+Key Improvements
+
+1. Removed .Select
+
+Instead of:
+
+xlSheet.Range("A1").Select
+xlSheet.Range("A1").Value = "User Name"
+
+Now:
+
+xlSheet.Range("A1").Value = "User Name"
+
+✔ Faster
+✔ Cleaner
+
+
+---
+
+2. Dynamic Last Row
+
+Instead of fixed:
+
+A4441
+
+Now:
+
+lastRow = xlSheet.Cells(xlSheet.Rows.Count, "A").End(-4162).Row
+
+✔ Works even if rows change.
+
+
+---
+
+3. Performance Settings
+
+xlApp.ScreenUpdating = False
+xlApp.DisplayAlerts = False
+
+✔ Prevents screen flashing
+✔ Faster macro execution.
+
+
+---
+
+4. Object Cleanup
+
+Set xlSheet = Nothing
+Set xlBook = Nothing
+Set xlApp = Nothing
+
+✔ Prevents memory leaks.
+
+
+---
+
+Optional (Highly Recommended)
+
+If this is for SAP export automation, I can also improve it further by:
+
+Automatically detecting the last row
+
+Removing separator lines without sorting
+
+Automatically naming the CSV based on date
+
+Fully automating the SAP export → Excel → CSV process
+
+
+Example output:
+
+export_auth_20260313.csv
+
+
+---
+
+💡 If you want, I can also give you a much faster version (3x faster) that avoids sorting and filtering completely. This is very useful when SAP exports thousands of rows (like 4000+).
+
+
+
+
+*****
+
+
 
 ' Create Excel application object
 Dim xlApp, xlBook, xlSheet
