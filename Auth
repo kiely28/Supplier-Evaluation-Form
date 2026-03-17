@@ -1,3 +1,117 @@
+Here are 5 simple Kaizen improvements for office/desktop setup, each with Before, After, and Effectiveness:
+
+
+---
+
+1. Organize Cables (Cable Management)
+
+Before:
+Messy and tangled cables under the desk; hard to identify which cable belongs to which device.
+
+After:
+Cables are grouped using cable ties or clips and labeled properly.
+
+Effectiveness:
+
+Easier troubleshooting
+
+Cleaner workspace
+
+Reduced risk of accidental unplugging
+
+
+
+---
+
+2. Desktop File Organization (Digital Clean-up)
+
+Before:
+Desktop full of random files and shortcuts; difficult to find documents.
+
+After:
+Files are sorted into folders (e.g., Reports, SAP, Projects) with proper naming.
+
+Effectiveness:
+
+Faster file access
+
+Improved productivity
+
+Less stress and confusion
+
+
+
+---
+
+3. Standardized Naming for Files
+
+Before:
+Files saved with unclear names like “New1”, “Final”, “Test”.
+
+After:
+Use consistent format (e.g., YYYY-MM-DD_ProjectName_Version).
+
+Effectiveness:
+
+Easy tracking of versions
+
+Better collaboration
+
+Reduced duplication/errors
+
+
+
+---
+
+4. Clean Desk Policy
+
+Before:
+Papers, pens, and unused items scattered on the desk.
+
+After:
+Only essential items are kept; others stored in drawers or organizers.
+
+Effectiveness:
+
+More working space
+
+Better focus
+
+Professional appearance
+
+
+
+---
+
+5. Labeling of Office Items
+
+Before:
+Drawers, folders, and storage boxes are not labeled.
+
+After:
+Labels added for easy identification (e.g., “Stationery”, “Invoices”, “Tools”).
+
+Effectiveness:
+
+Saves time searching
+
+Standardized workplace
+
+Easier for others to locate items
+
+
+
+---
+
+If you want, I can format this into a Kaizen report (with table + presentation style) for your office submission 👍
+
+
+
+
+*****
+
+
+
 Your code works, but it can be improved for reliability, readability, and speed. The main issues are:
 
 Too many .Select statements (slow and unnecessary)
