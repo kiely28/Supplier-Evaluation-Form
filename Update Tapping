@@ -1,0 +1,408 @@
+
+
+
+
+***
+
+
+
+
+Got it — your issue is now very clear:
+
+> You are saving CardSerialNo for both new and old RFID, so the system treats them as different identities, even if they belong to the same employee → resulting in duplicate records.
+
+
+
+
+---
+
+🔥 Root Cause
+
+Your table logic is like:
+
+MeetingId + CardSerialNo
+
+So:
+
+CardSerial	Employee
+
+1028 (new)	E001
+5555 (old)	E001
+
+
+👉 System thinks:
+
+1028 ≠ 5555
+➡️ So it inserts 2 records
+
+
+
+---
+
+✅ Correct Design (What you SHOULD do)
+
+You must standardize everything to EmployeeNo.
+
+MeetingId + EmployeeNo  ✅ (CORRECT)
+
+NOT CardSerial.
+
+
+---
+
+✅ Fix Option 1 — Minimal Change (Recommended for you)
+
+Keep saving CardSerialNo, but prevent duplicate using EmployeeNo.
+
+
+---
+
+✔ Update Stored Procedure
+
+Modify MA_InsertAttendee:
+
+ALTER PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @EmployeeNo NVARCHAR(50),
+    @CardSerialNo NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check using EmployeeNo (NOT CardSerial)
+    IF EXISTS (
+        SELECT 1 
+        FROM tbl_participants 
+        WHERE MeetingId = @MeetingId 
+        AND EmployeeNo = @EmployeeNo
+    )
+    BEGIN
+        SELECT 0 AS Result;
+        RETURN;
+    END
+
+    INSERT INTO tbl_participants
+    (
+        MeetingId,
+        EmployeeNo,
+        CardSerialNo,
+        TapIn
+    )
+    VALUES
+    (
+        @MeetingId,
+        @EmployeeNo,
+        @CardSerialNo,
+        GETDATE()
+    );
+
+    SELECT 1 AS Result;
+END
+
+
+---
+
+✔ Update Your C# Code
+
+insertCmd.Parameters.AddWithValue("@MeetingId", meetingId);
+insertCmd.Parameters.AddWithValue("@EmployeeNo", strEmpNo);
+insertCmd.Parameters.AddWithValue("@CardSerialNo", cardSerial);
+
+
+---
+
+✅ Fix Option 2 — Best Practice (Cleaner System)
+
+Stop using CardSerialNo as identifier.
+
+Table:
+
+tbl_participants
+-----------------
+MeetingId
+EmployeeNo   ✅ PRIMARY LOGIC
+TapIn
+TapOut
+
+CardSerial becomes just reference (optional).
+
+
+---
+
+✅ Fix Option 3 — Strong Protection (IMPORTANT)
+
+Add UNIQUE constraint:
+
+ALTER TABLE tbl_participants
+ADD CONSTRAINT UQ_Meeting_Employee
+UNIQUE (MeetingId, EmployeeNo);
+
+👉 Even if your code fails, duplicates are impossible
+
+
+---
+
+✅ Final Behavior After Fix
+
+Scenario:
+
+Tap	Card	Employee
+
+1st	New RFID (1028)	E001
+2nd	Old RFID (5555)	E001
+
+
+
+---
+
+Result:
+
+✔ First tap → INSERT
+❌ Second tap → BLOCKED (Already exists)
+
+
+---
+
+🔍 Why This Works
+
+Because:
+
+EmployeeNo = TRUE identity
+CardSerial = just a tool
+
+
+---
+
+💡 Important Advice (Based on your system)
+
+Right now your system is card-based, but it should be:
+
+Employee-based system
+
+This solves:
+
+duplicate records
+
+multiple cards per employee
+
+future changes (RFID replacement, biometrics, LDAP)
+
+
+
+---
+
+🚀 Recommended Final Architecture
+
+RFID (old/new)
+     ↓
+Resolve → EmployeeNo
+     ↓
+Save → tbl_participants (EmployeeNo)
+
+
+---
+
+👍 Summary Fix
+
+✔ Always resolve to EmployeeNo
+✔ Check duplicates using EmployeeNo
+✔ Save CardSerial only as reference
+✔ Add UNIQUE constraint
+
+
+---
+
+If you want, I can also help you:
+
+✅ Clean your existing duplicate data
+✅ Merge old & new RFID records into one employee
+✅ Add audit trail (which card used)
+
+Just tell me 👍
+
+
+
+
+****
+
+
+Ahh, I see the real issue now — this is a data duplication problem caused by using two identifiers (CardSerial vs EmployeeNo).
+
+🔥 What’s happening
+
+New RFID → found in EmployeeRecord → saved using EmployeeNo
+
+Old RFID → found in Meeting DB (CardSerial) → also saved
+👉 Result: same person = 2 different records in tbl_participants
+
+
+
+---
+
+✅ Goal
+
+> Only ONE record per employee per meeting, regardless of card used
+
+
+
+
+---
+
+✅ Proper Fix (Best Practice)
+
+You must enforce uniqueness using:
+
+MeetingId + EmployeeNo
+
+NOT CardSerial.
+
+
+---
+
+✅ Solution 1 — Fix in Stored Procedure (RECOMMENDED)
+
+Modify your MA_InsertAttendee to prevent duplicates.
+
+✔ Updated Stored Procedure Logic
+
+ALTER PROCEDURE MA_InsertAttendee
+    @MeetingId INT,
+    @EmployeeNo NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Check if already tapped in
+    IF EXISTS (
+        SELECT 1 
+        FROM tbl_participants 
+        WHERE MeetingId = @MeetingId 
+        AND EmployeeNo = @EmployeeNo
+    )
+    BEGIN
+        SELECT 0 AS Result; -- Already tapped
+        RETURN;
+    END
+
+    -- Insert new record
+    INSERT INTO tbl_participants
+    (
+        MeetingId,
+        EmployeeNo,
+        TapIn
+    )
+    VALUES
+    (
+        @MeetingId,
+        @EmployeeNo,
+        GETDATE()
+    );
+
+    SELECT 1 AS Result; -- Success
+END
+
+
+---
+
+✅ Solution 2 — Add Database Constraint (VERY IMPORTANT)
+
+This is the strongest protection (prevents duplicates even if code fails).
+
+ALTER TABLE tbl_participants
+ADD CONSTRAINT UQ_Meeting_Employee
+UNIQUE (MeetingId, EmployeeNo);
+
+👉 Now SQL will block duplicate entries automatically
+
+
+---
+
+✅ Solution 3 — Fix Your Code Logic (Important)
+
+Make sure both new and old RFID resolve to the SAME EmployeeNo.
+
+🔴 Problem Now:
+
+Old RFID might return a different EmployeeNo or NULL
+
+✅ Fix:
+
+After fallback (MA_CheckEmployeeByCard), ensure:
+
+strEmpNo = reader["EmployeeNo"].ToString();
+
+So both:
+
+New RFID → EmployeeRecord → E001
+Old RFID → MeetingDB → E001
+
+👉 Same EmployeeNo = No duplicate
+
+
+---
+
+⚠️ Common Mistake (Check This!)
+
+If your table still contains:
+
+CardSerialNo
+
+and your insert still uses it, duplicates will happen.
+
+👉 Make sure your table uses:
+
+EmployeeNo (PRIMARY identifier)
+
+
+---
+
+✅ Final Correct Flow
+
+RFID (Old or New)
+        ↓
+Resolve to EmployeeNo
+        ↓
+Check: MeetingId + EmployeeNo
+        ↓
+Insert ONLY if not exists
+
+
+---
+
+💡 Example Scenario
+
+Card	Source	EmployeeNo	Result
+
+New RFID	EmployeeRecord	E001	✅ Insert
+Old RFID	Meeting DB	E001	❌ Already exists → Blocked
+
+
+
+---
+
+🚀 Best Recommendation (Production-Level)
+
+Do ALL 3:
+
+✔ Stored Procedure check
+✔ Unique constraint in DB
+✔ Always use EmployeeNo
+
+
+---
+
+⚡ Bonus (Very Useful for You)
+
+You can also improve user feedback:
+
+if (result == 0)
+    ShowAlert("Already Tapped (Same Employee)", empName, dept, "alert-warning");
+
+
+---
+
+If you want, I can also help you: ✅ Clean your tbl_participants structure
+✅ Normalize old and new RFID mapping
+✅ Add logging (who used old vs new card)
+
+Just tell me 👍
