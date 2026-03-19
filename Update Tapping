@@ -1,4 +1,186 @@
+Good question — this is a common issue in ASP.NET Web Forms.
 
+🔥 Problem
+
+When you save hostname/IP like this:
+
+Request.UserHostName
+Request.UserHostAddress
+
+Sometimes it returns the IIS server info, not the client PC.
+
+
+---
+
+✅ Correct Way to Get CLIENT IP
+
+Use this:
+
+string clientIP = Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+
+if (string.IsNullOrEmpty(clientIP))
+{
+    clientIP = Request.ServerVariables["REMOTE_ADDR"];
+}
+
+✔ Why?
+
+HTTP_X_FORWARDED_FOR → real client IP (if behind proxy)
+
+REMOTE_ADDR → fallback
+
+
+
+---
+
+✅ Get CLIENT HOSTNAME (PC Name)
+
+string clientHost = System.Net.Dns.GetHostEntry(clientIP).HostName;
+
+⚠️ Note:
+
+This only works if:
+
+Network allows reverse DNS
+
+Client PC is registered in DNS
+
+
+Otherwise, it may fail or return server name
+
+
+
+---
+
+✅ Best Reliable Method (Recommended)
+
+👉 Use JavaScript to get client machine name/IP
+
+Because server-side C# cannot reliably get client hostname.
+
+
+---
+
+✔ Step 1: Add Hidden Fields in ASPX
+
+<input type="hidden" id="hfClientIP" runat="server" />
+<input type="hidden" id="hfHostName" runat="server" />
+
+
+---
+
+✔ Step 2: Use JavaScript
+
+<script>
+    // Get hostname (browser)
+    document.getElementById('<%=hfHostName.ClientID%>').value = window.location.hostname;
+
+    // Get IP via WebRTC (works in LAN)
+    function getIP(callback) {
+        var pc = new RTCPeerConnection({ iceServers: [] });
+        pc.createDataChannel("");
+        pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+        pc.onicecandidate = function (ice) {
+            if (!ice || !ice.candidate || !ice.candidate.candidate) return;
+            var ip = ice.candidate.candidate.split(" ")[4];
+            callback(ip);
+        };
+    }
+
+    getIP(function (ip) {
+        document.getElementById('<%=hfClientIP.ClientID%>').value = ip;
+    });
+</script>
+
+
+---
+
+✔ Step 3: Get Values in Code Behind
+
+string clientIP = hfClientIP.Value;
+string clientHost = hfHostName.Value;
+
+
+---
+
+✔ Step 4: Save in Database
+
+insertCmd.Parameters.AddWithValue("@ClientIP", clientIP);
+insertCmd.Parameters.AddWithValue("@HostName", clientHost);
+
+
+---
+
+✅ Best Practice (Enterprise Approach)
+
+Store both:
+
+EmployeeNo
+CardSerialNo
+ClientIP
+HostName
+TapIn
+
+
+---
+
+⚠️ Important Notes
+
+Method	Reliability
+
+Request.UserHostAddress	❌ Sometimes IIS
+ServerVariables	⚠️ Depends on network
+DNS.GetHostEntry	⚠️ Often fails
+JavaScript (WebRTC)	✅ Best for client info
+
+
+
+---
+
+💡 Simple Alternative (If inside company LAN)
+
+If all PCs are in domain, you can also log:
+
+string userName = Request.LogonUserIdentity.Name;
+
+Example output:
+
+DOMAIN\PC-12345
+
+
+---
+
+✅ Final Recommendation
+
+Use combination:
+
+✔ EmployeeNo
+✔ CardSerialNo
+✔ ClientIP (JS)
+✔ HostName (JS)
+✔ DomainUser (optional)
+
+
+---
+
+🚀 Result
+
+When user taps:
+
+✔ Juan D Cruz
+✔ PC-ACCOUNTING-01
+✔ 192.168.1.25
+✔ Tap In: 08:01 AM
+
+
+---
+
+If you want, I can: ✅ Update your stored procedures to include IP/hostname
+✅ Modify your full tapping code
+✅ Add device tracking report (who tapped on which PC)
+
+Just tell me 👍
 
 
 
