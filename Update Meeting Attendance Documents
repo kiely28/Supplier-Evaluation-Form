@@ -1,0 +1,14 @@
+Here’s a simple table format for your update:
+
+Module/Area	Updated Item	Description	Purpose
+
+Meeting Attendance Page	meetingattendance.aspx	Updated RFID tapping logic to properly handle new and existing card serial numbers	To ensure correct attendance recording and avoid duplicate entries
+Database Table	tbl_participants	Added new columns: IPAddress and EmployeeNo	To capture the client device used and link attendance to the correct employee
+Stored Procedure	ma_insertattendee	Updated to include parameters for IPAddress and EmployeeNo during insert	To save additional tracking information when a user taps in
+Stored Procedure	ma_updateattendeetimeout	Updated logic for timeout recording	To ensure accurate time-out logging and improve attendance tracking
+
+
+
+---
+
+If you want, I can also convert this into a Kaizen (Before–After–Effectiveness) or make it more formal for documentation/report 👍
