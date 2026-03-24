@@ -1,3 +1,125 @@
+Here are simple and realistic examples based on a typical Supplier Evaluation Macro (Excel + VBA with scoring, saving, and summary reports):
+
+
+---
+
+1. Data Entry (Scoring Module)
+
+Risk Assessment:
+User inputs incorrect rating (e.g., out of range or wrong criteria)
+
+Risk Control:
+Apply data validation (e.g., allow only 1–5 rating) and provide dropdown per criteria
+
+
+---
+
+2. Save Evaluation (Macro Button)
+
+Risk Assessment:
+Evaluation data is not saved due to macro interruption or error
+
+Risk Control:
+Add VBA error handling and show confirmation message after successful save
+
+
+---
+
+3. Duplicate Supplier Evaluation
+
+Risk Assessment:
+Same supplier evaluated multiple times for the same period
+
+Risk Control:
+Add duplicate checking (Supplier Name + Evaluation Date) before saving
+
+
+---
+
+4. Supplier Master List
+
+Risk Assessment:
+User manually edits or deletes supplier master data
+
+Risk Control:
+Lock and protect master list sheet; allow updates only via controlled form/macro
+
+
+---
+
+5. Computation of Scores
+
+Risk Assessment:
+Incorrect formula or macro logic leads to wrong total score
+
+Risk Control:
+Test formulas regularly and add validation check (e.g., compare manual vs system result)
+
+
+---
+
+6. Report Generation
+
+Risk Assessment:
+Generated summary report shows incomplete or outdated data
+
+Risk Control:
+Add refresh/update button before generating report
+
+
+---
+
+7. Macro Security
+
+Risk Assessment:
+Macro does not run because Excel macro settings are disabled
+
+Risk Control:
+Provide user instruction to enable macros and use trusted location
+
+
+---
+
+8. File Handling
+
+Risk Assessment:
+File gets corrupted or overwritten accidentally
+
+Risk Control:
+Implement backup file or version control (e.g., save copy per month)
+
+
+---
+
+9. Required Fields
+
+Risk Assessment:
+User submits evaluation with missing information
+
+Risk Control:
+Add required field validation before allowing save
+
+
+---
+
+10. User Access
+
+Risk Assessment:
+Unauthorized users modify evaluation results
+
+Risk Control:
+Restrict file access or apply password protection
+
+
+---
+
+If you want, I can convert this into a clean table format (for documentation/audit) or align it to ISO supplier evaluation requirements 👍
+
+
+
+*****
+
+
 
 Here’s a simple and clear explanation you can use:
 
