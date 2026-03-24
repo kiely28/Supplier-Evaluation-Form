@@ -1,3 +1,90 @@
+Here’s another clean and simple version with slightly clearer wording:
+
+Area	Changes Made	Details	Objective
+
+Attendance Page	meetingattendance.aspx	Enhanced RFID tapping process for handling new and existing card serial numbers	Improve accuracy and prevent duplicate attendance records
+Database	tbl_participants	Added IPAddress and EmployeeNo fields	Enable device tracking and proper employee identification
+Stored Procedure	ma_insertattendee	Modified to accept and save IPAddress and EmployeeNo	Ensure complete data is recorded during tap-in
+Stored Procedure	ma_updateattendeetimeout	Updated timeout logic	Provide accurate and reliable time-out records
+
+
+
+---
+
+✅ Shorter Version (if you need very simple)
+
+Item	Update	Purpose
+
+meetingattendance.aspx	Updated RFID tapping	Avoid duplicate and incorrect entries
+tbl_participants	Added IPAddress, EmployeeNo	Track device and employee
+ma_insertattendee	Added new parameters	Save additional details
+ma_updateattendeetimeout	Updated logic	Ensure correct timeout recording
+
+
+
+---
+
+If you want a more formal / audit-ready version, I can make it sound more technical 👍
+
+
+
+
+*****
+
+
+
+Got it—you want very simple, practical pairs like your example. Here are more:
+
+
+---
+
+1.
+Risk Assessment: Employee forgets RFID card
+Risk Control: Allow manual entry in attendance sheet with verification
+
+2.
+Risk Assessment: RFID card is damaged or unreadable
+Risk Control: Provide temporary manual logging and replace card
+
+3.
+Risk Assessment: Employee taps wrong card
+Risk Control: Display employee name after tap for confirmation
+
+4.
+Risk Assessment: System cannot read RFID scanner
+Risk Control: Check device connection and restart scanner
+
+5.
+Risk Assessment: No internet connection during tapping
+Risk Control: Use offline recording and sync once connection is restored
+
+6.
+Risk Assessment: Employee taps but record not saved
+Risk Control: Show confirmation message after successful tap
+
+7.
+Risk Assessment: Unauthorized person uses RFID card
+Risk Control: Add ID/photo verification if needed
+
+8.
+Risk Assessment: Incorrect tap-in time recorded
+Risk Control: Sync system time with server
+
+9.
+Risk Assessment: Employee forgets to tap in
+Risk Control: Allow manual correction with approval
+
+10.
+Risk Assessment: Duplicate employee records in system
+Risk Control: Validate EmployeeNo before saving
+
+
+---
+
+If you want, I can make this into a very short checklist format for your report submission 👍
+
+******
+
 Here’s a simple table format for your update:
 
 Module/Area	Updated Item	Description	Purpose
