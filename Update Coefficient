@@ -1,3 +1,73 @@
+Sub SetFiscalQuarterRange()
+    Dim currentMonth As Integer
+    
+    ' Add 1 month to today's date, then extract the month number
+    currentMonth = Month(DateAdd("m", 1, Date))
+    
+    With ThisWorkbook.Sheets(1)
+        Select Case currentMonth
+            Case 4 To 6 ' April to June
+                .Range("C9").Value = 1
+                .Range("D9").Value = "Apr"
+                .Range("C10").Value = 3
+                .Range("D10").Value = "Jun"
+            Case 7 To 9 ' July to September
+                .Range("C9").Value = 4
+                .Range("D9").Value = "Jul"
+                .Range("C10").Value = 6
+                .Range("D10").Value = "Sep"
+            Case 10 To 12 ' October to December
+                .Range("C9").Value = 7
+                .Range("D9").Value = "Oct"
+                .Range("C10").Value = 9
+                .Range("D10").Value = "Dec"
+            Case 1 To 3 ' January to March
+                .Range("C9").Value = 10
+                .Range("D9").Value = "Jan"
+                .Range("C10").Value = 12
+                .Range("D10").Value = "Mar"
+        End Select
+    End With
+End Sub
+
+
+*****
+
+Sub GetFiscalYear()
+    Dim fiscalStart As Date
+    Dim fiscalEnd As Date
+    Dim currentDate As Date
+    Dim fiscalYear As Integer
+    Dim previousMonthDate As Date
+    
+    ' Define the start and end dates of the fiscal year
+    fiscalStart = DateSerial(Year(Date), 4, 1) ' Fiscal year starts on April 1
+    fiscalEnd = DateSerial(Year(Date) + 1, 3, 31) ' Fiscal year ends on March 31
+    
+    ' Get the current date
+    currentDate = Date 'Set the date
+    'currentDate = dateValue("5/31/2023") 'Set the specific date
+    previousMonthDate = DateAdd("m", -1, currentDate) ' Subtract one month
+    
+    ' Determine the fiscal year
+    If previousMonthDate >= fiscalStart Then
+        fiscalYear = Year(currentDate)
+    Else
+        fiscalYear = Year(currentDate) - 1
+    End If
+    
+    ' Output the fiscal year to cell C11
+    ThisWorkbook.Sheets(1).Range("C12").Value = fiscalYear
+    'MsgBox fiscalYear
+
+End Sub
+
+
+********
+
+
+
+
 Here’s a clear, step-by-step explanation of your CheckMonthYearMatch macro in simple terms.
 
 
