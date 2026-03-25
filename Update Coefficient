@@ -1,3 +1,18 @@
+Hi,
+
+The issue in the program was that the fiscal year was not advancing by one month.
+
+This has already been updated, and the program now moves one month ahead in the fiscal year calculation.
+
+Please let me know if further adjustments are needed.
+
+Thank you.
+
+
+
+*****
+
+
 
 Here’s a clear review + explanation of both macros in your coefficient system, plus a few important fixes and improvements.
 
