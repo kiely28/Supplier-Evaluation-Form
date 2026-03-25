@@ -1,0 +1,110 @@
+Sub CheckMonthYearMatch()
+
+    Dim m1 As String, m2 As String, yr As Integer
+    Dim check1 As String, check2 As String
+    Dim result As String
+    Dim folderPath As String, fileName As String, filePath As String
+    Dim templateWB As Workbook, wb As Workbook
+    Dim templateWS As Worksheet
+    Dim fileFound As Boolean
+    Dim sourceWS As Worksheet
+
+    ' Set reference to Sheet1 of the active workbook
+    Set sourceWS = ThisWorkbook.Sheets("Sheet1")
+
+'    ' Get month numbers and year from active workbook
+'    m1 = sourceWS.Range("D9").Value
+'    m2 = sourceWS.Range("D10").Value
+'    yr = sourceWS.Range("C12").Value
+
+'    ' Format dates
+'    'check1 = Format(DateSerial(yr, m1, 1), "yyyy mmm")
+'    'check2 = Format(DateSerial(yr, m2, 1), "yyyy mmm")
+'    check1 = yr & " " & m1
+'    check2 = yr & " " & m2
+
+
+    ' Update 12/17/25
+    ' Validate Year
+    If Not IsNumeric(sourceWS.Range("C12").Value) Then
+        MsgBox "Year value is invalid.", vbCritical
+        End
+    End If
+
+    yr = CLng(sourceWS.Range("C12").Value)
+
+    ' Read month values as text (Jan, Feb, Mar, etc.)
+    m1 = Trim(sourceWS.Range("D9").Value)
+    m2 = Trim(sourceWS.Range("D10").Value)
+
+    If m1 = "" Or m2 = "" Then
+        MsgBox "Month values cannot be empty.", vbCritical
+        End
+    End If
+
+    ' Fiscal year rule
+    If UCase(m1) = "JAN" And UCase(m2) = "MAR" Then
+        finalYr = yr + 1
+    Else
+        finalYr = yr
+    End If
+
+    ' Build comparison strings
+    check1 = finalYr & " " & m1
+    check2 = finalYr & " " & m2
+    ' End of Update 12/17/25
+
+    ' Locate the template file
+    folderPath = "D:\Coefficient\Template\"
+    fileName = Dir(folderPath & "*.xlsx")
+
+    If fileName = "" Then
+        MsgBox "No template file found in folder.", vbExclamation
+        End
+        'Exit Sub
+    End If
+
+    filePath = folderPath & fileName
+    fileFound = False
+
+    ' Check if the workbook is already open
+    For Each wb In Workbooks
+        If wb.FullName = filePath Then
+            Set templateWB = wb
+            fileFound = True
+            Exit For
+        End If
+    Next wb
+
+    ' If not open, open it
+    If Not fileFound Then
+        Set templateWB = Workbooks.Open(filePath, UpdateLinks:=0, ReadOnly:=True)
+    End If
+
+    ' Use the first sheet (or change to specific sheet name if needed)
+    Set templateWS = templateWB.Sheets(1)
+
+    ' Compare values from template cells
+    If UCase(templateWS.Range("D8").Value) <> UCase(check1) Then
+    result = "Valid period From does NOT match. Expected: " & check1
+    End If
+    
+    If UCase(templateWS.Range("F8").Value) <> UCase(check2) Then
+        If result <> "" Then
+            result = result & vbCrLf
+        End If
+        result = result & "Valid period To does NOT match. Expected: " & check2
+    End If
+    
+    If result <> "" Then
+        MsgBox result, vbCritical, "Check Result"
+        End
+    End If
+
+    ' Close the template workbook if it was opened by this macro
+    If Not fileFound Then
+        templateWB.Close SaveChanges:=False
+    End If
+    
+    'MsgBox check1 & " " & check2
+End Sub
