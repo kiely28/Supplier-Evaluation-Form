@@ -1,0 +1,482 @@
+
+To build a SharePoint setup with “per Section → per Supplier → per Question”, the best approach is to use SharePoint Lists + (optional) Power Apps form. I’ll guide you step-by-step in a simple and scalable way.
+
+
+---
+
+✅ Recommended Structure (Simple & Clean)
+
+You will create 3 SharePoint Lists:
+
+1. 📂 Sections List
+
+Stores your sections like PR INK PROC, PR PROC
+
+Columns:
+
+Title → Section Name
+(e.g., PR INK PROC, PR PROC)
+
+
+
+---
+
+2. 🏭 Suppliers List
+
+Stores supplier details
+
+Columns:
+
+Supplier Name (Single line text)
+(LANXESS, FUSO, AOI, etc.)
+
+Supplier Code (Number or text)
+(341927, 334542)
+
+Section (Lookup → Sections List)
+
+
+👉 This links suppliers to a specific section
+
+
+---
+
+3. ❓ Questions List
+
+Stores all questions per section
+
+Columns:
+
+Question No (e.g., M1R, M6R)
+
+Description (e.g., Total Service)
+
+Section (Lookup → Sections List)
+
+
+
+---
+
+4. 📝 Evaluation List (MAIN DATA)
+
+This is where users will encode answers
+
+Columns:
+
+Section (Lookup → Sections)
+
+Supplier (Lookup → Suppliers)
+
+Question (Lookup → Questions)
+
+Score (Choice: 1, 2, 3)
+
+
+
+---
+
+🧠 How It Works (Your Example)
+
+Section: PR INK PROC
+
+Suppliers:
+
+LANXESS (341927)
+
+FUSO (334542)
+
+
+Questions:
+
+M1R – Total Service
+
+M6R – Sales
+
+D2R – Recovery
+
+D3R – Flexibility
+
+
+
+👉 When encoding:
+
+Select Section → PR INK PROC
+
+Select Supplier → LANXESS
+
+Select Question → M1R
+
+Select Score → 1 / 2 / 3
+
+
+
+---
+
+Section: PR PROC
+
+Suppliers:
+
+AOI
+
+ASIA
+
+BESTEC
+
+
+Questions:
+
+M1R, M5R, D3R, Q4R
+
+
+
+
+---
+
+⚙️ Important (Filter per Section)
+
+To make it dynamic (important!), you need filtering:
+
+👉 In default SharePoint → limited filtering
+👉 BEST approach → use Power Apps
+
+In Power Apps:
+
+When Section is selected:
+
+Filter Suppliers dropdown
+
+Filter Questions dropdown
+
+
+
+Example logic:
+
+Filter(Suppliers, Section = SelectedSection)
+Filter(Questions, Section = SelectedSection)
+
+
+---
+
+🔥 Better Option (Cleaner UI)
+
+Instead of selecting Question manually, you can:
+
+👉 Show all questions automatically per section + supplier
+
+Example layout:
+
+Supplier	Question	Score
+
+LANXESS	M1R	1
+LANXESS	M6R	2
+LANXESS	D2R	3
+
+
+This is easier using:
+
+Power Apps (recommended)
+
+or SharePoint + Excel export
+
+
+
+---
+
+🧩 Alternative (Simple but Less Flexible)
+
+If you want quick setup only (no Power Apps):
+
+Create ONE list:
+
+Columns:
+
+Section (Choice)
+
+Supplier Name
+
+Supplier Code
+
+Question No
+
+Description
+
+Score (1,2,3)
+
+
+⚠️ Downside:
+
+No automation
+
+Manual encoding
+
+Hard to scale
+
+
+
+---
+
+💡 Pro Tip (Best Practice)
+
+For your case (supplier evaluation system):
+
+Use normalized lists (Sections, Suppliers, Questions)
+
+Use Power Apps for encoding UI
+
+Use Power Automate for reports later
+
+
+👉 Tools:
+
+SharePoint
+
+Power Apps
+
+Power Automate
+
+
+
+---
+
+🚀 If You Want Next Step
+
+I can help you build:
+
+✅ Power Apps screen layout (ready design)
+
+✅ Dropdown filtering formula
+
+✅ Auto-generate questions per supplier
+
+✅ Export to Excel report
+
+
+Just tell me 👍
+
+
+
+
+
+******
+
+
+You’re basically building a dynamic evaluation form per Section in Power Apps, then sharing the link so the Section In-Charge can answer. This is very doable—and your UI idea is good 👍
+
+Let me guide you with a clear design + working approach.
+
+
+---
+
+🧩 1. Data Structure (IMPORTANT)
+
+Use these SharePoint lists (as mentioned earlier):
+
+Sections
+
+Suppliers
+
+Questions
+
+Evaluations (answers)
+
+
+👉 The key is:
+Each answer = 1 record per Supplier + Question
+
+
+---
+
+🎯 2. Your Target UI (Matrix Type)
+
+You want something like:
+
+Section: PR PROC
+
+Supplier | Code   | M1R | M5R | D3R
+-----------------------------------
+AOI      | 343434 |  1  |  2  |  3
+ASIA     | 456789 |  2  |  1  |  3
+
+👉 This is called a matrix/grid form
+
+
+---
+
+⚙️ 3. Build in Power Apps
+
+Step 1: Section Selection (or from link)
+
+Add Dropdown:
+
+Dropdown_Section
+Items = Sections
+
+
+---
+
+Step 2: Pass Section via Link 🔗
+
+When sending form:
+
+https://apps.powerapps.com/play/...&section=PR PROC
+
+Then in App:
+
+Set(varSection, Param("section"))
+
+Set default:
+
+Dropdown_Section.Default = varSection
+
+👉 Now when user opens link → Section auto selected ✅
+
+
+---
+
+Step 3: Show Suppliers per Section
+
+Insert Gallery (Vertical)
+
+Gallery_Suppliers.Items =
+Filter(Suppliers, Section.Value = Dropdown_Section.Selected.Title)
+
+Inside gallery show:
+
+Supplier Name
+
+Supplier Code
+
+
+
+---
+
+Step 4: Show Questions as Columns (M1R, M5R)
+
+Since Power Apps doesn’t support true tables easily, do this:
+
+👉 Inside each supplier row, manually create columns:
+
+Example:
+
+Label	Radio Button
+
+M1R	Radio_M1R
+M5R	Radio_M5R
+
+
+
+---
+
+Step 5: Add Score Selection (1,2,3)
+
+For each question:
+
+Radio_M1R.Items = [1,2,3]
+Radio_M5R.Items = [1,2,3]
+
+
+---
+
+💾 Step 6: Save Data (Important)
+
+Add Submit Button
+
+OnSelect:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    
+    Patch(Evaluations, Defaults(Evaluations),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: ThisRecord.SupplierName,
+        
+        Question: "M1R",
+        Score: Radio_M1R.Selected.Value
+    });
+
+    Patch(Evaluations, Defaults(Evaluations),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: ThisRecord.SupplierName,
+        
+        Question: "M5R",
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+👉 This saves:
+
+AOI + M1R + Score
+
+AOI + M5R + Score
+
+
+
+---
+
+🔥 4. Better (Dynamic Questions per Section)
+
+Instead of hardcoding M1R, M5R:
+
+Use a nested gallery
+
+Outer Gallery → Suppliers
+
+Inner Gallery → Questions
+
+Inner gallery:
+
+Filter(Questions, Section.Value = Dropdown_Section.Selected.Title)
+
+Inside:
+
+Question label (M1R)
+
+Radio (1,2,3)
+
+
+
+---
+
+🔗 5. Sending the Link
+
+Example:
+
+https://apps.powerapps.com/play/APPID?section=PR PROC
+
+Send to:
+
+Section In-Charge
+
+
+👉 They open → auto filtered → answer only their section
+
+
+---
+
+🧠 6. Key Tips (VERY IMPORTANT)
+
+✔ Use Lookup columns properly in SharePoint
+✔ Use Param() for dynamic link
+✔ Use ForAll + Patch for saving
+✔ Avoid hardcoding if many questions
+
+
+---
+
+🚀 If You Want Next
+
+I can help you build:
+
+✅ Exact Power Apps layout (copy-paste ready)
+
+✅ Dynamic matrix (auto generate questions as columns)
+
+✅ Save all answers in 1 click (optimized code)
+
+✅ Prevent duplicate submissions per supplier
+
+
+Just tell me 👍
+
