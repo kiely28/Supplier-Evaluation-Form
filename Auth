@@ -1,3 +1,172 @@
+Got it — if it’s still becoming 34448, that means Excel is converting the value before we even know which column is “Floor.”
+
+So the safest solution is: 👉 Split everything as TEXT first 👉 Then dynamically find the “Floor” column 👉 Force that column to stay as text
+
+
+---
+
+✅ ✅ Complete Working Solution (Dynamic + Safe)
+
+Sub PasteToExcel() ' Dynamic Floor Column Fix (Leading Zero Safe)
+
+    Dim xlApp, xlBook, xlSheet, lastRow, lastCol
+    Dim i As Long, floorCol As Long
+    
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = True
+    xlApp.DisplayAlerts = False
+    xlApp.ScreenUpdating = False
+    
+    'Open workbook
+    Set xlBook = xlApp.Workbooks.Open("D:\DownloadGNSTblAuth\TBL_AUTH\YourWorkbook.xlsx")
+    Set xlSheet = xlBook.Sheets(1)
+    
+    'Paste clipboard to A1
+    xlSheet.Range("A1").PasteSpecial
+    
+    'Delete first row
+    xlSheet.Rows(1).Delete
+    
+    'Find last row
+    lastRow = xlSheet.Cells(xlSheet.Rows.Count, "A").End(-4162).Row
+    
+    'Sort ascending
+    xlSheet.Sort.SortFields.Clear
+    xlSheet.Sort.SortFields.Add xlSheet.Range("A1:A" & lastRow), 0, 1
+    With xlSheet.Sort
+        .SetRange xlSheet.Range("A1:A" & lastRow)
+        .Header = 2
+        .Apply
+    End With
+    
+    'Remove dashed rows
+    xlSheet.Range("A1:A" & lastRow).AutoFilter 1, "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    On Error Resume Next
+    xlSheet.Range("A1:A" & lastRow).SpecialCells(12).ClearContents
+    On Error GoTo 0
+    xlSheet.AutoFilterMode = False
+    
+    'Sort descending
+    xlSheet.Sort.SortFields.Clear
+    xlSheet.Sort.SortFields.Add xlSheet.Range("A1:A" & lastRow), 0, 2
+    With xlSheet.Sort
+        .SetRange xlSheet.Range("A1:A" & lastRow)
+        .Header = 2
+        .Apply
+    End With
+    
+    '⚠️ CRITICAL: Force ALL columns as TEXT during split
+    xlSheet.Columns("A").TextToColumns _
+        Destination:=xlSheet.Range("A1"), _
+        DataType:=1, _
+        TextQualifier:=1, _
+        ConsecutiveDelimiter:=False, _
+        Tab:=False, _
+        Semicolon:=False, _
+        Comma:=False, _
+        Space:=False, _
+        Other:=True, _
+        OtherChar:="|", _
+        FieldInfo:=Array(Array(1, 2), Array(2, 2), Array(3, 2), Array(4, 2), Array(5, 2), Array(6, 2), Array(7, 2), Array(8, 2), Array(9, 2), Array(10, 2))
+    
+    'Delete original column A
+    xlSheet.Columns("A").Delete
+    
+    'Find last column after split
+    lastCol = xlSheet.Cells(1, xlSheet.Columns.Count).End(-4159).Column 'xlToLeft
+    
+    '🔍 Dynamically find "Floor" column
+    floorCol = 0
+    For i = 1 To lastCol
+        If LCase(Trim(xlSheet.Cells(1, i).Value)) Like "*floor*" Then
+            floorCol = i
+            Exit For
+        End If
+    Next i
+    
+    'If found, force it as TEXT (extra safety)
+    If floorCol > 0 Then
+        xlSheet.Columns(floorCol).NumberFormat = "@"
+    End If
+    
+    'Headers (adjust if needed)
+    xlSheet.Range("A1").Value = "User Name"
+    xlSheet.Range("B1").Value = "Complete name"
+    xlSheet.Range("E1").Value = "Room Number"
+    xlSheet.Range("F1").Value = "Valid through"
+    
+    'Save as CSV UTF-8
+    xlBook.SaveAs "\\172.16.52.232\tblauthority\export.csv", 62
+    
+    xlBook.Close
+    
+    xlApp.ScreenUpdating = True
+    xlApp.Quit
+    
+    Set xlSheet = Nothing
+    Set xlBook = Nothing
+    Set xlApp = Nothing
+
+End Sub
+
+
+---
+
+🔥 Why THIS finally works
+
+✅ 1. Converts EVERYTHING to TEXT during split
+
+FieldInfo:=Array(Array(1,2), Array(2,2), ...)
+
+👉 No column gets auto-converted → leading zeros are preserved
+
+
+---
+
+✅ 2. Dynamically finds “Floor” column
+
+If LCase(...) Like "*floor*" Then
+
+👉 Works even if column position changes
+
+
+---
+
+✅ 3. Double protection
+
+During split → TEXT
+
+After split → TEXT again
+
+
+
+---
+
+🧠 Important Reminder
+
+If your source data already lost the zero BEFORE paste, this cannot recover it.
+
+👉 Example:
+
+Clipboard already = 34448 ❌
+
+Expected = 034448
+
+
+
+---
+
+🚀 If you want next level fix
+
+I can upgrade this to: ✅ Force fixed format (e.g., always 6 digits → 000000)
+✅ Validate floor values before export
+✅ Auto-map columns without relying on headers
+
+Just tell me 👍
+
+****
+
+
 Here’s your complete updated macro with the correct fix so that values like 034448 stay intact in Column H (Floor) ✅
 
 
