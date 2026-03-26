@@ -1,3 +1,102 @@
+
+Got it 👍 — this is a common Excel issue where leading zeros are removed because the column is treated as number instead of text.
+
+
+---
+
+✅ ✅ Fix: Set Column H to Text Format
+
+You just need to force Column H to Text before or after data processing.
+
+
+---
+
+🔧 Recommended Update (BEST placement)
+
+Add this line AFTER TextToColumns and BEFORE saving CSV:
+
+'Set column H (Floor) to Text format
+xlSheet.Columns("H").NumberFormat = "@"
+
+
+---
+
+📌 Updated Section of Your Code
+
+Here’s where to insert it:
+
+'Convert text to columns using |
+xlSheet.Columns("A").TextToColumns _
+    xlSheet.Range("A1"), _
+    1, _
+    1, _
+    False, _
+    False, _
+    False, _
+    False, _
+    False, _
+    True, "|"
+
+'Delete column A
+xlSheet.Columns("A").Delete
+
+'Set column H (Floor) to Text format  <-- ADD HERE
+xlSheet.Columns("H").NumberFormat = "@"
+
+'Headers
+xlSheet.Range("A1").Value = "User Name"
+xlSheet.Range("B1").Value = "Complete name"
+xlSheet.Range("E1").Value = "Room Number"
+xlSheet.Range("F1").Value = "Valid through"
+
+
+---
+
+⚠️ Important Note
+
+Even with Text format:
+
+If Excel already converted 034448 → 34448 during paste or split, the leading zero is already lost ❌
+
+
+
+---
+
+💡 Better (Safer) Option 🔥
+
+To fully protect leading zeros, apply text format BEFORE splitting:
+
+'Set column A to Text BEFORE TextToColumns
+xlSheet.Columns("A").NumberFormat = "@"
+
+So final approach:
+
+'Before TextToColumns
+xlSheet.Columns("A").NumberFormat = "@"
+
+'Convert text to columns using |
+xlSheet.Columns("A").TextToColumns ...
+
+
+---
+
+🧠 Summary
+
+✔ Setting column H to "@" keeps values as text
+✔ Best practice: also set column A to text BEFORE splitting
+✔ Prevents values like 034448 from becoming 34448
+
+
+---
+
+If you want, I can: ✅ Automatically force leading zeros (fixed length like 6 digits)
+✅ Detect and correct already-truncated values
+✅ Make column mapping more dynamic (safer for future changes)
+
+
+
+*****
+
 Here’s a clear, step-by-step explanation of your macro so you fully understand what it’s doing and why 👇
 
 
