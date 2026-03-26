@@ -1,3 +1,153 @@
+Here’s your complete updated macro with the correct fix so that values like 034448 stay intact in Column H (Floor) ✅
+
+
+---
+
+✅ ✅ Complete Updated Code
+
+Sub PasteToExcel() ' Dynamic Last Row - Updated with Column H Text Fix
+
+    'Create Excel application
+    Dim xlApp, xlBook, xlSheet, lastRow
+    
+    Set xlApp = CreateObject("Excel.Application")
+    xlApp.Visible = True
+    xlApp.DisplayAlerts = False
+    xlApp.ScreenUpdating = False
+    
+    'Open workbook
+    Set xlBook = xlApp.Workbooks.Open("D:\DownloadGNSTblAuth\TBL_AUTH\YourWorkbook.xlsx")
+    Set xlSheet = xlBook.Sheets(1)
+    
+    'Paste clipboard to A1
+    xlSheet.Range("A1").PasteSpecial
+    
+    'Delete first row
+    xlSheet.Rows(1).Delete
+    
+    'Find last row dynamically
+    lastRow = xlSheet.Cells(xlSheet.Rows.Count, "A").End(-4162).Row   'xlUp
+    
+    'Sort column A ascending
+    xlSheet.Sort.SortFields.Clear
+    xlSheet.Sort.SortFields.Add xlSheet.Range("A1:A" & lastRow), 0, 1
+    With xlSheet.Sort
+        .SetRange xlSheet.Range("A1:A" & lastRow)
+        .Header = 2
+        .Apply
+    End With
+    
+    'Filter dashed line rows
+    xlSheet.Range("A1:A" & lastRow).AutoFilter 1, "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+    
+    'Clear filtered cells (safe)
+    On Error Resume Next
+    xlSheet.Range("A1:A" & lastRow).SpecialCells(12).ClearContents
+    On Error GoTo 0
+    
+    'Remove filter
+    xlSheet.AutoFilterMode = False
+    
+    'Sort column A descending
+    xlSheet.Sort.SortFields.Clear
+    xlSheet.Sort.SortFields.Add xlSheet.Range("A1:A" & lastRow), 0, 2
+    With xlSheet.Sort
+        .SetRange xlSheet.Range("A1:A" & lastRow)
+        .Header = 2
+        .Apply
+    End With
+    
+    'Ensure column A is TEXT before splitting (extra safety)
+    xlSheet.Columns("A").NumberFormat = "@"
+    
+    'Convert text to columns using | and force Column H as TEXT
+    xlSheet.Columns("A").TextToColumns _
+        Destination:=xlSheet.Range("A1"), _
+        DataType:=1, _
+        TextQualifier:=1, _
+        ConsecutiveDelimiter:=False, _
+        Tab:=False, _
+        Semicolon:=False, _
+        Comma:=False, _
+        Space:=False, _
+        Other:=True, _
+        OtherChar:="|", _
+        FieldInfo:=Array( _
+            Array(1, 1), _
+            Array(2, 1), _
+            Array(3, 1), _
+            Array(4, 1), _
+            Array(5, 1), _
+            Array(6, 1), _
+            Array(7, 1), _
+            Array(8, 2) _
+        )
+    
+    'Delete original column A
+    xlSheet.Columns("A").Delete
+    
+    'Headers
+    xlSheet.Range("A1").Value = "User Name"
+    xlSheet.Range("B1").Value = "Complete name"
+    xlSheet.Range("E1").Value = "Room Number"
+    xlSheet.Range("F1").Value = "Valid through"
+    
+    'Save as CSV (UTF-8)
+    xlBook.SaveAs "\\172.16.52.232\tblauthority\export.csv", 62   '62 = xlCSVUTF8
+    
+    xlBook.Close
+    
+    'Cleanup
+    xlApp.ScreenUpdating = True
+    xlApp.Quit
+    
+    Set xlSheet = Nothing
+    Set xlBook = Nothing
+    Set xlApp = Nothing
+
+End Sub
+
+
+---
+
+🔥 Key Fix (Why this works now)
+
+✔ FieldInfo:=Array(... Array(8,2))
+→ Forces Column H = TEXT during split
+
+✔ Prevents Excel from converting:
+
+034448 → 34448 ❌
+
+✔ Now stays:
+
+034448 ✅
+
+
+---
+
+💡 If Still Not Working (Edge Case)
+
+If your “Floor” is not always column H, tell me 👍
+I can:
+
+Dynamically detect the correct column
+
+Or lock format based on header name (safer)
+
+
+
+---
+
+If you want next upgrade: ✅ Auto format ALL numeric IDs with leading zeros
+✅ Add validation before export
+✅ Make this macro faster & more robust 🚀
+
+
+
+******
+
+
 
 Got it 👍 — this is a common Excel issue where leading zeros are removed because the column is treated as number instead of text.
 
