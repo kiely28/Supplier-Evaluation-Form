@@ -1,3 +1,19 @@
+Hi,
+
+Please be informed that the program has been updated and now accepts the new RFID cards for meeting attendance tapping.
+
+We kindly request your assistance in attaching a label at the station to inform users that the new RFID cards are acceptable.
+
+If you have any questions, please feel free to reach out.
+
+Thank you.
+
+
+
+
+*****
+
+
 Below is a complete example showing how to capture the HostName of the PC/Laptop and save it when tapping IN or OUT in your Meeting Attendance system.
 
 I kept your logic but added the hostname and cleaned the flow slightly.
