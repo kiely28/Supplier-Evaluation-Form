@@ -1,0 +1,83 @@
+declare @meetingID nvarchar(50) = 'MA-202603-093'
+ 
+ 
+	----- NEW VERSION NA MAY EMP ID NA
+	SELECT
+		muser.[EmployeeNo]
+		,CONCAT(muser.FirstName, ' ', COALESCE(muser.MiddleName, ''), ' ', muser.LastName) AS FullName
+		,muser.[Grade]
+		,CONCAT(muser.DivisionName, '/', muser.DepartmentName, '/', muser.SectionName) AS Department
+		,tpart.[TapIn]
+		,tpart.[TapOut]
+		FROM [db_MeetingAttendance].[dbo].[Tbl_Participants] tpart
+			INNER JOIN [db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER] muser
+		ON 
+			muser.EmployeeNo = tpart.EmployeeNo
+		WHERE MeetingId = @meetingID
+	UNION 
+	SELECT
+		muser.[EmployeeNo]
+		,CONCAT(muser.FirstName, ' ', COALESCE(muser.MiddleName, ''), ' ', muser.LastName) AS FullName
+		,muser.[Grade]
+		,CONCAT(muser.DivisionName, '/', muser.DepartmentName, '/', muser.SectionName) AS Department
+		,tpart.[TapIn]
+		,tpart.[TapOut]
+		FROM [db_MeetingAttendance].[dbo].[Tbl_Participants] tpart
+			INNER JOIN [db_EPPIIIP_New].[dbo].[vw_UserMaster_CardSerialNo] muser
+		ON 
+			muser.CardSerialNo = tpart.CardSerialNo
+		WHERE MeetingId = @meetingID
+		ORDER BY tpart.TapIn DESC;
+
+
+
+******
+
+
+
+
+
+SELECT 
+		mt.MeetingId,
+		mt.Title,
+
+		mt.StartDateTime,
+		mt.EndDateTime,
+
+		h.EmployeeNo,
+		CONCAT(h.FirstName, ' ', COALESCE(h.MiddleName, ''), ' ', h.LastName) AS FullName,
+		h.Grade,
+		CONCAT(h.DivisionName, ' / ', h.DepartmentName, ' / ', h.SectionName) AS Department,
+		m.TapIn,
+		COALESCE(m.TapOut, NULL) AS TapOut
+		--m.TapOut
+		--mt.CreatedBy
+	FROM tbl_participants m
+	LEFT JOIN [db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER] h
+		ON 
+			-- New RFID match
+			(CASE 
+				WHEN LEN(h.EM) > 10 THEN SUBSTRING(h.EM,1,10)
+				ELSE h.EM
+			END = m.CardSerialNo)
+
+			OR
+
+			-- Old RFID match
+			EXISTS (
+				SELECT 1
+				FROM [db_EPPIIIP_New].[dbo].[vw_UserMaster_CardSerialNo] v
+				WHERE v.APOAccount = h.APOAccount
+				AND v.CardSerialNo = m.CardSerialNo
+			)
+
+	LEFT JOIN tbl_meetings mt ON m.MeetingId = mt.MeetingId
+	--WHERE mt.MeetingId = @MeetingId
+	WHERE mt.CreatedBy = 'B014172'
+	--AND mt.StartDateTime = @StartDateTime
+	ORDER BY m.id DESC;
+
+
+
+
+
