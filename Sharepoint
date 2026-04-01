@@ -1,3 +1,233 @@
+Yes 👍 let’s build this step-by-step in SharePoint so your Power Apps will work perfectly later.
+
+We’ll create 4 lists: Sections, Suppliers, Questions, Evaluations.
+
+
+---
+
+🧩 STEP 1: Create “Sections” List
+
+Go to your **SharePoint site:
+
+👉 Click New → List → Blank list
+
+List Name:
+
+Sections
+
+Columns:
+
+Column Name	Type
+
+Title	Single line of text
+
+
+👉 Rename Title → Section Name (optional but cleaner)
+
+Sample Data:
+
+Section Name
+
+PR INK PROC
+PR PROC
+
+
+
+---
+
+🧩 STEP 2: Create “Suppliers” List
+
+👉 New List → Name:
+
+Suppliers
+
+Columns:
+
+Column Name	Type	Notes
+
+Title	Single line text	Supplier Name
+Supplier Code	Single line text	(use text to keep leading zeros)
+Section	Lookup	Link to Sections → Section Name
+
+
+
+---
+
+⚙️ IMPORTANT (Lookup Setup)
+
+When creating Section column:
+
+Type = Lookup
+
+Get information from: Sections
+
+Column: Section Name
+
+
+
+---
+
+Sample Data:
+
+Supplier Name	Supplier Code	Section
+
+LANXESS	341927	PR INK PROC
+FUSO	334542	PR INK PROC
+AOI	343434	PR PROC
+ASIA	456789	PR PROC
+BESTEC	567890	PR PROC
+
+
+
+---
+
+🧩 STEP 3: Create “Questions” List
+
+👉 New List → Name:
+
+Questions
+
+Columns:
+
+Column Name	Type
+
+Title	Single line text (Question No)
+Description	Single line text
+Section	Lookup (Sections)
+
+
+
+---
+
+Sample Data:
+
+Question No	Description	Section
+
+M1R	Total Service	PR INK PROC
+M6R	Sales	PR INK PROC
+D2R	Recovery	PR INK PROC
+D3R	Flexibility	PR INK PROC
+M1R		PR PROC
+M5R		PR PROC
+D3R		PR PROC
+Q4R		PR PROC
+
+
+
+---
+
+🧩 STEP 4: Create “Evaluations” List (MAIN)
+
+👉 New List → Name:
+
+Evaluations
+
+Columns:
+
+Column Name	Type
+
+Title	Single line text (optional, can leave unused)
+Section	Lookup (Sections)
+Supplier	Lookup (Suppliers)
+Question	Lookup (Questions)
+Score	Choice (1, 2, 3)
+
+
+
+---
+
+Setup Score Choices:
+
+1
+2
+3
+
+
+---
+
+🔗 RELATIONSHIP (VERY IMPORTANT)
+
+This is how everything connects:
+
+Sections
+   ↓
+Suppliers (per section)
+   ↓
+Questions (per section)
+   ↓
+Evaluations (answers)
+
+
+---
+
+✅ TEST YOUR SETUP
+
+Try adding 1 record in Evaluations:
+
+Section: PR PROC
+
+Supplier: AOI
+
+Question: M1R
+
+Score: 2
+
+
+👉 If all dropdowns show correct values → ✔️ GOOD SETUP
+
+
+---
+
+🔥 PRO TIP (Highly Recommended)
+
+Enable this in Lookup columns:
+
+👉 “Enforce relationship behavior” (if available)
+
+Prevent deleting section if used
+
+
+
+---
+
+🚀 NEXT STEP
+
+After this, you are ready for:
+
+👉 Power Apps
+
+Filter Suppliers by Section
+
+Filter Questions by Section
+
+Build your matrix UI
+
+
+
+---
+
+👍 If You Want
+
+I can give you next:
+
+✅ Exact Power Apps formulas (copy paste)
+
+✅ Auto-load questions per supplier (no manual setup)
+
+✅ Prevent duplicate evaluation per supplier
+
+✅ Export results to Excel format
+
+
+Just tell me 👌
+
+
+
+
+*******
+
+
+
 
 To build a SharePoint setup with “per Section → per Supplier → per Question”, the best approach is to use SharePoint Lists + (optional) Power Apps form. I’ll guide you step-by-step in a simple and scalable way.
 
