@@ -1,3 +1,243 @@
+Great—now that your SharePoint lists are ready, let’s build your Power Apps form (matrix style + link per section) step-by-step.
+
+We’ll use Power Apps connected to SharePoint.
+
+
+---
+
+🚀 STEP 1: Create the App
+
+1. Go to Power Apps
+
+
+2. Click Create → Canvas App (Tablet)
+
+
+3. Name it:
+
+
+
+Supplier Evaluation App
+
+
+---
+
+🔗 STEP 2: Connect SharePoint Lists
+
+In Data → Add data, connect:
+
+Sections
+
+Suppliers
+
+Questions
+
+Evaluations
+
+
+
+---
+
+🔑 STEP 3: Get Section from Link
+
+We want to open the app like:
+
+.../play?section=PR PROC
+
+In App → OnStart:
+
+Set(varSection, Param("section"))
+
+
+---
+
+🎯 STEP 4: Section Dropdown
+
+Insert Dropdown
+
+Name:
+
+Dropdown_Section
+
+Properties:
+
+Items = Sections
+Value = "Section Name"
+Default = varSection
+
+👉 If link is used → auto select section ✅
+
+
+---
+
+🧩 STEP 5: Supplier Gallery (Rows)
+
+Insert Vertical Gallery
+
+Name:
+
+Gallery_Suppliers
+
+Items:
+
+Filter(Suppliers, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+Inside the gallery, add:
+
+Label → Supplier Name
+
+Label → Supplier Code
+
+
+
+---
+
+🧠 STEP 6: Add Questions as Columns
+
+For your example (PR PROC):
+
+M1R
+
+M5R
+
+D3R
+
+Q4R
+
+
+👉 Inside the supplier row, add:
+
+Layout example:
+
+Supplier	Code	M1R	M5R	D3R	Q4R
+
+
+
+
+---
+
+🎯 STEP 7: Add Score Selection (Radio Buttons)
+
+For each question, insert a Radio control
+
+Example:
+
+M1R Radio:
+
+Items = [1,2,3]
+
+M5R Radio:
+
+Items = [1,2,3]
+
+👉 Repeat for all questions
+
+
+---
+
+💾 STEP 8: Save Button (IMPORTANT)
+
+Insert a Button → “Submit”
+
+OnSelect:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch(Evaluations, Defaults(Evaluations),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: ThisRecord,
+        Question: LookUp(Questions, Title="M1R" && Section.Value = Dropdown_Section.Selected.'Section Name'),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch(Evaluations, Defaults(Evaluations),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: ThisRecord,
+        Question: LookUp(Questions, Title="M5R" && Section.Value = Dropdown_Section.Selected.'Section Name'),
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+👉 Repeat for D3R, Q4R
+
+
+---
+
+🔥 STEP 9: Send Link per Section
+
+Now you can send:
+
+Example:
+
+https://apps.powerapps.com/play/APPID?section=PR PROC
+
+👉 Result:
+
+Section auto-selected
+
+Only suppliers & questions for that section appear
+
+
+
+---
+
+💡 OPTIONAL (Better UX)
+
+Disable Section dropdown:
+
+DisplayMode = DisplayMode.View
+
+
+---
+
+🧠 BEST PRACTICE (IMPORTANT)
+
+✔ Use Supplier Lookup properly
+✔ Make sure Question names EXACT match (M1R etc.)
+✔ Use Supplier Code as text (no missing 0 issue)
+
+
+---
+
+🔥 ADVANCED (If You Want Later)
+
+Instead of hardcoding (M1R, M5R), we can:
+
+Auto-load questions dynamically
+
+Auto-create columns
+
+Prevent duplicate submissions
+
+
+
+---
+
+🚀 If You Want Next Level
+
+I can help you build:
+
+✅ Fully dynamic matrix (no hardcoding questions)
+
+✅ Auto-save all answers per supplier
+
+✅ Prevent double submission
+
+✅ Export to Excel report (like your supplier evaluation file)
+
+
+Just tell me 👍
+
+
+
+*****
+
+
 Yes 👍 let’s build this step-by-step in SharePoint so your Power Apps will work perfectly later.
 
 We’ll create 4 lists: Sections, Suppliers, Questions, Evaluations.
