@@ -1,3 +1,198 @@
+Ahh yes 👍 that’s the default layout of a Vertical Gallery in Power Apps — it shows:
+
+[Image]   Title
+          Subtitle
+
+Don’t worry—you just need to customize the gallery layout to match your table (Supplier | Code | Questions).
+
+
+---
+
+🔧 STEP 1: Change Gallery Layout
+
+1. Click your Gallery (Gallery_Suppliers)
+
+
+2. On the right panel → Layout
+
+
+3. Change from:
+
+
+
+Title, subtitle, and image
+
+👉 To:
+
+Blank
+
+✅ This removes the default Image / Title / Subtitle
+
+
+---
+
+🧹 STEP 2: Delete Default Controls
+
+Inside the gallery, delete:
+
+Image control
+
+Title label
+
+Subtitle label
+
+
+👉 Now your gallery row is empty (clean canvas)
+
+
+---
+
+🧩 STEP 3: Build Your Own Row Layout
+
+Now recreate your structure manually:
+
+➤ Add Labels (Left side)
+
+Supplier Name
+
+Insert → Label
+
+Text = ThisItem.Title
+
+Supplier Code
+
+Insert → Label
+
+Text = ThisItem.'Supplier Code'
+
+
+---
+
+➤ Add Question Columns (Right side)
+
+Add labels for headers (outside gallery):
+
+M1R   M5R   D3R   Q4R
+
+
+---
+
+➤ Add Radio Buttons (inside gallery)
+
+For each question:
+
+M1R
+
+Items = [1,2,3]
+
+M5R
+
+Items = [1,2,3]
+
+👉 Position them horizontally like a table
+
+
+---
+
+🎯 FINAL LOOK (Inside Gallery)
+
+---------------------------------------------------------
+| AOI | 343434 | (1)(2)(3) | (1)(2)(3) | (1)(2)(3) | ... |
+---------------------------------------------------------
+
+
+---
+
+🧠 STEP 4: Align Like a Table
+
+To make it clean:
+
+✔ Make all controls same height
+✔ Use X position to align columns
+✔ Resize radios to be compact
+
+Example:
+
+Supplier Name → X = 10
+
+Code → X = 150
+
+M1R → X = 300
+
+M5R → X = 420
+
+
+
+---
+
+💡 STEP 5: Add Header Row (IMPORTANT)
+
+Outside the gallery (top), add labels:
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+
+👉 This makes it look like a real table
+
+
+---
+
+🔥 PRO TIP (Clean UI)
+
+Turn OFF:
+
+Gallery → Show scrollbar (optional)
+TemplatePadding = 0
+
+
+---
+
+🚨 COMMON ISSUE
+
+If Supplier Code not showing:
+
+👉 Use:
+
+ThisItem.'Supplier Code'
+
+(not Subtitle anymore)
+
+
+---
+
+✅ RESULT
+
+Now your gallery will look like:
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+🚀 If You Want Next
+
+I can help you:
+
+✅ Make questions dynamic (auto load per section)
+
+✅ Fix Patch (save) based on your actual control names
+
+✅ Add total score per row
+
+✅ Prevent duplicate submission
+
+
+Just tell me 👍
+
+
+
+
+*****
+
+
+
 Great—now that your SharePoint lists are ready, let’s build your Power Apps form (matrix style + link per section) step-by-step.
 
 We’ll use Power Apps connected to SharePoint.
