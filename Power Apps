@@ -1,0 +1,438 @@
+Great question—this is where your app becomes dynamic and scalable 👍
+We’ll make both:
+
+✅ Questions change per Section
+✅ Radio options (3 or 4) change per Question
+
+All inside Power Apps
+
+
+---
+
+🧩 STEP 1: Update Your “Questions” List (IMPORTANT)
+
+In SharePoint, modify your Questions list:
+
+Add NEW column:
+
+Column Name	Type
+
+Max Score	Number
+
+
+
+---
+
+Example Data:
+
+Question	Section	Max Score
+
+M1R	PR Proc NP	3
+M6R	PR Proc NP	3
+D2R	PR Proc NP	4
+D3R	PR Proc NP	4
+M1R	VP Proc NP	3
+M5R	VP Proc NP	4
+M6R	VP Proc NP	3
+Q3R	VP Proc NP	3
+
+
+👉 This controls how many radio options appear
+
+
+---
+
+🧠 STEP 2: Use Nested Gallery (Dynamic Questions)
+
+🟦 Outer Gallery → Suppliers
+
+Gallery_Suppliers.Items =
+Filter(Suppliers, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+
+---
+
+🟨 Inner Gallery → Questions (inside supplier row)
+
+Insert another gallery inside the supplier row
+
+Gallery_Questions.Items =
+Filter(Questions, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+
+---
+
+🎯 STEP 3: Show Question Name
+
+Inside Gallery_Questions:
+
+Add Label:
+
+Text = ThisItem.Title   // M1R, M6R, etc.
+
+
+---
+
+🔥 STEP 4: Dynamic Radio Button (KEY PART)
+
+Insert Radio control inside question gallery
+
+Radio Items:
+
+Sequence(ThisItem.'Max Score')
+
+
+---
+
+💡 What this does:
+
+Max Score	Output
+
+3	1, 2, 3
+4	1, 2, 3, 4
+
+
+👉 Automatically changes per question ✅
+
+
+---
+
+🖥️ FINAL UI STRUCTURE
+
+Section: PR Proc NP
+
+Supplier: AOI
+----------------------------------
+M1R   (1)(2)(3)
+M6R   (1)(2)(3)
+D2R   (1)(2)(3)(4)
+D3R   (1)(2)(3)(4)
+
+Supplier: ASIA
+----------------------------------
+M1R   (1)(2)(3)
+M6R   (1)(2)(3)
+D2R   (1)(2)(3)(4)
+D3R   (1)(2)(3)(4)
+
+
+---
+
+💾 STEP 5: Save (Dynamic Patch)
+
+Now saving dynamically:
+
+Button → OnSelect:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    
+    With(
+        {currentSupplier: ThisRecord},
+        
+        ForAll(
+            Gallery_Questions.AllItems,
+            
+            Patch(Evaluations, Defaults(Evaluations),
+            {
+                Section: Dropdown_Section.Selected,
+                Supplier: currentSupplier,
+                Question: ThisRecord,
+                Score: Radio1.Selected.Value
+            })
+        )
+    )
+)
+
+
+---
+
+⚠️ IMPORTANT (Fix Radio Reference)
+
+Inside nested gallery, Power Apps may confuse controls.
+
+👉 Rename Radio inside Questions gallery:
+
+Radio_Score
+
+Then use:
+
+Radio_Score.Selected.Value
+
+
+---
+
+🧠 BEST PRACTICE
+
+✔ Always store Max Score in SharePoint
+✔ Avoid hardcoding (M1R, etc.)
+✔ Use nested gallery for flexibility
+✔ Keep naming clean (Radio_Score, Gallery_Questions)
+
+
+---
+
+🚀 RESULT
+
+Now your app is:
+
+✅ Section-based
+✅ Question-based
+✅ Dynamic radio options (3 or 4)
+✅ Fully scalable
+
+
+---
+
+🔥 If You Want Next Level
+
+I can help you:
+
+✅ Make it look like Excel table (horizontal layout)
+
+✅ Auto-compute Total Score per supplier
+
+✅ Prevent duplicate entries
+
+✅ Add submit validation (must answer all)
+
+
+Just tell me 👍
+
+
+
+
+*****
+
+
+Good—this is the hardest part in Power Apps, but I’ll show you the clean way 👍
+
+👉 Goal: Dynamic horizontal matrix (like Excel)
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+⚠️ IMPORTANT REALITY (Power Apps Limitation)
+
+In Power Apps:
+
+❌ You CANNOT directly make a fully dynamic horizontal table like Excel
+✅ But you CAN simulate it using horizontal gallery inside vertical gallery
+
+
+---
+
+✅ SOLUTION: Nested Gallery (Vertical + Horizontal)
+
+
+---
+
+🧩 STEP 1: Outer Gallery (Suppliers = Rows)
+
+You already have this:
+
+Gallery_Suppliers.Items =
+Filter(Suppliers, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+👉 This creates rows (AOI, ASIA, etc.)
+
+
+---
+
+🧩 STEP 2: Add Horizontal Gallery (Questions = Columns)
+
+Inside each supplier row:
+
+👉 Insert Horizontal Gallery
+
+Name:
+
+Gallery_Questions_H
+
+Items:
+
+Filter(Questions, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+
+---
+
+🎯 STEP 3: Inside Horizontal Gallery
+
+Now each item = one column (M1R, M5R, etc.)
+
+
+---
+
+➤ Add Question Header
+
+Label:
+
+Text = ThisItem.Title
+
+👉 (optional: hide this if you already have header row)
+
+
+---
+
+➤ Add Radio Button (Dynamic)
+
+Items = Sequence(ThisItem.'Max Score')
+
+👉 This gives:
+
+M1R → 1,2,3
+
+D3R → 1,2,3,4
+
+
+
+---
+
+🧱 STEP 4: Layout Like Table
+
+Inside supplier row, arrange like this:
+
+Control	Purpose
+
+Label	Supplier Name
+Label	Supplier Code
+Horizontal Gallery	Questions
+
+
+
+---
+
+Example positions:
+
+Supplier Name → X=10
+Code          → X=150
+Questions     → X=300
+
+
+---
+
+🧾 STEP 5: Header Row (Outside Gallery)
+
+Add labels above:
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+
+
+---
+
+🔥 Dynamic Header (Optional Advanced)
+
+Add a horizontal gallery for header
+
+Gallery_Header.Items =
+Filter(Questions, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+Inside:
+
+Text = ThisItem.Title
+
+
+---
+
+🖥️ FINAL OUTPUT
+
+Now it will look like:
+
+Supplier | Code | M1R     | M5R     | D3R     | Q4R
+-----------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+💾 STEP 6: Saving (IMPORTANT)
+
+Because it's nested, use this:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    
+    With(
+        {currentSupplier: ThisRecord},
+        
+        ForAll(
+            Gallery_Questions_H.AllItems,
+            
+            Patch(Evaluations, Defaults(Evaluations),
+            {
+                Section: Dropdown_Section.Selected,
+                Supplier: currentSupplier,
+                Question: ThisRecord,
+                Score: Radio_Score.Selected.Value
+            })
+        )
+    )
+)
+
+
+---
+
+⚠️ COMMON ISSUE (VERY IMPORTANT)
+
+Inside nested gallery:
+
+👉 Rename Radio:
+
+Radio_Score
+
+👉 Then use:
+
+Radio_Score.Selected.Value
+
+
+---
+
+💡 PRO TIPS (Make it Clean)
+
+✔ Set horizontal gallery:
+
+WrapCount = 1
+
+✔ Set width per column:
+
+TemplateSize = 120
+
+✔ Align everything same height
+
+
+---
+
+🚀 RESULT
+
+You now have:
+
+✅ Dynamic columns per section
+✅ Dynamic radio options (3 or 4)
+✅ Table-like UI
+✅ Fully scalable
+
+
+---
+
+🔥 If You Want Next Level (Highly Recommended)
+
+I can help you:
+
+✅ Auto compute Total per Supplier
+
+✅ Lock form after submit
+
+✅ Prevent duplicate entries
+
+✅ Export to Excel (same format as your table)
+
+✅ Make UI look like real SAP/Excel grid
+
+
+Just tell me 👍
