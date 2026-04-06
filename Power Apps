@@ -1,3 +1,201 @@
+Good catch 👍 — that error is very common in Power Apps, and it usually means:
+
+> ❌ Section.Value is being used, but Section is not returning a record with a .Value field
+
+
+
+Let’s fix it properly based on how your SharePoint lookup works.
+
+
+---
+
+🔍 WHY THIS ERROR HAPPENS
+
+In SharePoint:
+
+A Lookup column (like Section) can behave differently depending on setup:
+
+Case	What it returns
+
+Lookup to Title	.Value or .Title
+Plain text column	just text (no .Value)
+Misconfigured	returns error ❌
+
+
+
+---
+
+✅ STEP-BY-STEP FIX
+
+🧩 Step 1: Check Your “Section” Column (VERY IMPORTANT)
+
+Go to: 👉 SE Question List
+
+Check column:
+
+Section
+
+Confirm:
+
+Type = Lookup
+
+Source = SE Section List
+
+Display column = Title (or Section Name)
+
+
+
+---
+
+🧪 Step 2: Test What Field Works
+
+In Power Apps, try these one by one inside a label:
+
+Test 1:
+
+ThisItem.Section.Value
+
+Test 2:
+
+ThisItem.Section.Title
+
+Test 3:
+
+ThisItem.Section
+
+👉 One of these will work (no error)
+
+
+---
+
+🔧 STEP 3: FIX YOUR FILTER
+
+Now update your formula depending on what works:
+
+
+---
+
+✅ MOST COMMON FIX
+
+Gallery_Questions_H.Items =
+Filter(
+    'SE Question List',
+    Section.Title = Dropdown_Section.Selected.Title
+)
+
+
+---
+
+🟡 If using .Value
+
+Section.Value = Dropdown_Section.Selected.Title
+
+
+---
+
+🟢 SAFEST METHOD (Recommended ⭐)
+
+Use ID instead of text:
+
+Gallery_Questions_H.Items =
+Filter(
+    'SE Question List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+👉 This avoids ALL text mismatch issues
+
+
+---
+
+🚨 WHY .Id IS BEST
+
+✔ No spelling issues
+✔ No space issues
+✔ Works even if names change
+✔ Faster and more reliable
+
+
+---
+
+🧠 SAME FIX FOR SUPPLIERS
+
+Update this also:
+
+Gallery_Suppliers.Items =
+Filter(
+    'SE Supplier List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+⚠️ IF STILL ERROR
+
+Then your column might NOT be lookup.
+
+👉 Quick fix:
+
+Delete Section column
+
+Recreate as Lookup
+
+Link to SE Section List
+
+
+
+---
+
+✅ FINAL WORKING VERSION (RECOMMENDED)
+
+Questions:
+
+Filter(
+    'SE Question List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+Suppliers:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+🎯 RESULT
+
+✔ No more .Value error
+✔ Dynamic filtering works
+✔ Your matrix will load correctly
+
+
+---
+
+🚀 Next Step
+
+If you're ready, I can help you:
+
+Fix Radio_Score saving issue (nested gallery problem)
+
+Add validation (must answer all)
+
+Add Total score per supplier
+
+Prevent duplicate submissions
+
+
+Just tell me 👍
+
+
+
+
+*****
+
+
 Got it 👍 let’s rebuild this clearly and in detail, step-by-step, so you can create a dynamic horizontal matrix (Excel-like) in Power Apps using your renamed lists.
 
 
