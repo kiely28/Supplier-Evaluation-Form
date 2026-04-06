@@ -1,3 +1,176 @@
+Good question 👍 — this is where many get confused.
+
+👉 Important concept first:
+
+Your Gallery_Header = for dynamic columns (Questions only)
+
+Supplier | Code = NOT part of that gallery
+
+
+So you should NOT add Supplier/Code inside Gallery_Header ❌
+Instead, place them outside (fixed labels) ✅
+
+
+---
+
+🎯 CORRECT STRUCTURE (Excel-like layout)
+
+[Header Row]
+Supplier | Code | M1R | M5R | D3R | Q4R
+
+[Gallery Rows]
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+🧩 STEP 1: Add Supplier & Code Headers (Outside Gallery)
+
+Above your supplier gallery:
+
+👉 Insert 2 Labels manually
+
+Supplier Header
+
+Text = "Supplier"
+X = 10
+Width = 130
+
+Code Header
+
+Text = "Code"
+X = 150
+Width = 120
+
+
+---
+
+🧩 STEP 2: Position Gallery_Header
+
+Now move your Gallery_Header to the right side
+
+Example:
+
+Gallery_Header.X = 300
+
+👉 This aligns it after Supplier + Code
+
+
+---
+
+🧩 STEP 3: Align with Rows (VERY IMPORTANT)
+
+Make sure:
+
+Element	X Position
+
+Supplier Label	X = 10
+Code Label	X = 150
+Header Gallery	X = 300
+Row Question Gallery	X = 300
+
+
+✔ MUST MATCH exactly
+
+
+---
+
+🧩 STEP 4: Supplier Row Alignment
+
+Inside Gallery_Suppliers:
+
+Supplier Name
+
+X = 10
+Width = 130
+
+Supplier Code
+
+X = 150
+Width = 120
+
+Questions (Horizontal Gallery)
+
+X = 300
+
+
+---
+
+🖥️ FINAL VISUAL
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+❗ WHY NOT INSIDE HEADER GALLERY?
+
+Because:
+
+Field	Type
+
+Supplier	Static
+Code	Static
+Questions	Dynamic
+
+
+👉 Gallery_Header only handles dynamic columns
+
+
+---
+
+🔥 OPTIONAL (ADVANCED LOOK)
+
+Add a rectangle background behind header:
+
+Fill = RGBA(240,240,240,1)
+Height = 40
+
+
+---
+
+🧠 PRO TIP (Perfect Alignment)
+
+Make sure BOTH:
+
+Gallery_Header.TemplateSize = 120
+Gallery_Questions_H.TemplateSize = 120
+
+
+---
+
+🚀 RESULT
+
+✔ Clean Excel-like layout
+✔ Dynamic question columns
+✔ Proper alignment
+✔ Scalable design
+
+
+---
+
+👍 If You Want Next
+
+I can help you:
+
+✅ Freeze “Supplier & Code” like Excel
+
+✅ Add horizontal scroll
+
+✅ Auto compute total score per supplier
+
+✅ Make UI look like SAP / professional dashboard
+
+
+Just tell me 👍
+
+
+****
+
+
 Good question 👍 — resizing “columns” in a horizontal gallery in Power Apps is a bit different from Excel, because:
 
 👉 Each “column” = 1 item in the horizontal gallery
