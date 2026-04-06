@@ -1,3 +1,207 @@
+Perfect 👍 thanks for the update—that’s actually a good naming convention.
+Now let’s adjust your Power Apps formulas to match your new SharePoint list names.
+
+We’ll update everything cleanly so it works without errors.
+
+
+---
+
+🧩 1. Updated Data Sources
+
+In Power Apps, make sure you added these:
+
+SE Section List
+
+SE Supplier List
+
+SE Question List
+
+SE Evaluation List
+
+
+
+---
+
+🔑 2. Section Dropdown (Updated)
+
+Dropdown_Section:
+
+Items = 'SE Section List'
+Value = "Section Name"
+
+👉 If your column is still Title, use:
+
+Value = "Title"
+
+
+---
+
+🔗 3. Get Section from Link
+
+App → OnStart:
+
+Set(varSection, Param("section"))
+
+Dropdown default:
+
+Default = varSection
+
+
+---
+
+🧩 4. Supplier Gallery (UPDATED)
+
+Gallery_Suppliers.Items =
+Filter(
+    'SE Supplier List',
+    Section.Value = Dropdown_Section.Selected.'Section Name'
+)
+
+👉 If error, try:
+
+Section.Value = Dropdown_Section.Selected.Title
+
+(depends on your column name)
+
+
+---
+
+🧩 5. Horizontal Question Gallery (UPDATED)
+
+Inside supplier row:
+
+Gallery_Questions_H.Items =
+Filter(
+    'SE Question List',
+    Section.Value = Dropdown_Section.Selected.'Section Name'
+)
+
+
+---
+
+🎯 6. Question Label
+
+Inside question gallery:
+
+Text = ThisItem.Title
+
+
+---
+
+🔥 7. Dynamic Radio Button (NO CHANGE)
+
+Items = Sequence(ThisItem.'Max Score')
+
+👉 Make sure column name is exactly:
+
+Max Score
+
+
+---
+
+💾 8. SAVE (UPDATED PATCH)
+
+This is the most important part:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    
+    With(
+        {currentSupplier: ThisRecord},
+        
+        ForAll(
+            Gallery_Questions_H.AllItems,
+            
+            Patch(
+                'SE Evaluation List',
+                Defaults('SE Evaluation List'),
+                {
+                    Section: Dropdown_Section.Selected,
+                    Supplier: currentSupplier,
+                    Question: ThisRecord,
+                    Score: Radio_Score.Selected.Value
+                }
+            )
+        )
+    )
+)
+
+
+---
+
+⚠️ 9. VERY IMPORTANT CHECKS
+
+✅ Lookup Fields in SharePoint
+
+In SE Evaluation List, confirm:
+
+Column	Type
+
+Section	Lookup → SE Section List
+Supplier	Lookup → SE Supplier List
+Question	Lookup → SE Question List
+
+
+
+---
+
+✅ Column Names (Exact Match)
+
+Check spelling carefully:
+
+'Max Score'
+
+'Section Name' OR Title
+
+'Supplier Code'
+
+
+
+---
+
+🚨 Common Fix (If Error in Patch)
+
+If Supplier or Question not saving:
+
+Use .Id instead:
+
+Supplier: currentSupplier.ID,
+Question: ThisRecord.ID
+
+
+---
+
+🖥️ FINAL RESULT
+
+Now your app will:
+
+✅ Load correct section from link
+✅ Show suppliers per section
+✅ Show questions horizontally
+✅ Show 3 or 4 radio buttons dynamically
+✅ Save to SE Evaluation List
+
+
+---
+
+🚀 If You Want Next (Highly Useful)
+
+I can help you:
+
+✅ Prevent duplicate evaluation per supplier
+
+✅ Add Submit confirmation + validation
+
+✅ Compute Total Score per supplier
+
+✅ Export results to Excel (formatted like your table)
+
+
+Just tell me 👍
+
+*****
+
+
 Great question—this is where your app becomes dynamic and scalable 👍
 We’ll make both:
 
