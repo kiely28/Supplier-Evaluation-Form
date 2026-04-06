@@ -1,3 +1,157 @@
+Good question 👍 — resizing “columns” in a horizontal gallery in Power Apps is a bit different from Excel, because:
+
+👉 Each “column” = 1 item in the horizontal gallery
+👉 The “column width” = TemplateSize
+
+
+---
+
+🎯 MAIN PROPERTY (Column Width)
+
+Select your Horizontal Gallery (Gallery_Questions_H)
+
+Set:
+
+TemplateSize = 120
+
+
+---
+
+🖥️ What this does
+
+| M1R | M5R | D3R |
+   ↑
+each column width = TemplateSize
+
+
+---
+
+📏 HOW TO RESIZE PROPERLY
+
+✅ 1. Adjust Column Width
+
+Try different values:
+
+TemplateSize = 100   // smaller
+TemplateSize = 140   // wider
+TemplateSize = 180   // large spacing
+
+
+---
+
+✅ 2. Match Header Width (IMPORTANT)
+
+If you have a header gallery:
+
+👉 Set SAME value:
+
+Gallery_Header.TemplateSize = 120
+Gallery_Questions_H.TemplateSize = 120
+
+✔ This keeps columns aligned perfectly
+
+
+---
+
+🧩 3. Control Inner Content Size
+
+Inside the column (Radio button):
+
+Resize radio to fit:
+
+Radio_Score.Width = Parent.TemplateWidth
+
+👉 This ensures radio fills the column
+
+
+---
+
+🧩 4. Reduce Spacing Between Columns
+
+Select horizontal gallery:
+
+TemplatePadding = 0
+
+👉 Removes extra gaps
+
+
+---
+
+🧩 5. Control Total Width (IMPORTANT)
+
+If columns are cut off:
+
+👉 Increase gallery width:
+
+Gallery_Questions_H.Width = 600   // adjust based on number of questions
+
+
+---
+
+📊 EXAMPLE
+
+If you have 4 questions:
+
+TemplateSize = 120
+Total width needed ≈ 480
+
+
+---
+
+🔥 PRO TIP (Dynamic Width ⭐)
+
+If number of questions changes per section:
+
+Gallery_Questions_H.Width =
+CountRows(Gallery_Questions_H.AllItems) * 120
+
+
+---
+
+🎯 RESULT
+
+You get a clean table like:
+
+Supplier | Code | M1R      | M5R      | D3R      | Q4R
+---------------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+⚠️ COMMON ISSUE
+
+If columns look misaligned:
+
+✔ Header TemplateSize ≠ Row TemplateSize ❌
+✔ Fix → make them equal ✅
+
+
+---
+
+🚀 If You Want Next
+
+I can help you:
+
+✅ Auto-fit columns based on number of radio buttons (3 vs 4)
+
+✅ Freeze first columns (Supplier, Code like Excel)
+
+✅ Add horizontal scroll
+
+✅ Make it look like real Excel grid
+
+
+Just tell me 👍
+
+
+
+
+****
+
+
+
+
 Good catch 👍 — that error is very common in Power Apps, and it usually means:
 
 > ❌ Section.Value is being used, but Section is not returning a record with a .Value field
