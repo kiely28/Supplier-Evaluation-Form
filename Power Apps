@@ -1,3 +1,327 @@
+Got it 👍 let’s rebuild this clearly and in detail, step-by-step, so you can create a dynamic horizontal matrix (Excel-like) in Power Apps using your renamed lists.
+
+
+---
+
+🎯 GOAL (What we want)
+
+Section: PR PROC
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+✔ Columns (Questions) = dynamic per Section
+✔ Radio options = dynamic (3 or 4)
+✔ Rows = Suppliers
+
+
+---
+
+⚠️ IMPORTANT CONCEPT
+
+Power Apps has no real table/grid control, so we simulate it using:
+
+👉 Vertical Gallery (rows)
+👉 Horizontal Gallery (columns)
+
+
+---
+
+🧩 STEP 1: Section Dropdown
+
+Insert Dropdown:
+
+Dropdown_Section.Items = 'SE Section List'
+
+If your column is Title:
+
+Dropdown_Section.Value = "Title"
+
+
+---
+
+🧩 STEP 2: Supplier Rows (Vertical Gallery)
+
+Insert Vertical Gallery
+
+Rename:
+
+Gallery_Suppliers
+
+Set Items:
+
+Filter(
+    'SE Supplier List',
+    Section.Value = Dropdown_Section.Selected.Title
+)
+
+
+---
+
+🎨 Inside Supplier Row (IMPORTANT)
+
+Delete default controls, then add:
+
+1. Supplier Name
+
+Text = ThisItem.Title
+
+2. Supplier Code
+
+Text = ThisItem.'Supplier Code'
+
+
+---
+
+🧩 STEP 3: Add Horizontal Gallery (Columns)
+
+👉 Inside the supplier row, insert Horizontal Gallery
+
+Rename:
+
+Gallery_Questions_H
+
+
+---
+
+Set Items:
+
+Filter(
+    'SE Question List',
+    Section.Value = Dropdown_Section.Selected.Title
+)
+
+
+---
+
+🧩 STEP 4: Build Each Column
+
+Inside Gallery_Questions_H:
+
+
+---
+
+➤ A. Question Label (optional inside row)
+
+Text = ThisItem.Title
+
+(You can hide this later if you use header)
+
+
+---
+
+➤ B. Radio Button (Dynamic Options)
+
+Insert Radio → rename:
+
+Radio_Score
+
+Set Items:
+
+Sequence(ThisItem.'Max Score')
+
+
+---
+
+💡 Example behavior:
+
+Question	Max Score	Radio Output
+
+M1R	3	1,2,3
+D3R	4	1,2,3,4
+
+
+
+---
+
+🧱 STEP 5: Layout Like Excel
+
+Inside supplier row:
+
+Element	Position
+
+Supplier Name	Left
+Supplier Code	Next
+Horizontal Gallery	Right
+
+
+
+---
+
+Example positioning:
+
+Supplier Name → X=10
+Code          → X=150
+Questions     → X=300
+
+
+---
+
+🧩 STEP 6: Create Header Row (VERY IMPORTANT)
+
+👉 Outside the gallery (top), create headers
+
+
+---
+
+Option A (Simple Static)
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+
+
+---
+
+Option B (Dynamic Header ⭐ BEST)
+
+Insert another Horizontal Gallery
+
+Rename:
+
+Gallery_Header
+
+Items:
+
+Filter(
+    'SE Question List',
+    Section.Value = Dropdown_Section.Selected.Title
+)
+
+Inside:
+
+Text = ThisItem.Title
+
+
+---
+
+🧩 STEP 7: Align Header + Rows
+
+IMPORTANT:
+
+✔ Header gallery X position = Questions gallery X
+✔ Same width per column
+
+
+---
+
+Set column width:
+
+Inside Gallery_Questions_H:
+
+TemplateSize = 120
+
+Same for header gallery.
+
+
+---
+
+🖥️ FINAL STRUCTURE
+
+[Header]
+Supplier | Code | M1R | M5R | D3R | Q4R
+
+[Gallery_Suppliers]
+    AOI | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+    ASIA| 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+💾 STEP 8: Save Data (CRITICAL)
+
+Now handle nested saving:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    
+    With(
+        {currentSupplier: ThisRecord},
+        
+        ForAll(
+            Gallery_Questions_H.AllItems,
+            
+            Patch(
+                'SE Evaluation List',
+                Defaults('SE Evaluation List'),
+                {
+                    Section: Dropdown_Section.Selected,
+                    Supplier: currentSupplier,
+                    Question: ThisRecord,
+                    Score: Radio_Score.Selected.Value
+                }
+            )
+        )
+    )
+)
+
+
+---
+
+⚠️ COMMON ISSUE (VERY IMPORTANT)
+
+Inside nested gallery:
+
+👉 Power Apps may confuse Radio_Score
+
+FIX:
+
+Use:
+
+Radio_Score.Selected.Value
+
+If error:
+
+ThisItem.Radio_Score.Selected.Value
+
+
+---
+
+🧠 BEST PRACTICES
+
+✔ Always use Max Score column
+✔ Keep naming consistent
+✔ Avoid hardcoding questions
+✔ Use lookup fields correctly
+
+
+---
+
+🚀 FINAL RESULT
+
+You now have:
+
+✅ Dynamic columns per section
+✅ Dynamic radio (3 or 4 choices)
+✅ Excel-like layout
+✅ Fully scalable design
+
+
+---
+
+🔥 If You Want Next Level
+
+I can help you upgrade to:
+
+✅ Auto compute Total Score per Supplier
+
+✅ Prevent duplicate submission
+
+✅ Disable submit if incomplete
+
+✅ Export to Excel (same format)
+
+
+Just tell me 👍
+
+
+
+
+
+*****
+
+
+
 Perfect 👍 thanks for the update—that’s actually a good naming convention.
 Now let’s adjust your Power Apps formulas to match your new SharePoint list names.
 
