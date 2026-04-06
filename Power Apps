@@ -1,3 +1,253 @@
+Ahh got it 👍 you’re using containers (MainContainer1) — that’s actually better, but the setup is slightly different.
+
+Let’s fix it properly so your layout still works like Excel.
+
+
+---
+
+🎯 KEY IDEA (WITH CONTAINERS)
+
+Inside Power Apps:
+
+👉 Your structure should be:
+
+MainContainer1 (Vertical)
+
+   ├── HeaderContainer  (horizontal)
+   └── BodyContainer    (vertical gallery)
+
+
+---
+
+🧩 STEP 1: MainContainer1
+
+Set:
+
+Direction = LayoutDirection.Vertical
+
+
+---
+
+🧩 STEP 2: Create HeaderContainer
+
+👉 Insert Horizontal Container inside MainContainer1
+
+Rename:
+
+HeaderContainer
+
+Set:
+
+Height = 50
+
+
+---
+
+🧩 STEP 3: Add Supplier & Code (INSIDE HeaderContainer)
+
+Now this is where your question comes in 👇
+
+👉 YES, you should put them inside HeaderContainer, NOT inside Gallery_Header
+
+
+---
+
+Add Label → Supplier
+
+Text = "Supplier"
+Width = 150
+
+
+---
+
+Add Label → Code
+
+Text = "Code"
+Width = 120
+
+
+---
+
+🧩 STEP 4: Add Gallery_Header (Dynamic Questions)
+
+Still inside HeaderContainer, add:
+
+👉 Horizontal Gallery
+
+Rename:
+
+Gallery_Header
+
+
+---
+
+Set Items:
+
+Filter(
+    'SE Question List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+Set Width:
+
+Width = Parent.Width - 270
+
+(150 Supplier + 120 Code = 270)
+
+
+---
+
+Inside Gallery_Header:
+
+Text = ThisItem.Title
+
+
+---
+
+🧩 STEP 5: Body (Rows)
+
+Now below HeaderContainer:
+
+👉 Add Gallery_Suppliers
+
+
+---
+
+Inside each row:
+
+👉 Use Horizontal Container (VERY IMPORTANT)
+
+
+---
+
+Row Layout:
+
+[Supplier] [Code] [Questions Gallery]
+
+
+---
+
+Supplier Label
+
+Width = 150
+Text = ThisItem.Title
+
+
+---
+
+Code Label
+
+Width = 120
+Text = ThisItem.'Supplier Code'
+
+
+---
+
+Questions Gallery (Horizontal)
+
+Rename:
+
+Gallery_Questions_H
+
+
+---
+
+Set Items:
+
+Filter(
+    'SE Question List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+🧩 STEP 6: Match Header and Body (CRITICAL)
+
+👉 Set SAME column width:
+
+Gallery_Header.TemplateSize = 120
+Gallery_Questions_H.TemplateSize = 120
+
+
+---
+
+🧩 STEP 7: Dynamic Radio Button
+
+Inside Gallery_Questions_H:
+
+Radio_Score.Items = Sequence(ThisItem.'Max Score')
+Radio_Score.Layout = Layout.Horizontal
+
+
+---
+
+🖥️ FINAL STRUCTURE (WITH CONTAINER)
+
+MainContainer1
+│
+├── HeaderContainer
+│     Supplier | Code | M1R | M5R | D3R | Q4R
+│
+└── Gallery_Suppliers
+      AOI | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+      ASIA| 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+🔥 WHY THIS WORKS BETTER
+
+✔ Containers auto-align everything
+✔ No need manual X positions
+✔ Responsive (resizes automatically)
+✔ Cleaner UI
+
+
+---
+
+⚠️ COMMON MISTAKE
+
+❌ Putting Supplier/Code inside Gallery_Header
+✔ They must be separate controls in HeaderContainer
+
+
+---
+
+🚀 RESULT
+
+Now you have:
+
+✅ Excel-like layout
+✅ Fully dynamic columns
+✅ Clean alignment (no manual positioning)
+✅ Works with different sections
+
+
+---
+
+👍 If You Want Next
+
+I can help you:
+
+✅ Fix SAVE (nested gallery issue — important)
+
+✅ Add total score per supplier
+
+✅ Freeze Supplier/Code column
+
+✅ Add validation before submit
+
+
+Just tell me 👍
+
+
+****
+
+
 Good question 👍 — this is where many get confused.
 
 👉 Important concept first:
