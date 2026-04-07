@@ -1,3 +1,130 @@
+Got it 👍 — your Radio is still vertical, so let’s fix it properly.
+
+
+---
+
+✅ MAKE RADIO BUTTON HORIZONTAL
+
+Select your Radio control (Radio_Score) in Power Apps
+
+
+---
+
+🔧 1. Set Layout to Horizontal
+
+Layout = Layout.Horizontal
+
+
+---
+
+🔧 2. Make Sure It Has Enough Width (VERY IMPORTANT)
+
+If width is too small, Power Apps will force vertical layout ❌
+
+Set:
+
+Width = Parent.TemplateWidth
+
+👉 or test with fixed width:
+
+Width = 120
+
+
+---
+
+🔧 3. Reduce Height
+
+Height = 40
+
+
+---
+
+🔧 4. Optional (Clean Alignment)
+
+Align = Align.Center
+
+
+---
+
+🧠 WHY YOURS IS STILL VERTICAL
+
+Even if you set:
+
+Layout = Layout.Horizontal
+
+👉 It will STILL show vertical if:
+
+Width is too small ❌
+
+Inside tight container ❌
+
+
+
+---
+
+🧪 QUICK TEST (IMPORTANT)
+
+Temporarily set:
+
+Width = 300
+
+👉 If it becomes horizontal → problem is width ✔️
+
+
+---
+
+🎯 FINAL CORRECT SETUP
+
+Layout = Layout.Horizontal
+Width = Parent.TemplateWidth
+Height = 40
+
+
+---
+
+🖥️ RESULT
+
+○ 1   ○ 2   ○ 3   ○ 4
+
+
+---
+
+🔥 PRO TIP (Better UI)
+
+If spacing looks tight:
+
+Padding = 5
+
+
+---
+
+🚨 COMMON ISSUE (Nested Gallery)
+
+Inside your horizontal gallery column, if still vertical:
+
+👉 Increase column width:
+
+Gallery_Questions_H.TemplateSize = 120
+
+
+---
+
+🚀 If Still Not Working
+
+Tell me:
+
+your TemplateSize
+
+your Radio width
+
+
+I can fix it exactly for your layout 👍
+
+
+
+****
+
+
 Got it 👍 I’ll give you a complete, start-to-finish tutorial so you can build your dynamic horizontal matrix (Excel-like) using:
 
 SharePoint
