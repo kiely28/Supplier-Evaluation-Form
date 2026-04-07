@@ -1,3 +1,218 @@
+Great—this is the step that makes your app feel like a real Excel table 👍
+We’ll make header + rows scroll together in ONE horizontal container so you only get one scrollbar.
+
+Using entity["software","Power Apps","Microsoft low-code platform"], follow this carefully:
+
+
+---
+
+🎯 GOAL
+
+Instead of:
+
+Header → has its own scroll ❌  
+Rows   → has another scroll ❌
+
+We want:
+
+ONE container → header + rows scroll together ✅
+
+
+---
+
+🧩 FINAL STRUCTURE (IMPORTANT)
+
+MainContainer1 (Vertical)
+│
+├── ScrollContainer (Horizontal Scroll ON)
+│     ├── HeaderContainer
+│     └── Gallery_Suppliers
+
+
+---
+
+🧩 STEP 1: Create Scroll Container
+
+👉 Insert a Container inside MainContainer1
+
+Rename:
+
+ScrollContainer
+
+Set properties:
+
+Direction = LayoutDirection.Vertical
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+
+👉 This enables horizontal scrolling
+
+
+---
+
+🧩 STEP 2: Move Header + Gallery Inside
+
+Drag BOTH into ScrollContainer:
+
+✅ HeaderContainer
+
+✅ Gallery_Suppliers
+
+
+
+---
+
+🧩 STEP 3: Make Them Wider Than Screen
+
+👉 This is the KEY
+
+We force content to be wider so scroll appears.
+
+
+---
+
+📌 Set HeaderContainer Width
+
+HeaderContainer.Width =
+150 + 120 + (CountRows('SE Question List') * 110)
+
+
+---
+
+📌 Set Gallery_Suppliers Width
+
+Gallery_Suppliers.Width =
+HeaderContainer.Width
+
+
+---
+
+👉 Explanation:
+
+150 = Supplier column
+120 = Code column
+110 = each question column
+
+
+---
+
+🧩 STEP 4: Remove Scroll from Inner Galleries
+
+❌ REMOVE scrolling from:
+
+Gallery_Header
+
+Gallery_Questions_H
+
+
+
+---
+
+Set:
+
+ShowScrollbar = false
+
+
+---
+
+🧩 STEP 5: Fix Question Gallery Width
+
+Inside supplier row:
+
+Gallery_Questions_H.Width =
+CountRows(Gallery_Questions_H.AllItems) * 110
+
+
+---
+
+🧩 STEP 6: Fix Column Width Consistency
+
+Set BOTH:
+
+Gallery_Header.TemplateSize = 110
+Gallery_Questions_H.TemplateSize = 110
+
+
+---
+
+🧩 STEP 7: Fix Radio Button (no internal scroll)
+
+Radio_Score.Width = Parent.TemplateWidth
+Radio_Score.Layout = Layout.Horizontal
+
+
+---
+
+🖥️ FINAL BEHAVIOR
+
+Now your UI will work like this:
+
+[ScrollContainer → scroll →]
+
+Supplier | Code | M1R | M5R | D3R | Q4R | ...
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+
+✔ One horizontal scroll only
+✔ Header and rows move together
+✔ No scroll inside radio buttons
+
+
+---
+
+🚨 COMMON MISTAKES
+
+❌ Header outside container
+❌ Different widths (header vs rows)
+❌ Inner galleries still scrolling
+❌ Radio width too big
+
+
+---
+
+🔥 PRO TIP (BEST UX)
+
+If you want smoother scrolling:
+
+ScrollContainer.Padding = 0
+
+
+---
+
+🚀 RESULT
+
+You now have:
+
+✅ True Excel-like horizontal scrolling
+✅ Dynamic columns
+✅ Clean UI
+✅ No double scroll issue
+
+
+---
+
+👍 If You Want Next Level
+
+I can help you:
+
+✅ Freeze Supplier & Code (like Excel frozen columns)
+
+✅ Add Total Score per Supplier
+
+✅ Prevent duplicate submission
+
+✅ Add validation (must answer all)
+
+
+Just tell me 👍
+
+
+
+****
+
+
+
 Ahh yes 👍 this is a very common issue when using nested galleries in entity["software","Power Apps","Microsoft low-code platform"].
 
 You’re seeing:
