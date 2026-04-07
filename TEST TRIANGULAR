@@ -1,0 +1,133 @@
+Sub UpdateStorageLocation()
+
+    Dim baseFolder As String
+    Dim sourcePath As String
+    Dim wbSource As Workbook
+    Dim wsGoods As Worksheet
+    Dim lastRow As Long
+    Dim colControl As Long, colApplied As Long
+    Dim i As Long
+    
+    Dim dictControl As Object
+    Dim dictApplied As Object
+    
+    Dim controlNum As String
+    Dim appliedBy As String
+    
+    Dim wbTarget As Workbook
+    Dim wsTarget As Worksheet
+    Dim targetPath As String
+    Dim r As Long, lastRowTarget As Long
+    
+    'Source workbook path
+    sourcePath = "D:\Triangular\MaterilWithDeficit.xlsx"
+    
+    'Read base folder from A1
+    baseFolder = ThisWorkbook.Sheets(1).Range("A1").Value
+    
+    If baseFolder = "" Then
+        MsgBox "Base folder path in A1 is empty.", vbExclamation
+        Exit Sub
+    End If
+    
+    If Dir(baseFolder, vbDirectory) = "" Then
+        MsgBox "Base folder path does not exist: " & baseFolder, vbCritical
+        Exit Sub
+    End If
+    
+    If Dir(sourcePath) = "" Then
+        MsgBox "Source workbook not found: " & sourcePath, vbCritical
+        Exit Sub
+    End If
+    
+    'Open source workbook
+    Set wbSource = Workbooks.Open(sourcePath)
+    
+    'Check if GOODS sheet exists
+    On Error Resume Next
+    Set wsGoods = wbSource.Sheets("GOODS")
+    On Error GoTo 0
+    
+    If wsGoods Is Nothing Then
+        MsgBox "Sheet GOODS not found.", vbCritical
+        wbSource.Close False
+        Exit Sub
+    End If
+    
+    'Find column numbers dynamically
+    For i = 1 To wsGoods.Cells(1, wsGoods.Columns.Count).End(xlToLeft).Column
+        If Trim(wsGoods.Cells(1, i).Value) = "ControlNumber" Then colControl = i
+        If Trim(wsGoods.Cells(1, i).Value) = "AppliedBy" Then colApplied = i
+    Next i
+    
+    If colControl = 0 Or colApplied = 0 Then
+        MsgBox "Required columns not found in GOODS sheet.", vbCritical
+        wbSource.Close False
+        Exit Sub
+    End If
+    
+    'Create dictionaries
+    Set dictControl = CreateObject("Scripting.Dictionary")
+    Set dictApplied = CreateObject("Scripting.Dictionary")
+    
+    lastRow = wsGoods.Cells(wsGoods.Rows.Count, colControl).End(xlUp).Row
+    
+    'Build mapping ControlNumber ? AppliedBy
+    For i = 2 To lastRow
+    
+        'Skip rows hidden by filter
+        If wsGoods.Rows(i).EntireRow.Hidden = False Then
+        
+            controlNum = Trim(wsGoods.Cells(i, colControl).Value)
+            appliedBy = Trim(wsGoods.Cells(i, colApplied).Value)
+            
+            If controlNum <> "" And appliedBy <> "" Then
+                If Not dictControl.exists(controlNum) Then
+                    dictControl.Add controlNum, appliedBy
+                    
+                    If Not dictApplied.exists(appliedBy) Then
+                        dictApplied.Add appliedBy, appliedBy
+                    End If
+                End If
+            End If
+            
+        End If
+    Next i
+    
+    'Process each AppliedBy workbook
+    Dim key As Variant
+    
+    For Each key In dictApplied.Keys
+        
+        targetPath = baseFolder & "\" & key & ".xlsx"
+        
+        If Dir(targetPath) <> "" Then
+        
+            Set wbTarget = Workbooks.Open(targetPath)
+            
+            On Error Resume Next
+            Set wsTarget = wbTarget.Sheets("Sheet1")
+            On Error GoTo 0
+            
+            If Not wsTarget Is Nothing Then
+            
+                lastRowTarget = wsTarget.Cells(wsTarget.Rows.Count, "P").End(xlUp).Row
+                
+                For r = 2 To lastRowTarget
+                    If wsTarget.Cells(r, "C").Value = "" Then
+                        wsTarget.Cells(r, "C").Value = wsTarget.Cells(r, "P").Value
+                    End If
+                Next r
+                
+            End If
+            
+            'wbTarget.Close SaveChanges:=True
+            
+        End If
+        
+    Next key
+    
+    'wbSource.Close False
+    
+    'MsgBox "Process completed successfully.", vbInformation
+End Sub
