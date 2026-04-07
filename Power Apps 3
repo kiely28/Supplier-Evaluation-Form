@@ -1,0 +1,431 @@
+Got it 👍 I’ll give you a complete, start-to-finish tutorial so you can build your dynamic horizontal matrix (Excel-like) using:
+
+SharePoint
+
+Power Apps
+
+
+This will cover: ✔ Data setup
+✔ Dynamic questions per section
+✔ Horizontal matrix UI
+✔ Single scroll (clean UX)
+✔ Dynamic radio (3 or 4 options)
+
+
+---
+
+🧩 PART 1: SHAREPOINT SETUP
+
+You already renamed lists—good 👍
+
+✅ 1. SE Section List
+
+Columns:
+
+Title → Section Name
+
+
+Example:
+
+PR Proc NP  
+VP Proc NP
+
+
+---
+
+✅ 2. SE Supplier List
+
+Columns:
+
+Title → Supplier Name
+
+Supplier Code → Text
+
+Section → Lookup (SE Section List)
+
+
+
+---
+
+✅ 3. SE Question List
+
+Columns:
+
+Title → Question (M1R, M5R…)
+
+Section → Lookup (SE Section List)
+
+Max Score → Number
+
+
+
+---
+
+Example:
+
+PR Proc NP:
+M1R → 3
+M6R → 3
+D2R → 4
+D3R → 4
+
+VP Proc NP:
+M1R → 3
+M5R → 4
+M6R → 3
+Q3R → 3
+
+
+---
+
+✅ 4. SE Evaluation List
+
+Columns:
+
+Section → Lookup
+
+Supplier → Lookup
+
+Question → Lookup
+
+Score → Number
+
+
+
+---
+
+🧩 PART 2: CREATE POWER APPS
+
+✅ Step 1: Create App
+
+In Power Apps:
+
+Create → Canvas App (Tablet)
+
+
+
+---
+
+✅ Step 2: Connect Data
+
+Add:
+
+SE Section List
+
+SE Supplier List
+
+SE Question List
+
+SE Evaluation List
+
+
+
+---
+
+🧩 PART 3: SECTION DROPDOWN
+
+Insert Dropdown:
+
+Items = 'SE Section List'
+Value = "Title"
+
+
+---
+
+🧩 PART 4: MAIN LAYOUT (VERY IMPORTANT)
+
+Use containers:
+
+MainContainer (Vertical)
+
+   ├── Dropdown_Section
+   └── ScrollContainer (Horizontal Scroll)
+          ├── HeaderContainer
+          └── Gallery_Suppliers
+
+
+---
+
+🧩 PART 5: SCROLL CONTAINER (KEY PART)
+
+Insert container:
+
+Properties:
+
+Direction = LayoutDirection.Vertical
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+
+👉 This gives ONE horizontal scroll
+
+
+---
+
+🧩 PART 6: HEADER (TOP ROW)
+
+Inside HeaderContainer (Horizontal)
+
+
+---
+
+➤ Add Supplier Header
+
+Text = "Supplier"
+Width = 150
+
+
+---
+
+➤ Add Code Header
+
+Text = "Code"
+Width = 120
+
+
+---
+
+➤ Add Dynamic Question Header
+
+Insert Horizontal Gallery
+
+Name:
+
+Gallery_Header
+
+Items:
+
+Filter(
+    'SE Question List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+Inside:
+
+Text = ThisItem.Title
+
+
+---
+
+Set column width:
+
+TemplateSize = 110
+
+
+---
+
+🧩 PART 7: SUPPLIER ROWS
+
+Insert Vertical Gallery
+
+Name:
+
+Gallery_Suppliers
+
+Items:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+🧩 PART 8: BUILD ROW CONTENT
+
+Inside each row → insert Horizontal Container
+
+
+---
+
+➤ Supplier Name
+
+Text = ThisItem.Title
+Width = 150
+
+
+---
+
+➤ Supplier Code
+
+Text = ThisItem.'Supplier Code'
+Width = 120
+
+
+---
+
+➤ Questions (Columns)
+
+Insert Horizontal Gallery
+
+Name:
+
+Gallery_Questions_H
+
+
+---
+
+Items:
+
+Filter(
+    'SE Question List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+Column Width:
+
+TemplateSize = 110
+
+
+---
+
+🧩 PART 9: RADIO BUTTON (DYNAMIC)
+
+Inside Gallery_Questions_H
+
+Insert Radio:
+
+Name:
+
+Radio_Score
+
+
+---
+
+Items:
+
+Sequence(ThisItem.'Max Score')
+
+
+---
+
+Make horizontal:
+
+Layout = Layout.Horizontal
+
+
+---
+
+Prevent scroll:
+
+Width = Parent.TemplateWidth
+
+
+---
+
+🧩 PART 10: FIX SCROLL (IMPORTANT)
+
+
+---
+
+Header Width:
+
+HeaderContainer.Width =
+150 + 120 + (CountRows(Gallery_Header.AllItems) * 110)
+
+
+---
+
+Rows Width:
+
+Gallery_Suppliers.Width = HeaderContainer.Width
+
+
+---
+
+Remove inner scroll:
+
+Gallery_Header.ShowScrollbar = false
+Gallery_Questions_H.ShowScrollbar = false
+
+
+---
+
+🖥️ FINAL OUTPUT
+
+[Scroll →]
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+✔ Dynamic columns per section
+✔ Dynamic radio options (3 or 4)
+✔ One scroll only
+✔ Excel-like UI
+
+
+---
+
+🧩 PART 11: SAVE DATA
+
+Button → OnSelect:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    With(
+        {sup: ThisRecord},
+        ForAll(
+            Gallery_Questions_H.AllItems,
+            Patch(
+                'SE Evaluation List',
+                Defaults('SE Evaluation List'),
+                {
+                    Section: Dropdown_Section.Selected,
+                    Supplier: sup,
+                    Question: ThisRecord,
+                    Score: Radio_Score.Selected.Value
+                }
+            )
+        )
+    )
+)
+
+
+---
+
+🚨 COMMON ERRORS (AND FIX)
+
+Issue	Fix
+
+.Value error	Use Section.Id
+Double scroll	Use ScrollContainer
+Misaligned columns	Same TemplateSize
+Radio scroll	Width = Parent.TemplateWidth
+
+
+
+---
+
+🚀 YOU NOW HAVE
+
+✅ Fully dynamic matrix
+✅ Section-based filtering
+✅ Horizontal Excel-like UI
+✅ Clean single scroll
+✅ Scalable design
+
+
+---
+
+👍 NEXT (HIGHLY RECOMMENDED)
+
+If you want, I can guide you to:
+
+✅ Prevent duplicate submission
+
+✅ Add total score per supplier
+
+✅ Highlight highest score
+
+✅ Export to Excel format
+
+
+Just tell me 👍
