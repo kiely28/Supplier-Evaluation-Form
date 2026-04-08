@@ -1,3 +1,217 @@
+Alright 👍 since it’s still not showing, let’s diagnose it precisely.
+At this point, the issue is 100% about actual width not exceeding the container.
+
+
+---
+
+🎯 QUICK TRUTH
+
+👉 Scrollbar will ONLY appear if:
+
+Content Width > ScrollContainer.Width
+
+
+---
+
+🔍 LET’S DEBUG STEP-BY-STEP
+
+
+---
+
+✅ STEP 1: FORCE TEST (VERY IMPORTANT)
+
+Temporarily set:
+
+HeaderContainer.Width = 1500
+Gallery_Suppliers_New.Width = 1500
+
+👉 Now run the app.
+
+❓ What happens?
+
+✅ If scrollbar appears → your formula is wrong
+
+❌ If still no scrollbar → container issue
+
+
+👉 Tell me result if unsure
+
+
+---
+
+🧩 STEP 2: CHECK ScrollContainer SETTINGS
+
+Select ScrollContainer
+
+Set EXACTLY:
+
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+
+
+---
+
+⚠️ VERY IMPORTANT
+
+If you are using Auto Layout Container, sometimes:
+
+Direction = LayoutDirection.Vertical
+
+👉 is correct (keep it)
+
+
+---
+
+🧩 STEP 3: CHECK PARENT CONTAINER
+
+Select MainContainer1
+
+Set:
+
+OverflowX = Overflow.Visible
+
+
+---
+
+🧩 STEP 4: REMOVE WIDTH LIMITING
+
+Check if ANY of these exist ❌:
+
+WidthFitToContent = true
+
+👉 If yes → turn OFF
+
+
+---
+
+🧩 STEP 5: VERIFY ACTUAL WIDTH VALUES
+
+Add a temporary label:
+
+Text = HeaderContainer.Width
+
+👉 Example result:
+
+350 → ❌ too small (no scroll)
+
+800+ → ✅ should scroll
+
+
+
+---
+
+🧠 MOST LIKELY YOUR ISSUE
+
+Based on your previous values:
+
+Gallery_Header.Width = 350
+Gallery_Question_H = 350
+
+👉 Even if you fixed formula, something is still limiting width.
+
+
+---
+
+✅ FINAL CORRECT SETUP (COPY THIS)
+
+
+---
+
+🔹 varTotalWidth
+
+Set(
+    varTotalWidth,
+    150 + 120 + CountRows(colQuestions) * 110
+)
+
+
+---
+
+🔹 HeaderContainer
+
+Width = varTotalWidth
+
+
+---
+
+🔹 Gallery_Suppliers_New
+
+Width = varTotalWidth
+
+
+---
+
+🔹 Gallery_Question_H_New
+
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+🔹 ScrollContainer
+
+Width = Parent.Width
+OverflowX = Overflow.Scroll
+
+
+---
+
+🖥️ EXPECTED RESULT
+
+Screen width = 400
+Content width = 700+
+
+→ Horizontal scrollbar appears ✅
+
+
+---
+
+🚨 IF STILL NOT WORKING
+
+Then the issue is definitely one of these:
+
+1. ❌ Gallery_Suppliers still OUTSIDE ScrollContainer
+
+
+2. ❌ Container auto layout overriding width
+
+
+3. ❌ Parent container restricting overflow
+
+
+4. ❌ Width not actually applied (formula error)
+
+
+
+
+---
+
+🚀 FASTEST WAY TO FIX (GUARANTEED)
+
+Do this:
+
+HeaderContainer.Width = 1200
+Gallery_Suppliers_New.Width = 1200
+
+👉 If still no scroll → layout issue
+👉 If scroll appears → width formula issue
+
+
+---
+
+👍 NEXT
+
+If you want, send me:
+
+Screenshot or exact properties of ScrollContainer
+
+Width values showing in labels
+
+
+I’ll pinpoint it exactly (we’re very close 👍)
+
+****
+
 Great question 👍 — this is the last piece that affects alignment and scrolling.
 
 You’re asking about Container4 inside Gallery_Suppliers_New (each row).
