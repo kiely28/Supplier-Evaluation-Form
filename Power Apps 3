@@ -1,3 +1,26 @@
+
+
+Issue: This rule creates a circular reference between
+properties, which is not allowed. A property
+cannot reference itself or other properties
+affected by its value.
+
+
+Location: HeaderContainer.Width
+
+
+Issue: This rule creates a circular reference between
+properties, which is not allowed. A property
+cannot reference itself or other properties
+affected by its value.
+
+Location: Gallery_Suppliers_New.Width
+
+
+
+*****
+
+
 Got it 👍 — your Radio is still vertical, so let’s fix it properly.
 
 
