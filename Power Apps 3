@@ -1,3 +1,174 @@
+Good catch 👍 — this is a classic circular reference issue in Power Apps.
+
+
+---
+
+❗ WHY THIS ERROR HAPPENS
+
+You likely did something like:
+
+HeaderContainer.Width = Gallery_Suppliers_New.Width
+Gallery_Suppliers_New.Width = HeaderContainer.Width
+
+👉 This creates a loop:
+
+Header → depends on Gallery  
+Gallery → depends on Header  
+❌ Infinite loop → ERROR
+
+
+---
+
+✅ SOLUTION: USE ONE SOURCE OF TRUTH
+
+👉 Only ONE control computes the width
+👉 Others just follow it
+
+
+---
+
+🎯 RECOMMENDED FIX (CLEAN & SAFE)
+
+
+---
+
+🧩 STEP 1: Create a Variable for Total Width
+
+Instead of referencing controls, calculate width once.
+
+In Screen → OnVisible:
+
+Set(
+    varTotalWidth,
+    150 + 120 + (CountRows('SE Question List') * 110)
+)
+
+
+---
+
+🧩 STEP 2: Use Variable Everywhere
+
+HeaderContainer:
+
+Width = varTotalWidth
+
+
+---
+
+Gallery_Suppliers:
+
+Width = varTotalWidth
+
+
+---
+
+👉 Now NO circular reference ✅
+
+
+---
+
+🧠 WHY THIS WORKS
+
+varTotalWidth = fixed calculation
+
+Header → uses varTotalWidth  
+Gallery → uses varTotalWidth  
+(no dependency between controls)
+
+
+---
+
+⚠️ IMPORTANT (Dynamic per Section)
+
+If questions change per section, update variable:
+
+Dropdown_Section → OnChange:
+
+Set(
+    varTotalWidth,
+    150 + 120 +
+    CountRows(
+        Filter(
+            'SE Question List',
+            Section.Id = Dropdown_Section.Selected.ID
+        )
+    ) * 110
+)
+
+
+---
+
+🧩 OPTIONAL (NO VARIABLE METHOD)
+
+If you don’t want variables, use SAME formula in both:
+
+150 + 120 +
+CountRows(
+    Filter(
+        'SE Question List',
+        Section.Id = Dropdown_Section.Selected.ID
+    )
+) * 110
+
+👉 But DO NOT reference each other
+
+
+---
+
+🚨 COMMON WRONG PATTERNS
+
+❌ This:
+
+Header.Width = Gallery.Width
+Gallery.Width = Header.Width
+
+❌ Or:
+
+Width = Parent.Width   // when parent depends on child
+
+
+---
+
+🖥️ FINAL RESULT
+
+✔ No circular reference error
+✔ Header and rows perfectly aligned
+✔ Dynamic width per section
+✔ Single scroll works properly
+
+
+---
+
+🔥 PRO TIP
+
+If you want extra safe setup:
+
+👉 Use variable + fixed column widths
+
+ColumnWidth = 110
+
+
+---
+
+🚀 If You Want Next
+
+I can help you:
+
+✅ Freeze Supplier & Code (like Excel)
+
+✅ Add total score per supplier
+
+✅ Optimize performance (important for many suppliers)
+
+✅ Fix save logic for nested galleries
+
+
+Just tell me 👍
+
+
+
+*****
+
 
 
 Issue: This rule creates a circular reference between
