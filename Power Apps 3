@@ -1,4 +1,182 @@
+Nice 👍 thanks for sharing your tree—this helps a lot.
+You’re very close, just one structural issue is causing most of your layout/scroll problems.
 
+
+---
+
+🔍 CURRENT ISSUE IN YOUR TREE
+
+Screen1
+ ├── Dropdown_Section
+ ├── ScrollContainer
+ │     └── HeaderContainer
+ │           └── Gallery_Header_New
+ └── Gallery_Suppliers_New   ❌ (outside ScrollContainer)
+
+👉 Problem:
+
+Header is inside ScrollContainer
+
+Rows are outside
+
+
+❌ Result:
+
+Header scrolls separately
+
+Rows don’t align
+
+Double scrollbar issues
+
+
+
+---
+
+✅ CORRECT STRUCTURE (FIX THIS)
+
+👉 Move Gallery_Suppliers_New INTO ScrollContainer
+
+
+---
+
+✔ UPDATED TREE
+
+Screen1
+ ├── Dropdown_Section
+ └── ScrollContainer   ✅ (MAIN SCROLL AREA)
+      ├── HeaderContainer
+      │     ├── Supplier Name_H
+      │     ├── Supplier Code_H
+      │     └── Gallery_Header_New
+      │           └── Question
+      │
+      └── Gallery_Suppliers_New   ✅ MOVED HERE
+            └── Container4
+                  ├── Supplier Name
+                  ├── Supplier Code
+                  └── Gallery_Question_H_New
+                        └── Radio_Score_New
+
+
+---
+
+🎯 WHY THIS FIX IS IMPORTANT
+
+Now:
+
+ScrollContainer
+   → controls horizontal scroll
+   → header + rows move together
+
+✔ One scrollbar only
+✔ Perfect alignment
+✔ Excel-like behavior
+
+
+---
+
+🧩 NEXT: FIX WIDTH (IMPORTANT)
+
+After moving, update widths:
+
+
+---
+
+✅ 1. ScrollContainer
+
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+
+
+---
+
+✅ 2. HeaderContainer Width
+
+Width = varTotalWidth
+
+
+---
+
+✅ 3. Gallery_Suppliers_New Width
+
+Width = varTotalWidth
+
+
+---
+
+✅ 4. Column Width Sync
+
+Gallery_Header_New.TemplateSize = 110
+Gallery_Question_H_New.TemplateSize = 110
+
+
+---
+
+🧩 NEXT: FIX RADIO (if needed)
+
+Inside Gallery_Question_H_New:
+
+Radio_Score_New.Layout = Layout.Horizontal
+Radio_Score_New.Width = Parent.TemplateWidth
+
+
+---
+
+🧩 NEXT: FIX DATA SOURCE (IMPORTANT)
+
+Make sure both use SAME source:
+
+Gallery_Header_New.Items = colQuestions
+Gallery_Question_H_New.Items = colQuestions
+
+
+---
+
+🖥️ FINAL RESULT
+
+[Scroll →]
+
+Supplier | Code | M1R | M5R | D3R | Q4R
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+✔ Single scroll
+✔ Perfect alignment
+✔ Dynamic columns
+✔ Clean UI
+
+
+---
+
+🚨 FINAL CHECKLIST
+
+✔ Gallery_Suppliers inside ScrollContainer
+✔ Header + Rows same width
+✔ TemplateSize same
+✔ No inner scrollbars
+✔ Radio width = Parent.TemplateWidth
+
+
+---
+
+🚀 If You Want Next (Highly Recommended)
+
+Now that layout is correct, next best steps:
+
+✅ Fix Save (Patch) for nested gallery (important)
+
+✅ Prevent duplicate evaluation per supplier
+
+✅ Add total score per row
+
+✅ Disable submit if incomplete
+
+
+Just tell me 👍
+
+
+*****
 
 > App
 > Screen1
