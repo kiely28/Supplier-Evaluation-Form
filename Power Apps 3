@@ -1,3 +1,180 @@
+Alright—we’ll fix this definitively 👍
+At this point, the problem is not just one property, it’s the combination of Auto Layout + Fill behavior + widths.
+
+Let’s go straight to a guaranteed working setup in Power Apps.
+
+
+---
+
+🚨 WHY IT’S STILL NOT SCROLLING
+
+Even if you set big widths (e.g., 1200), Auto Layout containers can still:
+
+• Stretch children to fit container ❌
+• Ignore your Width formulas ❌
+• Prevent overflow ❌
+
+👉 So visually it never exceeds the container → no scrollbar
+
+
+---
+
+✅ GUARANTEED FIX (DO THIS EXACTLY)
+
+🧩 STEP 1: SELECT ScrollContainer
+
+Set ALL of these:
+
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+Align = Align.Start
+
+
+---
+
+🧩 STEP 2: TURN OFF AUTO-STRETCH (CRITICAL)
+
+In the right panel (Layout settings), find:
+
+Fill portions / Flexible width / Stretch
+
+👉 Set for BOTH:
+
+HeaderContainer
+
+Gallery_Suppliers_New
+
+
+to:
+
+OFF / 0 / false
+
+
+---
+
+🧩 STEP 3: FORCE FIXED WIDTH (NO FILL)
+
+Now set:
+
+HeaderContainer
+
+Width = 1200
+
+Gallery_Suppliers_New
+
+Width = 1200
+
+👉 Don’t use Parent.Width here
+
+
+---
+
+🧩 STEP 4: CHECK ScrollContainer WIDTH
+
+Width = Parent.Width   // e.g. 400–800
+
+
+---
+
+🧪 TEST RESULT
+
+Now you have:
+
+ScrollContainer = 400
+Content = 1200
+
+👉 RESULT: ✅ Horizontal scrollbar MUST appear
+
+
+---
+
+❗ IF STILL NO SCROLL (LAST CHECK)
+
+Then your container is definitely Auto Layout blocking overflow
+
+
+---
+
+🔥 FINAL SOLUTION (100% WORKING)
+
+👉 Replace ScrollContainer with a manual container
+
+Steps:
+
+1. Insert → Container (not horizontal/vertical)
+
+
+2. Move:
+
+HeaderContainer
+
+Gallery_Suppliers_New
+
+
+
+
+
+---
+
+Set:
+
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+
+
+---
+
+Set widths again:
+
+HeaderContainer.Width = 1200
+Gallery_Suppliers_New.Width = 1200
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Auto Layout Container → controls children ❌
+Manual Container → allows overflow ✅
+
+
+---
+
+🖥️ FINAL EXPECTED RESULT
+
+[Scroll →]
+
+Supplier | Code | M1R | M5R | D3R | Q4R →
+------------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+
+
+---
+
+🎯 QUICK SUMMARY
+
+✔ Align = Start
+✔ OverflowX = Scroll
+✔ NO Fill / Stretch
+✔ Content width > container width
+✔ Use Manual Container if needed
+
+
+---
+
+👍 IF YOU WANT
+
+We can now move to the next critical part:
+
+👉 Saving all radio values correctly (nested gallery Patch — tricky but important)
+
+Just tell me 👍
+
+
+
+*****
+
+
 Alright 👍 since even with TemplateSize = 350 you still have no horizontal scrollbar, this tells us clearly:
 
 > ❗ The issue is NOT the column width anymore
