@@ -1,3 +1,197 @@
+Great question 👍 — this is the last piece that affects alignment and scrolling.
+
+You’re asking about Container4 inside Gallery_Suppliers_New (each row).
+This container is VERY important because it controls how each row behaves.
+
+
+---
+
+🎯 ROLE OF Container4
+
+Inside each row:
+
+Container4
+   ├── Supplier Name
+   ├── Supplier Code
+   └── Gallery_Question_H_New (with Radio)
+
+👉 Think of it as one full row of your table
+
+
+---
+
+❗ COMMON PROBLEM
+
+If Container4 is not set correctly:
+
+❌ Columns misaligned
+❌ Scroll breaks
+❌ Radio becomes vertical again
+❌ Rows not same width as header
+
+
+---
+
+✅ CORRECT SETUP FOR Container4
+
+
+---
+
+🧩 STEP 1: Make it Horizontal Layout
+
+Select Container4
+
+Direction = LayoutDirection.Horizontal
+
+👉 This makes:
+
+Supplier | Code | Questions
+
+
+---
+
+🧩 STEP 2: Set Width = Parent (VERY IMPORTANT)
+
+Width = Parent.TemplateWidth
+
+👉 This ensures:
+
+Row matches full gallery width
+
+Aligns with header
+
+
+
+---
+
+🧩 STEP 3: Remove Gaps
+
+Gap = 0
+Padding = 0
+
+
+---
+
+🧩 STEP 4: Set Fixed Width for First Columns
+
+Supplier Name
+
+Width = 150
+
+Supplier Code
+
+Width = 120
+
+
+---
+
+🧩 STEP 5: Dynamic Width for Questions
+
+Gallery_Question_H_New
+
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 6: Match Column Width
+
+TemplateSize = 110
+
+
+---
+
+🧩 STEP 7: Fix Radio Button
+
+Inside Gallery_Question_H_New:
+
+Radio_Score_New.Width = Parent.TemplateWidth
+Radio_Score_New.Layout = Layout.Horizontal
+
+
+---
+
+🧠 HOW IT WORKS NOW
+
+Container4 width = full row
+   → Supplier = fixed 150
+   → Code = fixed 120
+   → Questions = dynamic (based on count)
+
+
+---
+
+🖥️ FINAL ROW STRUCTURE
+
+| AOI | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ | ○ ○ ○ |
+
+
+---
+
+🚨 IMPORTANT ALIGNMENT RULE
+
+Make sure this matches header:
+
+Element	Width
+
+Supplier	150
+Code	120
+Question Column	110
+
+
+
+---
+
+❗ COMMON MISTAKES
+
+❌ Container4 width not set
+❌ Using auto width
+❌ Different TemplateSize in header vs rows
+❌ Gallery_Question_H_New fixed width (like 350)
+
+
+---
+
+🔥 PRO TIP (BEST PRACTICE)
+
+If you want clean and reusable:
+
+Set(varColWidth, 110);
+
+Then:
+
+Width = CountRows(colQuestions) * varColWidth
+TemplateSize = varColWidth
+
+
+---
+
+🚀 FINAL RESULT
+
+✔ Perfect alignment with header
+✔ Smooth horizontal scroll
+✔ Radio buttons horizontal
+✔ Fully dynamic per section
+
+
+---
+
+👍 NEXT STEP (IMPORTANT)
+
+Now your UI is complete ✅
+
+Next critical part: 👉 Saving data correctly from nested galleries (Patch)
+
+This is tricky but I can guide you step-by-step.
+
+Just tell me 👍
+
+
+
+
+*****
+
+
 Nice 👍 thanks for sharing your tree—this helps a lot.
 You’re very close, just one structural issue is causing most of your layout/scroll problems.
 
