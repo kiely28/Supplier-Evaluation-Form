@@ -1,3 +1,27 @@
+
+
+> App
+> Screen1
+	Dropdown_Section
+	> ScrollContainer
+		> HeaderContainer
+			Supplier Name_H
+			Supplier Code_H
+			> Gallery_Header_New
+				Question
+	> Gallery_Suppliers_New
+		> Container4
+			Supplier Name
+			Supplier Code
+			> Gallery_Question_H_New
+				Radio_Score_New
+
+
+
+****
+
+
+
 Great—you’re now hitting a delegation warning, which is normal when working with SharePoint + Power Apps 👍
 
 Let’s fix it properly (and safely).
