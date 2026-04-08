@@ -1,3 +1,193 @@
+Alright 👍 since even with TemplateSize = 350 you still have no horizontal scrollbar, this tells us clearly:
+
+> ❗ The issue is NOT the column width anymore
+❗ The issue is your container layout behavior (Auto Layout)
+
+
+
+This is a known behavior in Power Apps.
+
+
+---
+
+🎯 ROOT CAUSE (VERY IMPORTANT)
+
+You are using a Container (Auto Layout)
+
+👉 Auto layout containers will:
+
+Force children to fit inside container ❌
+Ignore overflow width ❌
+Prevent horizontal scroll ❌
+
+So even if:
+
+HeaderContainer.Width = 1200
+
+👉 Power Apps silently resizes it to fit screen → no scroll
+
+
+---
+
+✅ SOLUTION (WORKING 100%)
+
+You need to disable auto-resizing behavior
+
+
+---
+
+🧩 OPTION 1: TURN OFF "Fit to Width" (BEST)
+
+Select ScrollContainer
+
+Look for:
+
+WidthFitToContent
+
+👉 Set to:
+
+false
+
+
+---
+
+Also check:
+
+Align
+
+Set:
+
+Align = Align.Start
+
+
+---
+
+🧩 OPTION 2: USE MANUAL CONTAINER (RECOMMENDED ⭐)
+
+If above option not visible or not working:
+
+👉 Replace ScrollContainer with a regular container (NOT auto layout)
+
+
+---
+
+Steps:
+
+1. Insert → Container (not horizontal/vertical)
+
+
+2. Rename → ScrollContainer
+
+
+3. Move:
+
+HeaderContainer
+
+Gallery_Suppliers_New
+
+
+
+
+
+---
+
+Then set:
+
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+
+
+---
+
+🧩 OPTION 3: WRAP INSIDE A GROUP (QUICK FIX)
+
+If container is stubborn:
+
+👉 Select:
+
+HeaderContainer
+
+Gallery_Suppliers_New
+
+
+👉 Press:
+
+Ctrl + G (Group)
+
+Then:
+
+Group.Width = varTotalWidth
+
+
+---
+
+🧩 STEP 4: FORCE OVERFLOW (TEST)
+
+HeaderContainer.Width = 1500
+Gallery_Suppliers_New.Width = 1500
+
+👉 Now scroll WILL appear if setup is correct
+
+
+---
+
+🧠 WHY THIS HAPPENS
+
+Auto Layout Container:
+   → compress children to fit
+   → no overflow
+   → no scroll
+
+Manual Container:
+   → allows overflow
+   → enables scroll
+
+
+---
+
+🖥️ FINAL WORKING STRUCTURE
+
+ScrollContainer (manual, scroll enabled)
+   Width = screen width
+
+   Content inside:
+      Width = 1200+
+
+→ Horizontal scroll appears ✅
+
+
+---
+
+🚨 MOST IMPORTANT TAKEAWAY
+
+👉 Auto-layout container = NO horizontal scroll (unless configured carefully)
+👉 Manual container = FULL control (recommended for grids)
+
+
+---
+
+🚀 NEXT STEP
+
+Once this works, your app is basically complete UI-wise 👍
+
+I can help you next with:
+
+✅ Saving data correctly (nested gallery patch — critical)
+
+✅ Prevent duplicate submissions
+
+✅ Add total score per supplier
+
+✅ Make it look like real Excel (freeze columns)
+
+
+Just tell me 👍
+
+
+
+*****
+
+
 Alright 👍 since it’s still not showing, let’s diagnose it precisely.
 At this point, the issue is 100% about actual width not exceeding the container.
 
