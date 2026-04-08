@@ -1,3 +1,191 @@
+Great—you’re now hitting a delegation warning, which is normal when working with SharePoint + Power Apps 👍
+
+Let’s fix it properly (and safely).
+
+
+---
+
+❗ WHY THIS WARNING APPEARS
+
+This formula is the problem:
+
+CountRows(
+    Filter('SE Question List', Section.Id = Dropdown_Section.Selected.ID)
+)
+
+👉 Issue:
+
+CountRows() is NOT delegable
+
+SharePoint can’t process it on the server
+
+Power Apps only checks first 500 / 2000 records
+
+
+
+---
+
+🎯 IMPORTANT QUESTION
+
+👉 Do you have many questions per section?
+
+✔ If your answer is:
+
+5–20 questions → ✅ SAFE (ignore warning)
+
+100+ questions → ❌ MUST FIX
+
+
+👉 In your case (M1R, M5R, etc.) → you are SAFE 👍
+
+
+---
+
+✅ BEST PRACTICE FIX (RECOMMENDED)
+
+Instead of counting directly from SharePoint, use a local collection
+
+
+---
+
+🧩 STEP 1: Load Questions into Collection
+
+In Dropdown_Section.OnChange:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        Section.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+
+---
+
+🧩 STEP 2: Use Collection (NO DELEGATION ISSUE)
+
+Now replace your CountRows:
+
+Set(
+    varTotalWidth,
+    150 + 120 + (CountRows(colQuestions) * 110)
+)
+
+
+---
+
+🧩 STEP 3: Use Collection in Galleries
+
+Header:
+
+Gallery_Header.Items = colQuestions
+
+Questions:
+
+Gallery_Questions_H.Items = colQuestions
+
+
+---
+
+🧠 WHY THIS WORKS
+
+SharePoint → Filter (delegable) ✅  
+→ stored in collection (local) ✅  
+→ CountRows (local) ✅ NO WARNING
+
+
+---
+
+🚀 BONUS: IMPROVES PERFORMANCE
+
+✔ Faster loading
+✔ Less server calls
+✔ Stable behavior
+✔ No delegation warnings
+
+
+---
+
+⚠️ OPTIONAL (SET LIMIT)
+
+If you still worry:
+
+Go to:
+
+App Settings → Advanced Settings
+
+Set:
+
+Data row limit = 2000
+
+
+---
+
+🚨 WHEN YOU MUST FIX DELEGATION
+
+Fix is REQUIRED if:
+
+Thousands of records
+
+Financial / audit data
+
+Critical calculations
+
+
+👉 Your case = UI layout only → safe 👍
+
+
+---
+
+✅ FINAL CLEAN SETUP
+
+OnChange:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        Section.Id = Dropdown_Section.Selected.ID
+    )
+);
+
+Set(
+    varTotalWidth,
+    150 + 120 + CountRows(colQuestions) * 110
+)
+
+
+---
+
+🖥️ RESULT
+
+✔ No delegation warning
+✔ Correct column count
+✔ Dynamic layout works
+✔ Scalable design
+
+
+---
+
+👍 NEXT STEP (HIGHLY RECOMMENDED)
+
+I can help you fix next common issue:
+
+❗ Saving data from nested gallery (most tricky part)
+
+✅ Prevent duplicate submission
+
+✅ Compute total score per supplier
+
+✅ Highlight best supplier
+
+
+Just tell me 👍
+
+
+****
+
 
 Issue:
 
