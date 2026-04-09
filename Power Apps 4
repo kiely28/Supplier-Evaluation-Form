@@ -1,0 +1,471 @@
+Here’s a clean, ready-to-use Power Apps build prompt / guide you can follow (or reuse) to create your Excel-like Supplier Evaluation Canvas App with SharePoint integration:
+
+
+---
+
+✅ POWER APPS CANVAS APP – SUPPLIER EVALUATION MATRIX
+
+🔧 1. DATA CONNECTIONS
+
+Connect the following SharePoint lists:
+
+SE Section List
+
+SE Supplier List
+
+SE Question List
+
+SE Evaluation List
+
+
+
+---
+
+🧠 2. INITIAL VARIABLES & COLLECTIONS
+
+📌 On Screen OnVisible
+
+ClearCollect(
+    colSections,
+    'SE Section List'
+);
+
+Clear(colQuestions);
+
+Set(varTotalWidth, 0);
+
+
+---
+
+🎯 3. SECTION DROPDOWN
+
+Add Dropdown: Dropdown_Section
+
+Items:
+
+colSections
+
+OnChange:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        Section.Id = Dropdown_Section.Selected.ID
+    )
+);
+
+Set(
+    varTotalWidth,
+    150 + 120 + CountRows(colQuestions) * 110
+);
+
+
+---
+
+🧱 4. MAIN LAYOUT STRUCTURE
+
+Add:
+
+Vertical Container → MainContainer
+
+Inside it: ScrollContainer
+
+
+
+---
+
+🔄 5. SCROLL CONTAINER CONFIGURATION
+
+Properties:
+
+OverflowX = Scroll
+OverflowY = Hidden
+Align = Start
+
+⚠️ Important:
+
+Ensure ScrollContainer.Width < varTotalWidth
+
+Do NOT use Fill portions
+
+Set fixed width (e.g., screen width)
+
+
+
+---
+
+🧾 6. HEADER SECTION
+
+Add: HeaderContainer inside ScrollContainer
+
+Width:
+
+varTotalWidth
+
+Inside HeaderContainer:
+
+Static Columns:
+
+Label: "Supplier" → Width = 150
+
+Label: "Code" → Width = 120
+
+
+Dynamic Columns:
+
+Add Horizontal Gallery: Gallery_Header
+
+Items:
+
+colQuestions
+
+TemplateSize:
+
+110
+
+Inside Template:
+
+ThisItem.Title
+
+
+---
+
+📊 7. SUPPLIER ROWS
+
+Add Vertical Gallery: Gallery_Suppliers
+
+Items:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+Width:
+
+varTotalWidth
+
+
+---
+
+📦 8. ROW TEMPLATE DESIGN
+
+Inside Gallery_Suppliers:
+
+Add Horizontal Container
+
+Static Fields:
+
+Supplier Name → Width = 150 → ThisItem.Title
+
+Supplier Code → Width = 120 → ThisItem.'Supplier Code'
+
+
+
+---
+
+🔁 9. DYNAMIC QUESTION MATRIX
+
+Add Nested Horizontal Gallery: Gallery_Question_H
+
+Items:
+
+colQuestions
+
+TemplateSize:
+
+110
+
+
+---
+
+🎯 10. RADIO BUTTON CONTROL
+
+Inside Gallery_Question_H:
+
+Add Radio Control
+
+Items:
+
+Sequence(ThisItem.'Max Score')
+
+Layout:
+
+Horizontal
+
+Width:
+
+Parent.TemplateWidth
+
+
+---
+
+💾 11. SAVE / PATCH LOGIC
+
+On Radio OnChange:
+
+Patch(
+    'SE Evaluation List',
+    LookUp(
+        'SE Evaluation List',
+        Supplier.Id = Gallery_Suppliers.Selected.ID &&
+        Question.Id = ThisItem.ID
+    ),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: Gallery_Suppliers.Selected,
+        Question: ThisItem,
+        Score: Value(Radio.Selected.Value)
+    }
+);
+
+
+---
+
+📐 12. ALIGNMENT RULES (CRITICAL)
+
+✔ Supplier column = 150 width
+✔ Code column = 120 width
+✔ Question columns = 110 width
+✔ Header & rows must MATCH exactly
+✔ No flexible width / FillPortions
+✔ No fixed large template sizes (e.g., 350 ❌)
+
+
+---
+
+🧭 13. FINAL LAYOUT STRUCTURE
+
+MainContainer
+ └── ScrollContainer (Horizontal Scroll Enabled)
+      ├── HeaderContainer
+      │     ├── Supplier | Code | Q1 | Q2 | Q3 ...
+      │
+      └── Gallery_Suppliers
+            ├── Supplier Row
+            │     ├── Name | Code | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+🎯 FINAL OUTPUT
+
+Supplier | Code   | M1R | M5R | D3R | Q4R
+------------------------------------------
+AOI      | 343434 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+ASIA     | 456789 | ○ ○ ○ | ○ ○ ○ | ○ ○ ○
+
+
+---
+
+🚀 KEY FEATURES ACHIEVED
+
+✅ Excel-like horizontal matrix
+✅ Dynamic columns per section
+✅ Clean alignment
+✅ Single horizontal scrollbar
+✅ No nested scroll issues
+✅ Supports variable scoring (3–4 options)
+✅ SharePoint-integrated data persistence
+
+
+---
+
+If you want, I can also:
+
+Add default value loading (edit mode)
+
+Add color scoring (red/yellow/green)
+
+Optimize performance for large suppliers/questions
+
+Or convert this into a ready-to-import Power Apps template structure
+
+
+Just tell me 👍
+
+*****
+
+Here’s your updated tree view layout + RadioButton width = 350 design, structured clearly so you can follow it inside Power Apps.
+
+
+---
+
+🌳 TREE VIEW DESIGN (WITH HORIZONTAL MATRIX)
+
+Screen
+└── MainContainer (Vertical)
+    ├── Dropdown_Section
+    │
+    └── ScrollContainer (Horizontal Scroll Enabled)
+        ├── HeaderContainer (Width = varTotalWidth)
+        │   ├── lbl_Header_Supplier (Width: 150)
+        │   ├── lbl_Header_Code (Width: 120)
+        │   └── Gallery_Header (Horizontal)
+        │       └── lbl_QuestionTitle (Width: 350)
+        │
+        └── Gallery_Suppliers (Vertical, Width = varTotalWidth)
+            └── Container_Row (Horizontal)
+                ├── lbl_SupplierName (Width: 150)
+                ├── lbl_SupplierCode (Width: 120)
+                └── Gallery_Question_H (Horizontal)
+                    └── Container_QuestionCell (Width: 350)
+                        └── Radio_Score (Horizontal Radio Buttons)
+
+
+---
+
+📏 UPDATED WIDTH LOGIC (IMPORTANT)
+
+Since you want RadioButton width = 350, all question columns must match.
+
+Update variable:
+
+Set(
+    varTotalWidth,
+    150 + 120 + CountRows(colQuestions) * 350
+);
+
+
+---
+
+🧾 HEADER CONFIGURATION
+
+HeaderContainer.Width
+
+varTotalWidth
+
+Gallery_Header
+
+Items = colQuestions
+TemplateSize = 350
+
+Inside Header Template:
+
+Text = ThisItem.Title
+Width = 350
+
+
+---
+
+📊 SUPPLIER ROW CONFIGURATION
+
+Gallery_Suppliers.Width
+
+varTotalWidth
+
+
+---
+
+🔁 QUESTION ROW (CRITICAL ALIGNMENT)
+
+Gallery_Question_H
+
+Items = colQuestions
+TemplateSize = 350
+
+
+---
+
+🎯 RADIO BUTTON SETTINGS
+
+Inside Container_QuestionCell
+
+Radio_Score
+
+Items = Sequence(ThisItem.'Max Score')
+Layout = Horizontal
+Width = 350
+
+💡 Optional (better spacing):
+
+Align = Center
+
+
+---
+
+🧭 SCROLL CONTAINER SETTINGS
+
+OverflowX = Scroll
+OverflowY = Hidden
+Align = Start
+
+⚠️ Ensure:
+
+ScrollContainer.Width < varTotalWidth
+
+No FillPortions used anywhere
+
+No nested scrollbars
+
+
+
+---
+
+📐 FINAL COLUMN WIDTH SUMMARY
+
+Column Type	Width
+
+Supplier	150
+Code	120
+Question Cell	350
+
+
+
+---
+
+🎯 FINAL VISUAL OUTPUT
+
+Supplier | Code   | M1R (350px)       | M5R (350px)       | D3R (350px)
+----------------------------------------------------------------------------
+AOI      | 343434 | ○   ○   ○   ○     | ○   ○   ○         | ○   ○   ○
+ASIA     | 456789 | ○   ○   ○   ○     | ○   ○   ○         | ○   ○   ○
+
+
+---
+
+⚠️ IMPORTANT NOTES (BASED ON YOUR PREVIOUS ISSUE)
+
+✅ This WILL fix horizontal scroll not appearing
+
+❗ Your previous TemplateSize = 350 failed because:
+
+varTotalWidth was still based on 110
+
+
+✅ Now everything is consistent → scroll will work
+
+
+
+---
+
+🚀 PRO TIP (HIGHLY RECOMMENDED)
+
+If 350 feels too wide, you can improve UX:
+
+Use:
+
+
+Width = 300
+
+Or dynamic:
+
+
+Width = Max(300, Parent.Width / CountRows(colQuestions))
+
+
+---
+
+If you want next step, I can help you:
+
+✅ Add saved score loading (edit mode)
+
+✅ Add color indicators (low/high score)
+
+✅ Fix performance for large datasets
+
+✅ Or convert this into a Power Apps reusable component
+
+
+Just tell me 👍
