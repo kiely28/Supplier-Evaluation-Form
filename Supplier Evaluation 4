@@ -1,0 +1,49 @@
+Tree View
+> Screen1
+	Dropdown_Section
+	> ScrollContainer
+		> Gallery_Header
+			Ibl_QuestionTitle
+
+		> Gallery_Suppliers
+			> Gallery_Question_H
+				lbl_QuestionTitle_1
+			Ibl_SupplierCode
+
+
+Screen1.OnVisible = 
+ClearCollect(
+    colSections,
+    'SE Section List'
+);
+
+Clear(colQuestions);
+
+Set(varTotalWidth, 0);
+
+***
+
+Gallery_Header.Items = 
+Table(
+    Table({Value:"Code"}),
+Distinct('SE Question List', 'Title'))
+
+Gallery_Header.Height = 50
+
+Gallery_Header.LayoutMinWidth = 
+CountRows(Table(
+    Table({Value:"Code"}),
+    Distinct('SE Question List', 'Title')))*200
+
+Gallery_Header.ShowScrollBar = false
+Gallery_Header.TemplatePadding = 0
+Gallery_Header.TemplateSize = 200
+
+***
+
+Ibl_QuestionTitle.Text = 
+ThisItem.Value
+
+Ibl_QuestionTitleHeight = 50
+Ibl_QuestionTitleWidth = 50
+Ibl_QuestionTitleAlign = Align.Center
