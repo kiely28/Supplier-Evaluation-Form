@@ -1,3 +1,153 @@
+That “Expected identifier name” error in Power Apps usually means there’s a syntax issue (not the logic itself). In your case, it’s coming from how the formula is written in Screen1.OnVisible.
+
+Let’s fix it cleanly.
+
+
+---
+
+✅ Common Cause in Your Code
+
+This part is the problem:
+
+AddColumns(
+    Distinct('SE Question List', Title),
+    "Value",
+    Result
+)
+
+👉 In Power Apps, Distinct() returns a column named Result, but sometimes the editor throws an identifier error depending on formatting or separators.
+
+
+---
+
+✅ FIXED VERSION (Safe & Working)
+
+Use this exact format:
+
+Clear(colHeader);
+
+// Static columns
+Collect(colHeader, {Value: "Code"});
+Collect(colHeader, {Value: "Supplier"});
+
+// Dynamic columns
+Collect(
+    colHeader,
+    ForAll(
+        Distinct('SE Question List', Title),
+        {Value: Result}
+    )
+);
+
+
+---
+
+🔍 Why This Works
+
+ForAll() safely converts each record into {Value: ...}
+
+Avoids issues with AddColumns() parsing
+
+No ambiguity → no identifier error
+
+
+
+---
+
+⚠️ ALSO CHECK THESE (Very Important)
+
+1. Make sure column name is correct
+
+If your SharePoint column is not exactly Title, fix it:
+
+Distinct('SE Question List', 'Title')
+
+👉 Sometimes SharePoint requires quotes.
+
+
+---
+
+2. Separator issue (PH locale)
+
+If your app uses semicolon ; instead of comma ,, change to:
+
+Clear(colHeader);
+
+Collect(colHeader; {Value: "Code"});
+Collect(colHeader; {Value: "Supplier"});
+
+Collect(
+    colHeader;
+    ForAll(
+        Distinct('SE Question List'; Title);
+        {Value: Result}
+    )
+);
+
+👉 This is VERY common in PH / EU regions.
+
+
+---
+
+✅ Final Working Version (Copy-Paste Safe)
+
+If your app uses commas (,):
+
+Clear(colHeader);
+
+Collect(colHeader, {Value: "Code"});
+Collect(colHeader, {Value: "Supplier"});
+
+Collect(
+    colHeader,
+    ForAll(
+        Distinct('SE Question List', Title),
+        {Value: Result}
+    )
+);
+
+
+---
+
+If your app uses semicolons (;):
+
+Clear(colHeader);
+
+Collect(colHeader; {Value: "Code"});
+Collect(colHeader; {Value: "Supplier"});
+
+Collect(
+    colHeader;
+    ForAll(
+        Distinct('SE Question List'; Title);
+        {Value: Result}
+    )
+);
+
+
+---
+
+🚀 After This
+
+Set:
+
+Gallery_Header.Items = colHeader
+
+
+---
+
+If you still get an error, send me: 📸 Screenshot of the formula bar
+or
+📋 exact error line highlight
+
+I can pinpoint it instantly 👍
+
+
+
+
+****
+
+
 Good question—this is exactly what you need for an Excel-like header 👍
 
 You want:
