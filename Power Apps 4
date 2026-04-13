@@ -1,3 +1,24 @@
+Tree View
+> Screen1
+	Dropdown_Section
+	> ScrollContainer
+		 > HeaderContainer
+			Supplier Name_H
+			Supplier Code_H
+			> Gallery_Header_New
+				Question
+		 > Gallery_Suppliers_New
+			> Container4
+				Supplier Name
+				Supplier Code
+				> Gallery_Question_H
+					Radio_Score_New
+
+
+
+*****
+
+
 Great question 👍 — this is an advanced UI trick in Power Apps because there is no built-in “freeze pane” like Excel.
 
 But we can simulate it perfectly 👇
