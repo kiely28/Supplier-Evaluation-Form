@@ -1,3 +1,294 @@
+Great 👍 you already have a working structure—we’ll now upgrade it to freeze Supplier & Code step-by-step without breaking your app.
+
+I’ll guide you like a beginner, using your exact tree.
+
+
+---
+
+🎯 WHAT YOU HAVE NOW
+
+ScrollContainer
+   ├── HeaderContainer (Supplier | Code | Questions)
+   └── Gallery_Suppliers_New (rows)
+
+👉 Problem:
+
+Everything scrolls together ❌
+
+Cannot “freeze” Supplier & Code
+
+
+
+---
+
+🎯 WHAT WE WILL BUILD
+
+[FIXED] Supplier | Code || [SCROLL →] Questions
+
+👉 Like Excel freeze pane ✅
+
+
+---
+
+🔥 BIG IDEA (SIMPLE)
+
+We split your layout into TWO parts:
+
+Left Side	Right Side
+
+Supplier + Code (fixed)	Questions (scrollable)
+
+
+
+---
+
+🧩 STEP-BY-STEP (BEGINNER FRIENDLY)
+
+
+---
+
+🧩 STEP 1: ADD MAIN HORIZONTAL CONTAINER
+
+👉 Insert a new container in Screen1
+
+Rename:
+
+MainRowContainer
+
+Set:
+
+Direction = LayoutDirection.Horizontal
+
+
+---
+
+🧩 STEP 2: MOVE YOUR EXISTING CONTENT
+
+👉 Move ScrollContainer inside MainRowContainer
+
+
+---
+
+🧩 STEP 3: CREATE LEFT SIDE (FROZEN)
+
+👉 Insert container inside MainRowContainer
+
+Rename:
+
+LeftContainer
+
+
+---
+
+Set width:
+
+Width = 270   // 150 + 120
+
+
+---
+
+➤ ADD HEADER (LEFT)
+
+Inside LeftContainer:
+
+Add 2 labels:
+
+Supplier Name_H
+Supplier Code_H
+
+Set widths:
+
+Supplier Name_H.Width = 150
+Supplier Code_H.Width = 120
+
+
+---
+
+➤ ADD SUPPLIER ROWS (LEFT)
+
+👉 Insert a new Gallery
+
+Rename:
+
+Gallery_Suppliers_Left
+
+
+---
+
+Set Items:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+Inside row:
+
+Supplier Name → Width = 150
+Supplier Code → Width = 120
+
+
+---
+
+🧩 STEP 4: MODIFY YOUR EXISTING ScrollContainer
+
+👉 This becomes your RIGHT SIDE (SCROLLABLE)
+
+
+---
+
+Set:
+
+Width = Parent.Width - 270
+OverflowX = Overflow.Scroll
+Align = Align.Start
+
+
+---
+
+🧩 STEP 5: REMOVE SUPPLIER & CODE FROM RIGHT SIDE
+
+Inside:
+
+HeaderContainer
+Container4
+
+❌ REMOVE:
+
+Supplier Name_H
+
+Supplier Code_H
+
+Supplier Name
+
+Supplier Code
+
+
+👉 Keep ONLY:
+
+Question header
+
+Radio buttons
+
+
+
+---
+
+🧩 STEP 6: FIX HEADER (RIGHT SIDE)
+
+Gallery_Header_New
+
+Items = colQuestions
+TemplateSize = 110
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 7: FIX ROW QUESTIONS
+
+Gallery_Question_H
+
+Items = colQuestions
+TemplateSize = 110
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 8: FIX RADIO BUTTON
+
+Layout = Layout.Horizontal
+Width = Parent.TemplateWidth
+
+
+---
+
+🧩 STEP 9: ALIGN LEFT & RIGHT ROWS
+
+👉 VERY IMPORTANT
+
+Set BOTH galleries:
+
+Gallery_Suppliers_Left.TemplateSize = 60
+Gallery_Suppliers_New.TemplateSize = 60
+
+
+---
+
+🧠 FINAL TREE VIEW (UPDATED)
+
+Screen1
+ ├── Dropdown_Section
+ └── MainRowContainer (Horizontal)
+      ├── LeftContainer (FIXED)
+      │     ├── Supplier Name_H
+      │     ├── Supplier Code_H
+      │     └── Gallery_Suppliers_Left
+      │           ├── Supplier Name
+      │           └── Supplier Code
+      │
+      └── ScrollContainer (SCROLLABLE)
+            ├── HeaderContainer
+            │     └── Gallery_Header_New
+            │           └── Question
+            │
+            └── Gallery_Suppliers_New
+                  └── Container4
+                        └── Gallery_Question_H
+                              └── Radio_Score_New
+
+
+---
+
+🖥️ FINAL RESULT
+
+Supplier | Code || M1R | M5R | D3R | Q4R →
+------------------------------------------------
+AOI      | 343434 || ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+ASIA     | 456789 || ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+
+
+---
+
+🎯 WHAT YOU ACHIEVED
+
+✅ Frozen Supplier & Code
+✅ Smooth horizontal scroll
+✅ Clean Excel-like UI
+✅ Fully dynamic per section
+
+
+---
+
+🚨 COMMON MISTAKES
+
+❌ Forgetting to remove Supplier/Code on right side
+❌ Different row height (misalignment)
+❌ Different data source for left/right gallery
+
+
+---
+
+🚀 NEXT (VERY IMPORTANT)
+
+Now your UI is professional level 🎉
+
+Next step I recommend:
+
+👉 ❗ Save all answers correctly (nested gallery Patch)
+
+I can guide you step-by-step (this is the hardest part)
+
+Just tell me 👍
+
+
+****
+
+
 Tree View
 > Screen1
 	Dropdown_Section
