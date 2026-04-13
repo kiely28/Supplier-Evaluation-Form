@@ -1,3 +1,166 @@
+Good question—this is exactly what you need for an Excel-like header 👍
+
+You want:
+
+Code | Supplier | Q1 | Q2 | Q3 ...
+
+
+---
+
+✅ Correct Way to Combine Static + Dynamic Columns
+
+Instead of using nested Table(), build a single flat collection that includes:
+
+Static columns (Code, Supplier)
+
+Dynamic columns (Questions)
+
+
+
+---
+
+🔧 Step 1: Build Header Collection (OnVisible)
+
+Replace your current logic with:
+
+Clear(colHeader);
+
+// Static columns
+Collect(colHeader, {Value: "Code"});
+Collect(colHeader, {Value: "Supplier"});
+
+// Dynamic columns (Questions)
+Collect(
+    colHeader,
+    AddColumns(
+        Distinct('SE Question List', Title),
+        "Value",
+        Result
+    )
+);
+
+
+---
+
+🔧 Step 2: Bind to Gallery
+
+Gallery_Header.Items = colHeader
+
+
+---
+
+🔧 Step 3: Label Text
+
+lbl_QuestionTitle.Text = ThisItem.Value
+
+
+---
+
+🔧 Step 4: Width Control (Optional but Recommended)
+
+If you want different widths:
+
+lbl_QuestionTitle.Width =
+Switch(
+    ThisItem.Value,
+    "Code", 120,
+    "Supplier", 200,
+    200   // Questions
+)
+
+
+---
+
+🔧 Step 5: Gallery Width (IMPORTANT for Scroll)
+
+Gallery_Header.LayoutMinWidth =
+Sum(
+    colHeader,
+    Switch(
+        Value,
+        "Code", 120,
+        "Supplier", 200,
+        200
+    )
+)
+
+
+---
+
+⚠️ Important Notes
+
+❌ Don’t do this:
+
+Table(
+    {Value:"Code"},
+    {Value:"Supplier"},
+    Distinct(...)
+)
+
+👉 This causes invalid structure / nested tables
+
+
+---
+
+✅ Always flatten using:
+
+Collect()
+
+AddColumns()
+
+
+
+---
+
+💡 Pro Tip (Best Practice)
+
+Add a Type column so you can control behavior later:
+
+Clear(colHeader);
+
+// Static
+Collect(colHeader, {Value: "Code", Type: "Static"});
+Collect(colHeader, {Value: "Supplier", Type: "Static"});
+
+// Dynamic
+Collect(
+    colHeader,
+    AddColumns(
+        Distinct('SE Question List', Title),
+        "Value", Result,
+        "Type", "Question"
+    )
+);
+
+Then you can do:
+
+If(ThisItem.Type = "Static", Bold, Normal)
+
+
+---
+
+🎯 Result
+
+You now get:
+
+[Code] [Supplier] [Q1] [Q2] [Q3] ...
+
+✔ Clean
+✔ Scrollable
+✔ Aligned with rows
+✔ Extendable for scoring
+
+
+---
+
+If you want next, I can help you: 👉 Sync this with **Gallery_Suppliers + Gallery_Question_H (matrix style)**
+👉 Or implement **radio button scoring per question per supplier**
+
+Just tell me 👍
+
+
+***
+
 Tree View
 > Screen1
 	Dropdown_Section
