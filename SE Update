@@ -1,0 +1,244 @@
+Great 👍 this is now moving into access control per section, which is a very good design.
+
+We’ll make it simple and scalable using SharePoint + Power Apps.
+
+
+---
+
+🎯 GOAL
+
+Only specific users can access a section:
+
+PR INK → King, Geryl
+VP PR  → Chami, Hannah
+
+✔ Others cannot open / answer
+✔ Can be used when sending form link
+
+
+---
+
+🧩 PART 1: CREATE USER ACCESS LIST
+
+✅ Create new SharePoint list:
+
+SE Access List
+
+
+---
+
+Columns:
+
+Column Name	Type
+
+Title	(optional)
+Section	Lookup → SE Section List
+User	Person or Group
+
+
+
+---
+
+🖥️ Example Data
+
+Section     | User
+-------------------------
+PR INK      | King
+PR INK      | Geryl
+VP PR       | Chami
+VP PR       | Hannah
+
+
+---
+
+🧩 PART 2: GET CURRENT USER
+
+In Power Apps:
+
+User().Email
+
+
+---
+
+🧩 PART 3: CHECK ACCESS
+
+We will check:
+
+👉 “Is current user allowed for selected section?”
+
+
+---
+
+✅ Create a variable
+
+In Dropdown_Section.OnChange:
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Id = Dropdown_Section.Selected.ID &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🧩 PART 4: CONTROL ACCESS
+
+
+---
+
+✅ OPTION 1: DISABLE FORM
+
+Select your main container (form area):
+
+DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+✅ OPTION 2: SHOW MESSAGE
+
+Insert Label:
+
+Text = "You are not authorized for this section"
+Visible = !varHasAccess
+
+
+---
+
+✅ OPTION 3: HIDE FORM
+
+Visible = varHasAccess
+
+
+---
+
+🧩 PART 5: AUTO SELECT SECTION FROM LINK (ADVANCED)
+
+If you send link like:
+
+...?section=PR INK
+
+
+---
+
+In Screen1.OnVisible:
+
+Set(
+    varSectionName,
+    Param("section")
+);
+
+Set(
+    varSelectedSection,
+    LookUp('SE Section List', Title = varSectionName)
+);
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Id = varSelectedSection.ID &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+Then:
+
+Dropdown_Section.Default = varSelectedSection.Title
+
+
+---
+
+🧠 HOW IT WORKS
+
+User opens app
+   ↓
+Selects section
+   ↓
+System checks:
+   Is user in SE Access List?
+      YES → allow
+      NO  → block
+
+
+---
+
+🖥️ FINAL USER EXPERIENCE
+
+Authorized:
+
+PR INK selected
+→ King opens → can answer ✅
+
+Not authorized:
+
+PR INK selected
+→ Other user → "Not authorized" ❌
+
+
+---
+
+🚨 IMPORTANT NOTES
+
+✔ Use User.Email (not name)
+✔ Make sure SharePoint Person column is correct
+✔ One row per user per section
+
+
+---
+
+🔥 PRO TIP (Better Performance)
+
+Instead of direct filter every time:
+
+ClearCollect(
+    colAccess,
+    'SE Access List'
+)
+
+Then:
+
+Filter(
+    colAccess,
+    Section.Id = Dropdown_Section.Selected.ID &&
+    User.Email = User().Email
+)
+
+
+---
+
+🚀 YOU NOW HAVE
+
+✅ Section-based user access
+✅ Secure form per section
+✅ Scalable design
+✅ Works with link sharing
+
+
+---
+
+👍 NEXT STEP
+
+I can help you upgrade this further:
+
+✅ Role-based access (Viewer / Editor / Approver)
+
+✅ Lock submission after submit
+
+✅ Audit trail (who answered what)
+
+✅ Email notification to assigned users
+
+
+Just tell me 👍
