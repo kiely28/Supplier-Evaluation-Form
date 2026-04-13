@@ -1,3 +1,222 @@
+Great question 👍 — this is an advanced UI trick in Power Apps because there is no built-in “freeze pane” like Excel.
+
+But we can simulate it perfectly 👇
+
+
+---
+
+🎯 GOAL (Like Excel Freeze Pane)
+
+[Fixed] Supplier | Code || Scroll → M1R | M5R | D3R | Q4R
+
+✔ Supplier + Code stay visible
+✔ Only questions scroll horizontally
+
+
+---
+
+🔥 SOLUTION: SPLIT INTO 2 SECTIONS
+
+👉 Instead of 1 table, we create 2 synchronized layouts
+
+
+---
+
+🧩 FINAL STRUCTURE
+
+MainContainer (Horizontal)
+
+   ├── LeftContainer (FIXED)
+   │     ├── Header (Supplier | Code)
+   │     └── Gallery_Suppliers_Left
+   │
+   └── RightScrollContainer (SCROLLABLE)
+         ├── Header (Questions)
+         └── Gallery_Suppliers_Right
+
+
+---
+
+🧩 STEP 1: MAIN CONTAINER
+
+Direction = LayoutDirection.Horizontal
+
+
+---
+
+🧩 STEP 2: LEFT SIDE (FROZEN COLUMNS)
+
+LeftContainer
+
+Width = 270   // 150 + 120
+
+
+---
+
+Header (Left)
+
+Supplier | Code
+
+
+---
+
+Gallery_Suppliers_Left
+
+Items:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = Dropdown_Section.Selected.ID
+)
+
+
+---
+
+Inside row:
+
+Supplier Name → Width = 150
+Supplier Code → Width = 120
+
+
+---
+
+🧩 STEP 3: RIGHT SIDE (SCROLLABLE)
+
+RightScrollContainer
+
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+Align = Align.Start
+Width = Parent.Width - 270
+
+
+---
+
+🧩 STEP 4: HEADER (QUESTIONS)
+
+Gallery_Header
+
+Items = colQuestions
+TemplateSize = 110
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 5: ROWS (QUESTIONS)
+
+Gallery_Suppliers_Right
+
+SAME Items as Left:
+
+Gallery_Suppliers_Left.Items
+
+
+---
+
+Inside row → Gallery_Question_H
+
+Items = colQuestions
+TemplateSize = 110
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 6: RADIO BUTTON
+
+Items = Sequence(ThisItem.'Max Score')
+Layout = Layout.Horizontal
+Width = Parent.TemplateWidth
+
+
+---
+
+🔗 STEP 7: SYNC ROW HEIGHT (IMPORTANT)
+
+Set BOTH galleries:
+
+TemplateSize = 60   // same value
+
+
+---
+
+🧠 WHY THIS WORKS
+
+LeftContainer = fixed (no scroll)
+RightContainer = scrollable
+
+→ Looks like frozen columns
+
+
+---
+
+🖥️ FINAL RESULT
+
+Supplier | Code || M1R | M5R | D3R | Q4R →
+------------------------------------------------
+AOI      | 343434 || ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+ASIA     | 456789 || ○ ○ ○ | ○ ○ ○ | ○ ○ ○ →
+
+✔ Supplier & Code frozen
+✔ Only questions scroll
+✔ Excel-like experience
+
+
+---
+
+🚨 IMPORTANT RULES
+
+✔ Left & Right galleries MUST use same Items
+✔ Same row height (TemplateSize)
+✔ No spacing differences
+✔ Align rows perfectly
+
+
+---
+
+🔥 PRO TIP (Alignment Fix)
+
+If rows misalign:
+
+Gallery_Suppliers_Left.TemplateSize =
+Gallery_Suppliers_Right.TemplateSize
+
+
+---
+
+🚀 BONUS (Optional)
+
+Add vertical scroll sync:
+
+Both galleries scroll together (advanced)
+
+
+
+---
+
+👍 NEXT STEP
+
+Now your app is almost enterprise-level UI 🎉
+
+I can help you next:
+
+✅ Sync vertical scrolling (perfect alignment)
+
+✅ Save all answers correctly (Patch)
+
+✅ Add total score per supplier
+
+✅ Highlight best supplier
+
+
+Just tell me 👍
+
+
+
+****
+
+
 Here’s a clean, ready-to-use Power Apps build prompt / guide you can follow (or reuse) to create your Excel-like Supplier Evaluation Canvas App with SharePoint integration:
 
 
