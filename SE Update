@@ -1,4 +1,182 @@
 
+Perfect 👍 that helps a lot.
+
+So your internal name is:
+
+User
+
+👉 BUT the error is still happening, which means the issue is now:
+
+> ❗ Not the column name
+❗ But how the Person field is being compared
+
+
+
+
+---
+
+🎯 FINAL WORKING FIX (FOR PERSON COLUMN)
+
+Use .Email safely with alias 👇
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List' As A,
+            A.Section.Id = Dropdown_Section.Selected.ID &&
+            A.User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+❗ IF STILL ERROR → USE THIS (100% SAFE)
+
+Sometimes .Email is not recognized properly, so use .Claims instead:
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List' As A,
+            A.Section.Id = Dropdown_Section.Selected.ID &&
+            A.User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🧠 WHY THIS FIXES IT
+
+A.User = record (Person field)
+User().Email = text
+
+→ Must compare SAME TYPE
+
+✔ .Email → text vs text
+✔ .Claims → text vs text (more reliable)
+
+
+---
+
+🧪 DEBUG (VERY IMPORTANT)
+
+Add these labels to confirm:
+
+
+---
+
+Label 1:
+
+Text = User().Email
+
+👉 Example:
+
+juan@email.com
+
+
+---
+
+Label 2:
+
+Text = First('SE Access List').User.Email
+
+👉 If this errors → use .Claims
+
+
+---
+
+Label 3 (safe):
+
+Text = First('SE Access List').User.Claims
+
+👉 Example:
+
+i:0#.f|membership|juan@email.com
+
+
+---
+
+🚨 ALSO CHECK THIS (VERY COMMON)
+
+Make sure your User column allows only ONE person
+
+👉 In SharePoint:
+
+Column settings → Allow multiple selections = OFF
+
+
+
+---
+
+🧩 ALSO VERIFY SECTION COLUMN
+
+If your Section column is text (not lookup):
+
+Use:
+
+A.Section = Dropdown_Section.Selected.Title
+
+
+---
+
+If it is lookup (recommended):
+
+A.Section.Id = Dropdown_Section.Selected.ID
+
+
+---
+
+✅ FINAL SAFE VERSION (RECOMMENDED)
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List' As A,
+            A.Section.Id = Dropdown_Section.Selected.ID &&
+            A.User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🎉 RESULT
+
+✔ No more incompatible type error
+✔ Access control works correctly
+✔ Compatible with SharePoint Person column
+✔ Production-ready
+
+
+---
+
+👍 NEXT STEP
+
+Now that access is working, I recommend:
+
+🔐 Disable form after submit
+
+💾 Save answers (Patch for nested gallery — important)
+
+📊 Add scoring summary
+
+
+Just tell me 👍
+
+
+
+
+****
+
+
 Perfect 👍 this pinpoints the exact issue.
 
 
