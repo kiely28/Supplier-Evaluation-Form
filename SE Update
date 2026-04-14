@@ -1,4 +1,216 @@
 
+Nice 👍 you already have a working OnChange — we’ll just enhance it to include access control (without breaking your current logic).
+
+
+---
+
+🎯 YOUR CURRENT CODE
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = Dropdown_Section.Selected.Title
+    )
+)
+
+✔ This loads questions
+❌ But no user restriction yet
+
+
+---
+
+🎯 GOAL
+
+Add:
+
+✔ Load questions
+✔ Check if user is allowed
+✔ Control access (enable/disable form)
+
+
+---
+
+✅ UPDATED OnChange (COMBINED VERSION)
+
+Use this:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = Dropdown_Section.Selected.Title
+    )
+);
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Value = Dropdown_Section.Selected.Title &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🧠 EXPLANATION (SIMPLE)
+
+1. Load questions for selected section
+2. Check if current user exists in access list
+3. Store result in varHasAccess (true/false)
+
+
+---
+
+🧩 NEXT: APPLY ACCESS CONTROL
+
+
+---
+
+✅ OPTION 1: Disable Form
+
+Select your main form container:
+
+DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+✅ OPTION 2: Show Message
+
+Add Label:
+
+Text = "You are not authorized to access this section"
+Visible = !varHasAccess
+
+
+---
+
+✅ OPTION 3: Hide Form
+
+Visible = varHasAccess
+
+
+---
+
+🚨 IMPORTANT (YOUR COLUMN)
+
+You used:
+
+'Section In-charge'.Value
+
+👉 That means your column is:
+
+Either Lookup
+
+Or Choice
+
+
+✔ So .Value is correct in your case
+
+
+---
+
+⚠️ BUT FOR ACCESS LIST
+
+If your SE Access List → Section is Lookup:
+
+👉 Use:
+
+Section.Id = Dropdown_Section.Selected.ID
+
+
+---
+
+🔥 SAFER VERSION (RECOMMENDED)
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Id = Dropdown_Section.Selected.ID &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🧪 DEBUG TIP (IMPORTANT)
+
+Add label:
+
+Text = varHasAccess
+
+👉 Should show:
+
+true → allowed
+
+false → blocked
+
+
+
+---
+
+🖥️ FINAL FLOW
+
+User selects section
+   ↓
+Questions load
+   ↓
+Access checked
+   ↓
+Form enabled OR blocked
+
+
+---
+
+🚀 BONUS (AUTO BLOCK EARLY)
+
+If you want to stop loading questions when no access:
+
+If(
+    varHasAccess,
+    ClearCollect(
+        colQuestions,
+        Filter(
+            'SE Question List',
+            'Section In-charge'.Value = Dropdown_Section.Selected.Title
+        )
+    ),
+    Clear(colQuestions)
+)
+
+
+---
+
+👍 NEXT STEP
+
+Now you have:
+
+✅ Dynamic questions
+✅ Per-section access control
+
+Next best upgrade:
+
+✅ Prevent duplicate submission per supplier
+
+✅ Save answers correctly (nested Patch — very important)
+
+✅ Add total score per supplier
+
+
+Just tell me 👍
+
+
+****
+
 Dropdown_Section.Onchange
 
 ClearCollect(
