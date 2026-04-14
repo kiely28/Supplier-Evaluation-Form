@@ -1,3 +1,20 @@
+Issue
+
+Incompatible types for comparison. These types
+can't be compared: Error, Text.
+
+We can't evaluate your formula because the
+values being compared in the formula aren't the
+same type.
+
+Location
+Dropdown_Section
+.OnChange
+
+
+
+****
+
 
 Issue
 
