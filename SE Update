@@ -1,3 +1,211 @@
+Good 👍 this error is very common and easy to fix once you know the cause.
+
+
+---
+
+❗ ERROR EXPLANATION
+
+> Incompatible types: Error vs Text
+
+
+
+👉 This means one side of your comparison is:
+
+✔ Text (string)
+
+❌ Error (invalid field or wrong column type)
+
+
+
+---
+
+🔍 YOUR CURRENT FORMULA
+
+'Section In-charge'.Value = Dropdown_Section.Selected.Title
+
+👉 Problem is usually here:
+
+'Section In-charge'.Value
+
+
+---
+
+🎯 ROOT CAUSE
+
+Your 'Section In-charge' column is likely:
+
+Type	Correct Access
+
+Lookup	.Value OR .Title
+Choice	.Value
+Text	❌ NO .Value
+
+
+
+---
+
+✅ STEP-BY-STEP FIX
+
+
+---
+
+🧪 STEP 1: TEST THE COLUMN
+
+Add a temporary label:
+
+ThisItem.'Section In-charge'
+
+
+---
+
+If it shows text → it is TEXT column
+
+👉 Use:
+
+'Section In-charge' = Dropdown_Section.Selected.Title
+
+
+---
+
+If it shows record → it is LOOKUP
+
+👉 Use:
+
+'Section In-charge'.Title = Dropdown_Section.Selected.Title
+
+
+---
+
+🔥 MOST LIKELY FIX (TRY THIS FIRST)
+
+Replace your formula with:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Title = Dropdown_Section.Selected.Title
+    )
+)
+
+
+---
+
+🧠 EVEN BETTER (RECOMMENDED)
+
+Avoid text comparison completely ❗
+
+👉 Use ID instead:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+✔ No mismatch
+✔ Faster
+✔ No errors
+
+
+---
+
+🧩 ALSO FIX ACCESS CHECK
+
+Use same logic:
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Id = Dropdown_Section.Selected.ID &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🚨 WHY THIS HAPPENS
+
+.Value used on wrong column type
+→ Power Apps returns ERROR
+→ Compared to Text
+→ Crash
+
+
+---
+
+🧪 DEBUG TIP
+
+Add label:
+
+Text = Dropdown_Section.Selected.Title
+
+and
+
+Text = First('SE Question List').'Section In-charge'
+
+👉 Compare what each returns
+
+
+---
+
+✅ FINAL SAFE VERSION
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+);
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Id = Dropdown_Section.Selected.ID &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🚀 RESULT
+
+✔ No type error
+✔ Correct filtering
+✔ Access control works
+✔ More stable app
+
+
+---
+
+👍 NEXT STEP
+
+If you want, I can help you:
+
+🔧 Fix Save (nested gallery Patch — critical)
+
+📊 Add total score per supplier
+
+🚫 Prevent duplicate submission
+
+
+Just tell me 👍
+
+
+****
+
+
 Issue
 
 Incompatible types for comparison. These types
