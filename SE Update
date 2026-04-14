@@ -1,3 +1,17 @@
+
+Dropdown_Section.Onchange
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = Dropdown_Section.Selected.Title
+    )
+)
+
+
+****
+
 Great 👍 this is now moving into access control per section, which is a very good design.
 
 We’ll make it simple and scalable using SharePoint + Power Apps.
