@@ -1,3 +1,152 @@
+
+Perfect 👍 this pinpoints the exact issue.
+
+
+---
+
+❗ ROOT CAUSE OF YOUR ERROR
+
+This part:
+
+User.Email = User().Email
+
+👉 Problem:
+
+User (your column) is a Person column
+
+But Power Apps thinks you're calling the function User()
+
+
+So:
+
+User.Email  → ❌ error (conflict)
+User().Email → ✔ function
+
+👉 Result = Error vs Text mismatch
+
+
+---
+
+✅ FIX (VERY SIMPLE)
+
+You need to rename or alias the column
+
+
+---
+
+🥇 BEST FIX (RECOMMENDED)
+
+Use As to rename the record:
+
+Filter(
+    'SE Access List' As A,
+    A.Section.Id = Dropdown_Section.Selected.ID &&
+    A.User.Email = User().Email
+)
+
+
+---
+
+🥈 ALTERNATIVE FIX
+
+Use [@User] to force column reference:
+
+Filter(
+    'SE Access List',
+    Section.Id = Dropdown_Section.Selected.ID &&
+    'User'.Email = User().Email
+)
+
+⚠️ Sometimes still buggy depending on naming
+
+
+---
+
+🥉 BEST PRACTICE (CLEANEST)
+
+👉 Rename column in SharePoint:
+
+User → AccessUser
+
+Then use:
+
+Filter(
+    'SE Access List',
+    Section.Id = Dropdown_Section.Selected.ID &&
+    AccessUser.Email = User().Email
+)
+
+
+---
+
+🧠 WHY THIS HAPPENS
+
+User → column name ❌
+User() → function ✔
+
+Power Apps gets confused → ERROR
+
+
+---
+
+✅ FINAL WORKING VERSION
+
+Use this (safe + clean):
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List' As A,
+            A.Section.Id = Dropdown_Section.Selected.ID &&
+            A.User.Email = User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🧪 DEBUG TIP
+
+Add label:
+
+Text = User().Email
+
+👉 Make sure it matches SharePoint user email
+
+
+---
+
+🚀 RESULT
+
+✔ No more error
+✔ Access control works
+✔ Correct user filtering
+✔ Stable formula
+
+
+---
+
+👍 NEXT STEP
+
+You’re now very close to full system 🎉
+
+Next I recommend:
+
+✅ Save answers correctly (nested Patch — critical)
+
+✅ Prevent duplicate submission
+
+✅ Add total score per supplier
+
+
+Just tell me 👍
+
+
+***
+
+
 Good 👍 this error is very common and easy to fix once you know the cause.
 
 
