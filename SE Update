@@ -1,3 +1,20 @@
+
+
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Id = Dropdown_Section.Selected.ID &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+****
+
+
 Issue
 
 Delegation warning. The highlighted part of this
