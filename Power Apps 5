@@ -1,0 +1,228 @@
+Got it 👍 I’ll give you a clear, complete setup so your app will:
+
+✔ Auto-select section from link
+✔ Check user access
+✔ Disable form if not allowed
+✔ Still work when user manually selects
+
+
+---
+
+🎯 OVERALL FLOW
+
+Open link → Get section → Set dropdown → Load data → Check access → Enable/Disable form
+
+
+---
+
+🧩 STEP 1: LOAD ACCESS LIST (IMPORTANT)
+
+In Screen1.OnVisible (TOP PART)
+
+ClearCollect(
+    colAccess,
+    'SE Access List'
+);
+
+👉 Avoids delegation + faster
+
+
+---
+
+🧩 STEP 2: AUTO-SELECT SECTION FROM LINK
+
+Still in Screen1.OnVisible:
+
+Set(
+    varSectionName,
+    Param("section")
+);
+
+Set(
+    varSelectedSection,
+    LookUp(
+        'SE Section List',
+        Title = varSectionName
+    )
+);
+
+
+---
+
+🧩 STEP 3: SET DROPDOWN DEFAULT
+
+Select Dropdown_Section
+
+Default = varSelectedSection.Title
+
+
+---
+
+🧩 STEP 4: LOAD QUESTIONS + CHECK ACCESS (ONVISIBLE)
+
+Still in Screen1.OnVisible:
+
+// Load questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+);
+
+// Check access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+
+---
+
+🧩 STEP 5: HANDLE MANUAL SELECTION (IMPORTANT)
+
+👉 Keep your app working even without link
+
+In Dropdown_Section.OnChange:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+// Load questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+);
+
+// Check access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+
+---
+
+🧩 STEP 6: DISABLE FORM
+
+Select your main container (form area)
+
+DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+🧩 STEP 7: OPTIONAL MESSAGE
+
+Add Label:
+
+Text = "You are not authorized to access this section"
+Visible = !varHasAccess
+Color = Red
+
+
+---
+
+🧠 IMPORTANT NOTES
+
+
+---
+
+❗ WHY OnVisible IS REQUIRED
+
+Dropdown.OnChange → NOT triggered when opening via link
+OnVisible → ALWAYS triggered
+
+
+---
+
+❗ WHY WE USE varSelectedSection
+
+Works for BOTH:
+✔ Link-based selection
+✔ Manual dropdown selection
+
+
+---
+
+🔗 SAMPLE LINK
+
+https://apps.powerapps.com/play/appId=XXX&tenantId=XXX&section=PR%20PROC
+
+
+---
+
+🖥️ FINAL BEHAVIOR
+
+
+---
+
+✅ Authorized user
+
+Open link → PR PROC selected → form enabled → can answer
+
+
+---
+
+❌ Unauthorized user
+
+Open link → PR PROC selected → form disabled → message shown
+
+
+---
+
+🚨 COMMON MISTAKES
+
+❌ Only using Dropdown.OnChange
+❌ Not setting Dropdown.Default
+❌ Not loading access list
+❌ Using Section.Id (delegation issue)
+❌ Using User.Email instead of Claims
+
+
+---
+
+🎉 RESULT
+
+✔ Auto-select works
+✔ Access control works
+✔ No delegation issue
+✔ Works for both link & manual
+
+
+---
+
+👍 NEXT STEP (HIGHLY RECOMMENDED)
+
+Now that your access control is complete:
+
+I can help you with:
+
+💾 Save answers (Patch nested gallery — most important)
+
+🚫 Prevent duplicate submissions
+
+📊 Add total score per supplier
+
+📈 Dashboard / report
+
+
+Just tell me 👍
