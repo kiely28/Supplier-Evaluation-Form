@@ -1,3 +1,431 @@
+Great 👍 now you’re ready for the final step: sharing your app with section-specific links.
+
+I’ll show you the simple + practical way.
+
+
+---
+
+🎯 GOAL
+
+Send a link like:
+
+PR PROC → opens app → auto-selected → user answers
+
+
+---
+
+🔗 STEP 1: GET YOUR APP LINK
+
+In Power Apps:
+
+1. Go to your app
+
+
+2. Click Share
+
+
+3. Copy the link
+
+
+
+Example:
+
+https://apps.powerapps.com/play/appId=12345&tenantId=abcde
+
+
+---
+
+🧩 STEP 2: ADD SECTION PARAMETER
+
+Add this to the end:
+
+&section=PR PROC
+
+
+---
+
+✅ FINAL LINK
+
+https://apps.powerapps.com/play/appId=12345&tenantId=abcde&section=PR PROC
+
+
+---
+
+🧠 IMPORTANT (SPACES IN TEXT)
+
+👉 Replace spaces with %20
+
+
+---
+
+✔ Correct format:
+
+&section=PR%20PROC
+
+
+---
+
+🧩 EXAMPLES
+
+PR INK
+
+&section=PR%20INK
+
+VP PR
+
+&section=VP%20PR
+
+
+---
+
+🧩 STEP 3: SEND TO USERS
+
+You can send via:
+
+
+---
+
+📧 Email
+
+Hi,
+
+Please complete the supplier evaluation for your assigned section using the link below:
+
+PR PROC:
+https://apps.powerapps.com/play/appId=12345&tenantId=abcde&section=PR%20PROC
+
+Thank you.
+---
+
+💬 Chat (Teams / Messenger)
+
+Hi, please answer your section here:
+
+PR PROC:
+https://apps.powerapps.com/play/appId=12345&tenantId=abcde&section=PR%20PROC
+---
+
+🧩 STEP 4: MAKE SURE APP IS SHARED
+
+👉 VERY IMPORTANT
+
+In Power Apps → Share:
+
+✔ Add users:
+
+King
+
+Geryl
+
+Chami
+
+Hannah
+
+
+
+---
+
+🔐 SECURITY NOTE
+
+Even if someone gets the link:
+
+✔ Your varHasAccess logic will:
+
+Allow → correct user
+Block → unauthorized user
+
+
+---
+
+🖥️ USER EXPERIENCE
+
+Authorized:
+
+Click link → section auto-selected → can answer ✅
+
+
+---
+
+Not authorized:
+
+Click link → section loads → form disabled ❌
+
+
+---
+
+🔥 PRO TIP (CLEAN LINKS)
+
+If you want shorter/cleaner links:
+
+👉 Use bit.ly or internal email formatting
+
+
+---
+
+🚀 BONUS (ADVANCED)
+
+You can also pass:
+
+&section=PR%20PROC&user=king@email.com
+
+(for logging / tracking)
+
+
+---
+
+🎉 FINAL RESULT
+
+✔ Section-specific links
+✔ Auto-selection works
+✔ Access control enforced
+✔ Easy to distribute
+
+
+---
+
+👍 NEXT STEP
+
+If you want to level this up:
+
+📩 Auto send email per section
+
+🧾 Generate report after submission
+
+🚫 Prevent multiple submissions
+
+📊 Dashboard of results
+
+
+Just tell me 👍
+
+
+****
+
+
+Yes 👍 you can auto-select the section from link AND still apply access control (disable form) — you just need to trigger the logic in the correct place.
+
+
+---
+
+🎯 GOAL
+
+✔ Open app using link
+✔ Section is auto-selected
+✔ System checks access
+✔ Form is enabled or disabled automatically
+
+
+---
+
+🔗 STEP 1: LINK FORMAT
+
+Example link:
+
+https://apps.powerapps.com/...&section=PR PROC
+
+
+---
+
+🧩 STEP 2: HANDLE IN Screen1.OnVisible
+
+👉 This is where everything should happen (NOT only in Dropdown)
+
+
+---
+
+✅ FULL WORKING CODE
+
+// Get section from URL
+Set(
+    varSectionName,
+    Param("section")
+);
+
+// Set selected section record
+Set(
+    varSelectedSection,
+    LookUp(
+        'SE Section List',
+        Title = varSectionName
+    )
+);
+
+// Load questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+);
+
+// Check access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🧩 STEP 3: SET DROPDOWN DEFAULT
+
+Select Dropdown_Section
+
+Default = varSelectedSection.Title
+
+
+---
+
+🧩 STEP 4: DISABLE FORM BASED ON ACCESS
+
+Select your main form container
+
+DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+🧩 STEP 5: OPTIONAL MESSAGE
+
+Add a label:
+
+Text = "You are not authorized to access this section"
+Visible = !varHasAccess
+
+
+---
+
+🧠 IMPORTANT BEHAVIOR
+
+App opens via link
+   ↓
+OnVisible runs
+   ↓
+Section auto-selected
+   ↓
+Access checked
+   ↓
+Form enabled OR disabled
+
+
+---
+
+🚨 VERY IMPORTANT (COMMON ISSUE)
+
+👉 Your current logic is in:
+
+Dropdown_Section.OnChange
+
+❌ This will NOT run automatically when using link
+
+
+---
+
+✅ SOLUTION
+
+Keep BOTH:
+
+
+---
+
+✔ For manual selection:
+
+Dropdown_Section.OnChange
+
+
+---
+
+✔ For link-based selection:
+
+Screen1.OnVisible
+
+
+---
+
+🧩 OPTIONAL (REUSE LOGIC CLEANLY)
+
+To avoid duplicate code:
+
+
+---
+
+In OnVisible:
+
+Set(varSelectedSection, LookUp('SE Section List', Title = Param("section")))
+
+
+---
+
+In Dropdown.OnChange:
+
+Set(varSelectedSection, Dropdown_Section.Selected)
+
+
+---
+
+Then use ONE logic block:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+);
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+)
+
+
+---
+
+🖥️ FINAL RESULT
+
+✔ Link auto-selects section
+✔ Access control still works
+✔ Form disables if not allowed
+✔ Works for both manual + link
+
+
+---
+
+🚀 NEXT STEP
+
+Now your app supports:
+
+✅ Dynamic sections
+✅ Link-based access
+✅ User restriction
+
+Next I recommend:
+
+🔐 Lock submission after submit
+
+💾 Save answers (Patch nested gallery)
+
+📊 Add scoring summary
+
+
+Just tell me 👍
+
+
+*****
+
 
 Great 👍 thanks for sharing your exact formula—now I can give you the clean, correct, and warning-free version.
 
