@@ -1,3 +1,200 @@
+Good 👍 since you’re using a container as your form area, disabling it works a bit differently in Power Apps.
+
+Containers don’t truly “disable” like forms—but we can simulate disable behavior perfectly 👇
+
+
+---
+
+🎯 GOAL
+
+If varHasAccess = false
+→ User CANNOT click radio buttons
+→ UI looks disabled
+
+
+---
+
+🧩 OPTION 1: DISABLE ALL INPUT CONTROLS (RECOMMENDED ✅)
+
+👉 You must control the DisplayMode of the controls inside the container
+
+
+---
+
+For your Radio buttons (Radio_Score_New)
+
+Set:
+
+DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+👉 Do this for:
+
+Radio buttons ✅ (most important)
+
+Text inputs (if any)
+
+Dropdowns (if any)
+
+
+
+---
+
+🧠 WHY THIS IS REQUIRED
+
+Container → cannot block interaction ❌
+Controls → must be disabled individually ✅
+
+
+---
+
+🧩 OPTION 2: OVERLAY (BEST UI EXPERIENCE ⭐)
+
+👉 This is the cleanest and most professional approach
+
+
+---
+
+Step 1: Insert a rectangle ON TOP of your container
+
+Rename:
+
+Overlay_Disable
+
+
+---
+
+Step 2: Set properties
+
+Visible = !varHasAccess
+Fill = RGBA(255,255,255,0.6)
+
+
+---
+
+👉 This creates: ✔ semi-transparent layer
+✔ blocks all clicks
+✔ looks disabled
+
+
+---
+
+Step 3: Add message (optional)
+
+Insert label ON TOP of overlay:
+
+Text = "You are not authorized to access this section"
+Visible = !varHasAccess
+Align = Align.Center
+
+
+---
+
+🧩 OPTION 3: DISABLE ENTIRE CONTAINER (LIMITED)
+
+You can try:
+
+DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+⚠️ BUT:
+
+Not all controls respect it
+
+Nested galleries may ignore it
+
+
+👉 So not reliable ❌
+
+
+---
+
+🧩 BEST PRACTICE (COMBINE)
+
+👉 Use BOTH:
+
+✔ Disable controls
+
+Radio.DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+✔ Overlay
+
+Overlay.Visible = !varHasAccess
+
+
+---
+
+🖥️ FINAL RESULT
+
+
+---
+
+✅ Authorized
+
+Form active → user can click radio buttons
+
+
+---
+
+❌ Not authorized
+
+Form greyed out
+Cannot click anything
+Message shown
+
+
+---
+
+🔥 PRO TIP (FOR YOUR NESTED GALLERY)
+
+Inside:
+
+Gallery_Suppliers → Gallery_Question_H → Radio_Score_New
+
+Set ONLY here:
+
+Radio_Score_New.DisplayMode = If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+👉 No need to set everywhere
+
+
+---
+
+🎉 RESULT
+
+✔ Clean disabled UI
+✔ Prevents input
+✔ Works with nested galleries
+✔ Professional look
+
+
+---
+
+👍 NEXT STEP
+
+Now your app is:
+
+✅ Dynamic matrix
+✅ Frozen columns
+✅ Access control
+✅ Disabled form
+
+Next I recommend:
+
+💾 Save answers (Patch nested gallery — critical)
+
+🚫 Prevent duplicate submission
+
+📊 Total scoring per supplier
+
+
+Just tell me 👍
+
+
+****
+
+
 Got it 👍 I’ll give you a clear, complete setup so your app will:
 
 ✔ Auto-select section from link
