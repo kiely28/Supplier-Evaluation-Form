@@ -1,3 +1,435 @@
+Here’s a clean, complete, and implementation-ready design for your Power Apps Canvas App based on your requirements. I’ll refine a few parts to make it stable, delegation-safe, and easier to maintain.
+
+
+---
+
+✅ 1. APP OVERVIEW (WHAT YOU’LL GET)
+
+You will have a system that:
+
+Dynamically loads Suppliers × Questions (matrix style)
+
+Works like Excel (horizontal layout with frozen columns)
+
+Supports URL-based section auto-selection
+
+Enforces per-section access control
+
+Allows dynamic scoring (based on Max Score)
+
+Prevents editing when unauthorized
+
+
+
+---
+
+✅ 2. SCREEN STRUCTURE (TREE VIEW)
+
+Screen_Main
+│
+├── Dropdown_Section
+├── MainContainer (Horizontal)
+│   ├── LeftContainer (Width: 270)
+│   │   ├── Header_Left (Supplier | Code)
+│   │   └── Gallery_Suppliers_Left
+│   │       ├── lbl_SupplierName (Width: 150)
+│   │       └── lbl_SupplierCode (Width: 120)
+│   │
+│   └── RightScrollContainer (Horizontal Scroll)
+│       ├── HeaderContainer
+│       │   └── Gallery_Header (Questions)
+│       │       └── lbl_QuestionTitle (Width: 110)
+│       │
+│       └── Gallery_Suppliers_Right
+│           └── Gallery_Question_H (Horizontal)
+│               └── Radio_Score
+│
+├── Overlay_Rectangle (Disable UI)
+└── lbl_NoAccessMessage
+
+
+---
+
+✅ 3. SCREEN ONVISIBLE (CORE LOGIC)
+
+Use this optimized version (fixes delegation + improves performance):
+
+// Get section from URL
+Set(varSectionName, Param("section"));
+
+// Load Sections
+ClearCollect(colSections, 'SE Section List');
+
+// Set Selected Section
+Set(
+    varSelectedSection,
+    If(
+        !IsBlank(varSectionName),
+        LookUp(colSections, Title = varSectionName),
+        First(colSections)
+    )
+);
+
+// Load Access List
+ClearCollect(colAccess, 'SE Access List');
+
+// Load Suppliers
+ClearCollect(
+    colSuppliers,
+    Filter('SE Supplier List', Section.Value = varSelectedSection.Title)
+);
+
+// Load Questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+);
+
+// Compute total width for horizontal scroll
+Set(varTotalWidth, CountRows(colQuestions) * 110);
+
+// Check Access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email   // ✅ FIXED (no Claims needed)
+        )
+    ) > 0
+);
+
+
+---
+
+✅ 4. DROPDOWN CONFIGURATION
+
+Items:
+
+colSections
+
+Default:
+
+varSelectedSection.Title
+
+OnChange:
+
+Set(varSelectedSection, Dropdown_Section.Selected);
+
+// Reload Suppliers
+ClearCollect(
+    colSuppliers,
+    Filter('SE Supplier List', Section.Value = varSelectedSection.Title)
+);
+
+// Reload Questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+);
+
+// Recompute width
+Set(varTotalWidth, CountRows(colQuestions) * 110);
+
+// Recheck access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        )
+    ) > 0
+);
+
+
+---
+
+✅ 5. LEFT SIDE (FROZEN COLUMNS)
+
+Gallery_Suppliers_Left
+
+Items:
+
+
+colSuppliers
+
+TemplateSize:
+
+
+50
+
+Labels:
+
+Supplier Name → ThisItem.Title
+
+Code → ThisItem.'Supplier Code'
+
+
+
+---
+
+✅ 6. RIGHT SIDE (SCROLLABLE MATRIX)
+
+RightScrollContainer
+
+OverflowX = Scroll
+
+OverflowY = Hidden
+
+
+
+---
+
+HeaderContainer
+
+Width:
+
+
+varTotalWidth
+
+
+---
+
+Gallery_Header
+
+Items:
+
+
+colQuestions
+
+Label:
+
+
+ThisItem.Title
+
+Width:
+
+
+110
+
+
+---
+
+✅ 7. SUPPLIER ROW WITH QUESTIONS
+
+Gallery_Suppliers_Right
+
+Items:
+
+
+colSuppliers
+
+TemplateSize: (IMPORTANT: same as left)
+
+
+50
+
+
+---
+
+Inside → Gallery_Question_H
+
+Items:
+
+
+colQuestions
+
+WrapCount:
+
+
+CountRows(colQuestions)
+
+
+---
+
+✅ 8. RADIO BUTTON (DYNAMIC SCORE)
+
+Radio_Score
+
+Items = Sequence(ThisItem.'Max Score')
+Layout = Layout.Horizontal
+Width = 110
+
+
+---
+
+DEFAULT VALUE (Load saved score)
+
+LookUp(
+    'SE Evaluation List',
+    Section.Value = varSelectedSection.Title &&
+    Supplier.Value = ThisItem.Parent.Title &&
+    Question.Value = ThisItem.Title
+).Score
+
+
+---
+
+ONCHANGE (SAVE DATA)
+
+Patch(
+    'SE Evaluation List',
+    LookUp(
+        'SE Evaluation List',
+        Section.Value = varSelectedSection.Title &&
+        Supplier.Value = ThisItem.Parent.Title &&
+        Question.Value = ThisItem.Title
+    ),
+    {
+        Section: varSelectedSection,
+        Supplier: ThisItem.Parent,
+        Question: ThisItem,
+        Score: Radio_Score.Selected.Value
+    }
+)
+
+
+---
+
+✅ 9. ACCESS CONTROL
+
+Radio DisplayMode
+
+If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+✅ 10. DISABLE OVERLAY
+
+Rectangle
+
+Visible = !varHasAccess
+Fill = RGBA(255,255,255,0.6)
+
+
+---
+
+Label
+
+Text = "You are not authorized to access this section"
+Visible = !varHasAccess
+
+
+---
+
+✅ 11. LINK AUTO-SELECTION
+
+Use this format:
+
+https://apps.powerapps.com/play/appId=XXX&tenantId=XXX&section=PR%20PROC
+
+✔ Supports spaces via %20
+✔ Automatically selects section
+✔ Applies access control immediately
+
+
+---
+
+✅ 12. IMPORTANT FIXES (VERY CRITICAL)
+
+🔥 Fix 1: Person Column Comparison
+
+Use:
+
+User.Email = User().Email
+
+NOT Claims (avoids mismatch issues)
+
+
+---
+
+🔥 Fix 2: Delegation
+
+Use collections (ClearCollect) before filtering
+
+Avoid deep nested LookUps directly on SharePoint
+
+
+
+---
+
+🔥 Fix 3: Performance
+
+Load data once per section change
+
+Avoid recalculating inside galleries
+
+
+
+---
+
+✅ 13. OPTIONAL (HIGHLY RECOMMENDED)
+
+✔ Add Loading Spinner
+
+UpdateContext({isLoading:true});
+...
+UpdateContext({isLoading:false});
+
+
+---
+
+✔ Prevent Duplicate Patch (Better Version)
+
+With(
+    {
+        existing:
+        LookUp(
+            'SE Evaluation List',
+            Section.Value = varSelectedSection.Title &&
+            Supplier.Value = ThisItem.Parent.Title &&
+            Question.Value = ThisItem.Title
+        )
+    },
+    If(
+        IsBlank(existing),
+        Patch('SE Evaluation List', Defaults('SE Evaluation List'), {...}),
+        Patch('SE Evaluation List', existing, {...})
+    )
+)
+
+
+---
+
+✅ FINAL RESULT
+
+You now have:
+
+✔ Excel-like matrix UI
+✔ Frozen supplier columns
+✔ Dynamic question columns
+✔ Horizontal scrolling
+✔ Section-based filtering
+✔ URL-driven navigation
+✔ Role-based access control
+✔ Clean and scalable structure
+
+
+---
+
+If you want next step, I can help you:
+
+👉 Add **"Submit All / Lock Evaluation"**
+👉 Add **Total Score per Supplier (auto compute)**
+👉 Add **color indicators (like Excel conditional formatting)**
+👉 Optimize for **large data (100+ suppliers)**
+
+Just tell me 👍
+
+
+*****
+
+
 Great 👍 now you’re ready for the final step: sharing your app with section-specific links.
 
 I’ll show you the simple + practical way.
