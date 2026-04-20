@@ -1,0 +1,571 @@
+Got it—let’s slow this down and walk through it like you’re building it for the first time. I’ll explain what each part does, why it exists, and how it connects, not just the formulas.
+
+
+---
+
+🧠 PART 1: WHAT YOU ARE BUILDING (BIG PICTURE)
+
+You’re creating a system that looks like this:
+
+Supplier	Code	Q1	Q2	Q3	Q4
+
+ABC Corp	A001	○	○	○	○
+XYZ Inc	X002	○	○	○	○
+
+
+👉 This is called a matrix layout:
+
+Rows = Suppliers
+
+Columns = Questions
+
+Each cell = Score (Radio button)
+
+
+
+---
+
+🧱 PART 2: SHAREPOINT LISTS (YOUR DATABASE)
+
+Think of SharePoint as your Excel database in the cloud.
+
+1. SE Section List
+
+👉 Groups everything (like departments)
+
+Title
+
+QA
+PR PROC
+
+
+
+---
+
+2. SE Supplier List
+
+👉 Suppliers per section
+
+Supplier	Code	Section
+
+ABC Corp	A001	QA
+
+
+
+---
+
+3. SE Question List
+
+👉 Questions per section
+
+Code	Section	Max Score
+
+M1R	QA	3
+
+
+✔ Max Score = how many radio buttons (1–3 or 1–4)
+
+
+---
+
+4. SE Evaluation List
+
+👉 This stores answers
+
+Section	Supplier	Question	Score
+
+
+
+
+---
+
+5. SE Access List
+
+👉 Controls who can edit
+
+Section	User
+
+
+
+
+---
+
+⚙️ PART 3: SCREEN LOAD (OnVisible)
+
+This is the brain when the app opens.
+
+
+---
+
+STEP 1: Get section from link
+
+Set(varSectionName, Param("section"))
+
+👉 If link has:
+
+&section=QA
+
+Then:
+
+varSectionName = "QA"
+
+
+---
+
+STEP 2: Load Sections
+
+ClearCollect(colSections, 'SE Section List')
+
+👉 Creates a local copy of sections
+✔ Faster than querying SharePoint every time
+
+
+---
+
+STEP 3: Select current section
+
+Set(
+    varSelectedSection,
+    LookUp(colSections, Title = varSectionName)
+)
+
+👉 Finds the section from the URL
+
+
+---
+
+STEP 4: Load Suppliers
+
+ClearCollect(
+    colSuppliers,
+    Filter('SE Supplier List', Section.Value = varSelectedSection.Title)
+)
+
+👉 Only suppliers of selected section
+
+
+---
+
+STEP 5: Load Questions
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = varSelectedSection.Title
+    )
+)
+
+👉 Only questions for that section
+
+
+---
+
+STEP 6: Compute Width
+
+Set(varTotalWidth, CountRows(colQuestions) * 110)
+
+👉 Why? Each question column = 110px
+So total width grows dynamically
+
+
+---
+
+STEP 7: Check Access
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            'SE Access List',
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        )
+    ) > 0
+)
+
+👉 If user is in list → TRUE
+👉 Else → FALSE
+
+
+---
+
+🎛️ PART 4: DROPDOWN (SECTION SELECTOR)
+
+
+---
+
+What it does:
+
+Allows user to switch section manually
+
+
+---
+
+Items:
+
+colSections
+
+👉 Shows all sections
+
+
+---
+
+Default:
+
+varSelectedSection.Title
+
+👉 Auto-select from URL
+
+
+---
+
+OnChange:
+
+Reload everything:
+
+Set(varSelectedSection, Dropdown_Section.Selected)
+
+Then reload:
+
+Suppliers
+
+Questions
+
+Access
+
+
+
+---
+
+🧊 PART 5: LEFT SIDE (FROZEN COLUMNS)
+
+
+---
+
+Why this exists:
+
+👉 So Supplier + Code do not move when scrolling
+
+
+---
+
+Gallery_Suppliers_Left
+
+Items = colSuppliers
+
+
+---
+
+Inside it:
+
+Label 1 → Supplier Name
+
+Label 2 → Supplier Code
+
+
+
+---
+
+✔ This is your fixed column (like Excel freeze pane)
+
+
+---
+
+➡️ PART 6: RIGHT SIDE (SCROLLABLE AREA)
+
+
+---
+
+Why:
+
+👉 Questions can be many → need horizontal scroll
+
+
+---
+
+Container:
+
+RightScrollContainer
+
+Set:
+
+OverflowX = Scroll
+
+
+---
+
+🧾 PART 7: HEADER (QUESTIONS)
+
+
+---
+
+Gallery_Header
+
+Items = colQuestions
+
+👉 Displays:
+
+M1R | M2R | D3R | ...
+
+
+---
+
+Each column:
+
+Width = 110
+
+
+---
+
+📊 PART 8: MATRIX (SUPPLIER × QUESTIONS)
+
+
+---
+
+This is the most important part
+
+
+---
+
+Outer Gallery (Rows)
+
+Gallery_Suppliers_Right.Items = colSuppliers
+
+👉 Each row = 1 supplier
+
+
+---
+
+Inner Gallery (Columns)
+
+Gallery_Question_H.Items = colQuestions
+
+👉 Each column = 1 question
+
+
+---
+
+✔ This creates a grid automatically
+
+
+---
+
+🔘 PART 9: RADIO BUTTON (SCORING)
+
+
+---
+
+Items:
+
+Sequence(ThisItem.'Max Score')
+
+👉 Example:
+
+Max Score = 3 → shows:
+
+
+1  2  3
+
+
+---
+
+Layout:
+
+Layout = Horizontal
+
+
+---
+
+💾 PART 10: SAVE DATA
+
+
+---
+
+When user selects a score:
+
+Patch(...)
+
+
+---
+
+What happens:
+
+👉 If record exists → UPDATE
+👉 If not → CREATE
+
+
+---
+
+Why Patch?
+
+Because each cell = one record:
+
+Supplier	Question	Score
+
+
+
+
+---
+
+🔐 PART 11: ACCESS CONTROL
+
+
+---
+
+If user is NOT allowed:
+
+DisplayMode = Disabled
+
+
+---
+
+Result:
+
+Cannot click radio buttons
+
+View only
+
+
+
+---
+
+🚫 PART 12: DISABLE SCREEN (OVERLAY)
+
+
+---
+
+Rectangle:
+
+Visible = !varHasAccess
+
+
+---
+
+Effect:
+
+👉 Covers whole screen with transparent white
+
+
+---
+
+Message:
+
+"You are not authorized"
+
+
+---
+
+✔ This improves UX instead of just disabling controls
+
+
+---
+
+🔗 PART 13: LINK-BASED ACCESS
+
+
+---
+
+Example:
+
+https://apps.powerapps.com/play/appId=XXX&section=QA
+
+
+---
+
+What happens:
+
+1. App opens
+
+
+2. Reads section=QA
+
+
+3. Auto selects QA
+
+
+4. Loads data
+
+
+5. Applies access control
+
+
+
+
+---
+
+✔ No need to manually select section
+
+
+---
+
+🎯 PART 14: HOW EVERYTHING CONNECTS
+
+
+---
+
+Flow:
+
+1. App opens
+
+
+2. Reads URL
+
+
+3. Loads Section
+
+
+4. Loads Suppliers + Questions
+
+
+5. Builds matrix
+
+
+6. Checks access
+
+
+7. Enables/disables UI
+
+
+8. User selects score
+
+
+9. Data saved to SharePoint
+
+
+
+
+---
+
+🧩 FINAL SIMPLE ANALOGY
+
+Think of it like:
+
+SharePoint = Excel database
+
+Power Apps = Interactive Excel UI
+
+Galleries = Rows & Columns
+
+Patch = Save cell value
+
+Access List = Permissions
+
+
+
+---
+
+🚀 NEXT (IF YOU WANT TO IMPROVE)
+
+I can guide you step-by-step on:
+
+✅ Add **Total Score per Supplier**
+
+✅ Add **Submit/Finalize button**
+
+✅ Add **Color rating (Red/Yellow/Green)**
+
+✅ Improve performance for **100+ suppliers**
+
+
+Just tell me 👍
