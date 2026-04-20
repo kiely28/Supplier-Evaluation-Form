@@ -1,3 +1,445 @@
+Alright—now let’s make this very practical. I’ll show you exactly:
+
+1. What controls to insert (step-by-step)
+
+
+2. Where to place them
+
+
+3. Final Tree View (clean structure)
+
+
+4. Important properties per control
+
+
+
+This is written so you can build it from scratch without guessing.
+
+
+---
+
+🧱 PART 1: CONTROLS TO INSERT (STEP-BY-STEP)
+
+🔹 STEP 1: Add Main Screen
+
+Insert → Screen
+
+Rename to:
+
+
+Screen_Main
+
+
+---
+
+🔹 STEP 2: Add Section Dropdown
+
+Insert → Dropdown
+
+Rename:
+
+
+Dropdown_Section
+
+Place it:
+
+Top of screen
+
+Key Properties:
+
+Items = colSections
+Default = varSelectedSection.Title
+
+
+---
+
+🔹 STEP 3: Add Main Horizontal Container
+
+Insert → Horizontal Container
+
+Rename:
+
+
+MainContainer
+
+Properties:
+
+Width = Parent.Width
+Height = Parent.Height - 60
+Y = 60
+
+👉 This will hold LEFT + RIGHT sections
+
+
+---
+
+🧊 PART 2: LEFT SIDE (FROZEN COLUMNS)
+
+
+---
+
+🔹 STEP 4: Add Left Container
+
+Insert inside MainContainer → Vertical Container
+
+Rename:
+
+
+LeftContainer
+
+Properties:
+
+Width = 270
+Height = Parent.Height
+
+
+---
+
+🔹 STEP 5: Add Header (Supplier | Code)
+
+Insert inside LeftContainer → Horizontal Container
+
+Rename:
+
+
+Header_Left
+
+Add 2 Labels:
+
+Label 1:
+
+Text = "Supplier"
+Width = 150
+
+Label 2:
+
+Text = "Code"
+Width = 120
+
+
+---
+
+🔹 STEP 6: Add Supplier Gallery (LEFT)
+
+Insert → Vertical Gallery
+
+Rename:
+
+
+Gallery_Suppliers_Left
+
+Properties:
+
+Items = colSuppliers
+TemplateSize = 50
+
+
+---
+
+Inside Gallery (2 Labels):
+
+Supplier Name:
+
+Text = ThisItem.Title
+Width = 150
+
+Supplier Code:
+
+Text = ThisItem.'Supplier Code'
+Width = 120
+
+
+---
+
+➡️ PART 3: RIGHT SIDE (SCROLLABLE MATRIX)
+
+
+---
+
+🔹 STEP 7: Add Right Scroll Container
+
+Insert → Vertical Container
+
+Rename:
+
+
+RightScrollContainer
+
+Properties:
+
+Width = Parent.Width - 270
+Height = Parent.Height
+OverflowX = Scroll
+OverflowY = Hidden
+
+
+---
+
+🔹 STEP 8: Add Header Container
+
+Insert inside RightScrollContainer → Container
+
+Rename:
+
+
+HeaderContainer
+
+Property:
+
+Width = varTotalWidth
+Height = 50
+
+
+---
+
+🔹 STEP 9: Add Header Gallery (Questions)
+
+Insert → Horizontal Gallery
+
+Rename:
+
+
+Gallery_Header
+
+Properties:
+
+Items = colQuestions
+TemplateSize = 110
+WrapCount = CountRows(colQuestions)
+
+
+---
+
+Inside Gallery:
+
+Insert Label:
+
+
+Text = ThisItem.Title
+Width = 110
+
+
+---
+
+📊 PART 4: MAIN MATRIX (SUPPLIER × QUESTIONS)
+
+
+---
+
+🔹 STEP 10: Add Supplier Gallery (RIGHT)
+
+Insert → Vertical Gallery
+
+Rename:
+
+
+Gallery_Suppliers_Right
+
+Properties:
+
+Items = colSuppliers
+TemplateSize = 50
+Width = varTotalWidth
+
+
+---
+
+🔹 STEP 11: Add Inner Gallery (Questions per Row)
+
+Insert inside Supplier_Right → Horizontal Gallery
+
+Rename:
+
+
+Gallery_Question_H
+
+Properties:
+
+Items = colQuestions
+TemplateSize = 110
+WrapCount = CountRows(colQuestions)
+
+
+---
+
+🔘 PART 5: RADIO BUTTON (SCORING)
+
+
+---
+
+🔹 STEP 12: Add Radio Button
+
+Insert inside Gallery_Question_H
+
+Rename:
+
+
+Radio_Score
+
+
+---
+
+Properties:
+
+Items = Sequence(ThisItem.'Max Score')
+Layout = Layout.Horizontal
+Width = 110
+
+
+---
+
+Display Mode (Access Control):
+
+If(varHasAccess, DisplayMode.Edit, DisplayMode.Disabled)
+
+
+---
+
+💾 PART 6: SAVE DATA (IMPORTANT)
+
+
+---
+
+Radio OnChange:
+
+Patch(
+    'SE Evaluation List',
+    LookUp(
+        'SE Evaluation List',
+        Section.Value = varSelectedSection.Title &&
+        Supplier.Value = ThisItem.Parent.Title &&
+        Question.Value = ThisItem.Title
+    ),
+    {
+        Section: varSelectedSection,
+        Supplier: ThisItem.Parent,
+        Question: ThisItem,
+        Score: Radio_Score.Selected.Value
+    }
+)
+
+
+---
+
+🚫 PART 7: OVERLAY (ACCESS BLOCK)
+
+
+---
+
+🔹 STEP 13: Add Rectangle
+
+Insert → Rectangle
+
+Rename:
+
+
+Overlay_Block
+
+Properties:
+
+Visible = !varHasAccess
+Fill = RGBA(255,255,255,0.6)
+Width = Parent.Width
+Height = Parent.Height
+
+
+---
+
+🔹 STEP 14: Add Label (Message)
+
+Name: lbl_NoAccess
+
+Properties:
+
+Text = "You are not authorized to access this section"
+Visible = !varHasAccess
+Align = Align.Center
+
+
+---
+
+🌳 FINAL TREE VIEW (VERY IMPORTANT)
+
+Here’s your complete structure:
+
+Screen_Main
+│
+├── Dropdown_Section
+│
+├── MainContainer (Horizontal)
+│   │
+│   ├── LeftContainer (Vertical)
+│   │   │
+│   │   ├── Header_Left (Horizontal)
+│   │   │   ├── lbl_Supplier
+│   │   │   └── lbl_Code
+│   │   │
+│   │   └── Gallery_Suppliers_Left
+│   │       ├── lbl_SupplierName
+│   │       └── lbl_SupplierCode
+│   │
+│   └── RightScrollContainer
+│       │
+│       ├── HeaderContainer
+│       │   └── Gallery_Header
+│       │       └── lbl_QuestionTitle
+│       │
+│       └── Gallery_Suppliers_Right
+│           └── Gallery_Question_H
+│               └── Radio_Score
+│
+├── Overlay_Block
+└── lbl_NoAccess
+
+
+---
+
+⚠️ CRITICAL ALIGNMENT RULE (DO NOT MISS)
+
+To keep rows aligned:
+
+Gallery_Suppliers_Left.TemplateSize = 50
+Gallery_Suppliers_Right.TemplateSize = 50
+
+✔ If not equal → rows will not match
+
+
+---
+
+🎯 FINAL RESULT
+
+You now have:
+
+✔ Excel-like layout
+✔ Frozen columns (Supplier & Code)
+✔ Scrollable questions
+✔ Dynamic radio scoring
+✔ Access control
+✔ URL-based selection
+
+
+---
+
+🚀 IF YOU WANT NEXT
+
+I can guide you further to:
+
+🔢 Add **Total Score per Supplier**
+
+🎨 Add **color rating (like Excel conditional formatting)**
+
+🚀 Optimize for **large data (fast loading)**
+
+🔒 Add **Submit/Lock evaluation**
+
+
+Just tell me 👍
+
+
+
+****
+
+
 Got it—let’s slow this down and walk through it like you’re building it for the first time. I’ll explain what each part does, why it exists, and how it connects, not just the formulas.
 
 
