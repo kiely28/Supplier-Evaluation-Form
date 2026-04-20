@@ -1,0 +1,264 @@
+Got you 👍 let’s redo the freeze Supplier & Code (Excel-style) cleanly using your current tree. I’ll make it simple and exact so you can apply it without breaking anything.
+
+
+---
+
+🎯 GOAL
+
+Supplier | Code || M1R | M5R | D3R | Q4R →
+--------------------------------------------
+AOI      | 343434 || ○ ○ ○ | ○ ○ ○ | → scroll
+ASIA     | 456789 || ○ ○ ○ | ○ ○ ○ | → scroll
+
+✔ Supplier & Code → fixed (no scroll)
+✔ Questions → horizontal scroll
+
+
+---
+
+🧠 MAIN IDEA
+
+👉 Split your UI into 2 parts
+
+LEFT (Fixed)	RIGHT (Scrollable)
+
+Supplier + Code	Questions
+
+
+
+---
+
+🧩 STEP 1: CREATE MAIN HORIZONTAL CONTAINER
+
+Insert new container in Screen1:
+
+MainContainer_H
+
+Set:
+
+Direction = LayoutDirection.Horizontal
+Width = Parent.Width
+Height = Parent.Height
+
+
+---
+
+🧩 STEP 2: CREATE LEFT SIDE (FROZEN)
+
+Insert container inside MainContainer_H:
+
+LeftContainer
+
+Set:
+
+Width = 270   // 150 + 120
+Height = Parent.Height
+
+
+---
+
+🔹 ADD HEADER (LEFT)
+
+Inside LeftContainer:
+
+Add labels:
+
+Supplier Name_H
+Supplier Code_H
+
+Set:
+
+Supplier Name_H.Width = 150
+Supplier Code_H.Width = 120
+
+
+---
+
+🔹 ADD SUPPLIER LIST
+
+Insert gallery:
+
+Gallery_Suppliers_Left
+
+Items:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID
+)
+
+
+---
+
+Inside gallery row:
+
+Supplier Name (Width = 150)
+Supplier Code (Width = 120)
+
+
+---
+
+🧩 STEP 3: MOVE YOUR EXISTING RIGHT SIDE
+
+👉 Your current:
+
+ScrollContainer
+   HeaderContainer
+   Gallery_Suppliers_New
+
+👉 Move ALL of this into:
+
+RightScrollContainer
+
+
+---
+
+🧩 STEP 4: CONFIGURE RIGHT SCROLL
+
+Select RightScrollContainer
+
+Width = Parent.Width - 270
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+Align = Align.Start
+
+
+---
+
+🧩 STEP 5: REMOVE DUPLICATES (IMPORTANT)
+
+Inside RIGHT side:
+
+❌ REMOVE:
+
+Supplier Name_H
+
+Supplier Code_H
+
+Supplier Name
+
+Supplier Code
+
+
+👉 Only keep:
+
+Questions + Radio buttons
+
+
+---
+
+🧩 STEP 6: SET QUESTION WIDTH
+
+Header:
+
+Gallery_Header_New.Items = colQuestions
+Gallery_Header_New.TemplateSize = 110
+Gallery_Header_New.Width = CountRows(colQuestions) * 110
+
+
+---
+
+Row:
+
+Gallery_Question_H.Items = colQuestions
+Gallery_Question_H.TemplateSize = 110
+Gallery_Question_H.Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 7: ALIGN ROW HEIGHT (VERY IMPORTANT)
+
+Set BOTH:
+
+Gallery_Suppliers_Left.TemplateSize = 60
+Gallery_Suppliers_New.TemplateSize = 60
+
+👉 If not equal → rows will not align ❌
+
+
+---
+
+🧩 STEP 8: FINAL TREE VIEW (CLEAN)
+
+Screen1
+ ├── Dropdown_Section
+ └── MainContainer_H (Horizontal)
+      ├── LeftContainer (FIXED)
+      │     ├── Supplier Name_H
+      │     ├── Supplier Code_H
+      │     └── Gallery_Suppliers_Left
+      │           ├── Supplier Name
+      │           └── Supplier Code
+      │
+      └── RightScrollContainer (SCROLLABLE)
+            ├── HeaderContainer
+            │     └── Gallery_Header_New
+            │           └── Question
+            │
+            └── Gallery_Suppliers_New
+                  └── Container4
+                        └── Gallery_Question_H
+                              └── Radio_Score_New
+
+
+---
+
+🧠 WHY THIS WORKS
+
+LeftContainer → not scrollable → stays fixed
+RightScrollContainer → scrollable → moves
+
+
+---
+
+🚨 COMMON MISTAKES
+
+❌ Supplier still inside right side
+❌ Different TemplateSize (misaligned rows)
+❌ Right container width = Parent.Width (no scroll)
+❌ Missing OverflowX = Scroll
+
+
+---
+
+🧪 QUICK CHECK
+
+If working correctly:
+
+✔ Scroll → only questions move
+✔ Supplier & Code stay visible
+✔ Rows aligned perfectly
+
+
+---
+
+🎉 RESULT
+
+✔ Excel-like layout
+✔ Frozen columns
+✔ Smooth horizontal scroll
+✔ Works with your dynamic questions
+
+
+---
+
+👍 NEXT STEP
+
+Now you have:
+
+✅ Dynamic matrix
+✅ Frozen columns
+✅ Access control
+✅ Save logic
+
+Next best upgrades:
+
+📊 Auto total score per supplier
+
+🚫 Prevent duplicate submission
+
+📈 Dashboard view
+
+
+Just tell me 👍
