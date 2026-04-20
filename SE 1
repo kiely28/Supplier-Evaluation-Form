@@ -1,3 +1,24 @@
+App
+Screen1
+├── Label1 (Text label)
+├── Dropdown_Section
+├── ScrollContainer
+│   ├── HeaderContainer
+│   │       ├── Supplier Name_H 
+│   │       └── Supplier Code_H
+│   │       └── Gallery_Header_New
+│   │           ├── Question
+│   └── Gallery_Supplier_New 
+│       ├── Container4
+│       │       ├── Supplier Name
+│       │       └── Supplier Code
+│       │       └── Gallery_Question_H_new
+│       │           ├── Radio_Score_New
+
+********
+
+
+
 Alright—now let’s make this very practical. I’ll show you exactly:
 
 1. What controls to insert (step-by-step)
