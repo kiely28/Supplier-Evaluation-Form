@@ -1,0 +1,260 @@
+That’s a good call 👍—let’s focus on saving first (this is the core of your system). We’ll make it simple, reliable, and working with your current layout.
+
+
+---
+
+🎯 GOAL
+
+When user clicks Submit button:
+
+Save → Section | Supplier | Question | Score
+
+Into your SharePoint list in SharePoint using Power Apps
+
+
+---
+
+🧠 YOUR CURRENT STRUCTURE
+
+Gallery_Supplier_New
+   └── Container4
+         └── Gallery_Question_H_new
+               └── Radio_Score_New
+
+👉 This is a nested gallery → we loop twice
+
+
+---
+
+🧩 STEP 1: ADD SUBMIT BUTTON
+
+Insert button:
+
+btnSubmit
+
+Set text:
+
+"Submit"
+
+
+---
+
+🧩 STEP 2: BASIC SAVE LOGIC (WORKING VERSION)
+
+👉 Select btnSubmit → OnSelect
+
+ForAll(
+    Gallery_Supplier_New.AllItems As sup,
+    ForAll(
+        sup.Gallery_Question_H_new.AllItems As ques,
+        If(
+            !IsBlank(ques.Radio_Score_New.Selected.Value),
+            Patch(
+                'SE Evaluation List',
+                Defaults('SE Evaluation List'),
+                {
+                    Section: varSelectedSection,
+                    Supplier: sup,
+                    Question: ques,
+                    Score: ques.Radio_Score_New.Selected.Value
+                }
+            )
+        )
+    )
+)
+
+
+---
+
+🧠 EXPLANATION (SIMPLE)
+
+Loop Supplier →
+   Loop Questions →
+      Get selected radio →
+         Save to SharePoint
+
+
+---
+
+🧩 STEP 3: IMPORTANT SETTINGS (MUST CHECK)
+
+
+---
+
+✅ Radio button
+
+Select Radio_Score_New
+
+Items = Sequence(ThisItem.'Max Score')
+Layout = Layout.Horizontal
+
+
+---
+
+✅ Make sure it returns VALUE
+
+Add test label inside question gallery:
+
+Text = Radio_Score_New.Selected.Value
+
+👉 Must show 1 / 2 / 3 / 4
+
+
+---
+
+🧩 STEP 4: FIX LOOKUP FIELDS (VERY IMPORTANT)
+
+Your SharePoint columns:
+
+Column	Type
+
+Section	Lookup
+Supplier	Lookup
+Question	Lookup
+
+
+
+---
+
+✅ SAFE VERSION (USE ID)
+
+Update Patch like this:
+
+Patch(
+    'SE Evaluation List',
+    Defaults('SE Evaluation List'),
+    {
+        Section: {
+            Id: varSelectedSection.ID,
+            Value: varSelectedSection.Title
+        },
+        Supplier: {
+            Id: sup.ID,
+            Value: sup.Title
+        },
+        Question: {
+            Id: ques.ID,
+            Value: ques.Title
+        },
+        Score: Value(ques.Radio_Score_New.Selected.Value)
+    }
+)
+
+
+---
+
+🧩 STEP 5: PREVENT DUPLICATES (IMPORTANT)
+
+Before saving:
+
+RemoveIf(
+    'SE Evaluation List',
+    Section.Id = varSelectedSection.ID
+);
+
+👉 Clears old answers first
+
+
+---
+
+🧩 STEP 6: SUCCESS MESSAGE
+
+After save:
+
+Notify("Evaluation submitted successfully", NotificationType.Success)
+
+
+---
+
+🧪 DEBUG CHECKLIST
+
+If not saving:
+
+✔ Check:
+
+ques.Radio_Score_New.Selected.Value
+
+✔ Check:
+
+sup.Title
+ques.Title
+
+✔ Check:
+
+varSelectedSection.Title
+
+
+---
+
+🚨 COMMON ERRORS
+
+
+---
+
+❌ Blank Score
+
+👉 Fix:
+
+!IsBlank(Selected.Value)
+
+
+---
+
+❌ Wrong lookup format
+
+👉 Fix: Use:
+
+{ Id: ..., Value: ... }
+
+
+---
+
+❌ No data saved
+
+👉 Check:
+
+List permissions
+
+Column names match exactly
+
+
+
+---
+
+🖥️ FINAL RESULT
+
+After clicking submit:
+
+Section	Supplier	Question	Score
+
+PR PROC	AOI	M1R	3
+PR PROC	AOI	M5R	2
+
+
+
+---
+
+🎉 YOU NOW HAVE
+
+✅ Working submit button
+✅ Saves per supplier per question
+✅ Handles nested gallery
+✅ Clean SharePoint structure
+
+
+---
+
+👍 NEXT STEP (WHEN READY)
+
+When you’re ready, we can go back and fix:
+
+🧊 Freeze columns (Supplier & Code)
+
+📊 Auto total score per supplier
+
+🚫 Prevent multiple submissions per user
+
+📈 Dashboard/report
+
+
+Just tell me 👍
