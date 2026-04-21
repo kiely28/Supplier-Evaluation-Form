@@ -1,3 +1,298 @@
+Perfect 👍 thanks for sharing your actual tree—this makes it much easier to fix correctly without rebuilding everything.
+
+Right now, your issue is:
+
+Supplier + Code are INSIDE ScrollContainer ❌
+→ That’s why they scroll
+
+We’ll modify your existing structure (not rebuild) to freeze them.
+
+
+---
+
+🎯 FINAL TARGET (BASED ON YOUR TREE)
+
+Screen1
+├── Label1
+├── Dropdown_Section
+├── MainContainer_H (NEW - Horizontal)
+│   ├── LeftContainer (NEW - FIXED)
+│   │     ├── Supplier Name_H
+│   │     ├── Supplier Code_H
+│   │     └── Gallery_Supplier_Left (NEW)
+│   │           ├── Supplier Name
+│   │           └── Supplier Code
+│   │
+│   └── ScrollContainer (EXISTING - MODIFIED)
+│         ├── HeaderContainer
+│         │     └── Gallery_Header_New (Questions only)
+│         │
+│         └── Gallery_Supplier_New
+│               └── Container4
+│                     └── Gallery_Question_H_new
+│                           └── Radio_Score_New
+
+
+---
+
+🧩 STEP-BY-STEP (MODIFY YOUR CURRENT APP)
+
+
+---
+
+🧩 STEP 1: ADD MAIN HORIZONTAL CONTAINER
+
+👉 Insert new container:
+
+MainContainer_H
+
+Set:
+
+Direction = LayoutDirection.Horizontal
+Width = Parent.Width
+Height = Parent.Height
+
+
+---
+
+🧩 STEP 2: MOVE YOUR ScrollContainer
+
+👉 Drag your existing:
+
+ScrollContainer
+
+👉 Put it inside MainContainer_H
+
+
+---
+
+🧩 STEP 3: CREATE LEFT (FROZEN) SIDE
+
+👉 Insert container inside MainContainer_H
+
+LeftContainer
+
+
+---
+
+Set width:
+
+Width = 270   // 150 + 120
+Height = Parent.Height
+
+
+---
+
+🧩 STEP 4: MOVE HEADER (IMPORTANT)
+
+From your current:
+
+HeaderContainer
+   Supplier Name_H
+   Supplier Code_H
+
+👉 MOVE these TWO labels into:
+
+LeftContainer
+
+
+---
+
+🧩 STEP 5: CREATE LEFT GALLERY
+
+👉 Insert new gallery:
+
+Gallery_Supplier_Left
+
+
+---
+
+Items (same as your right gallery):
+
+Gallery_Supplier_New.Items
+
+OR:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID
+)
+
+
+---
+
+Inside this gallery:
+
+Add:
+
+Supplier Name (Width = 150)
+Supplier Code (Width = 120)
+
+
+---
+
+🧩 STEP 6: REMOVE DUPLICATES FROM RIGHT SIDE ❗
+
+Inside your EXISTING:
+
+ScrollContainer
+   HeaderContainer
+   Gallery_Supplier_New
+
+
+---
+
+❌ REMOVE:
+
+From HeaderContainer:
+
+Supplier Name_H
+Supplier Code_H
+
+From Container4:
+
+Supplier Name
+Supplier Code
+
+
+---
+
+👉 KEEP ONLY:
+
+Gallery_Header_New (Questions)
+Gallery_Question_H_new (Radio buttons)
+
+
+---
+
+🧩 STEP 7: FIX SCROLL SETTINGS
+
+Select:
+
+ScrollContainer
+
+
+---
+
+Set:
+
+Width = Parent.Width - 270
+OverflowX = Overflow.Scroll
+OverflowY = Overflow.Hidden
+Align = Align.Start
+
+
+---
+
+🧩 STEP 8: FIX QUESTION WIDTH
+
+
+---
+
+Header:
+
+Gallery_Header_New.TemplateSize = 110
+Gallery_Header_New.Width = CountRows(colQuestions) * 110
+
+
+---
+
+Rows:
+
+Gallery_Question_H_new.TemplateSize = 110
+Gallery_Question_H_new.Width = CountRows(colQuestions) * 110
+
+
+---
+
+🧩 STEP 9: ALIGN ROW HEIGHT (VERY IMPORTANT)
+
+Set BOTH galleries:
+
+Gallery_Supplier_Left.TemplateSize = 60
+Gallery_Supplier_New.TemplateSize = 60
+
+
+---
+
+🧪 FINAL CHECK
+
+
+---
+
+✅ When you scroll horizontally:
+
+✔ Questions move → ✅
+✔ Supplier stays → ✅
+✔ Code stays → ✅
+✔ Rows aligned → ✅
+
+
+---
+
+🚨 COMMON ERRORS (FROM YOUR CURRENT SETUP)
+
+
+---
+
+❌ Still scrolling Supplier?
+
+👉 Means:
+
+Supplier still inside ScrollContainer
+
+
+---
+
+❌ No scrollbar?
+
+👉 Check:
+
+OverflowX = Scroll
+Width < content width
+
+
+---
+
+❌ Misaligned rows?
+
+👉 Fix:
+
+TemplateSize must match (LEFT & RIGHT)
+
+
+---
+
+🎉 RESULT
+
+✔ Excel-like UI
+✔ Frozen Supplier & Code
+✔ Smooth horizontal scroll
+✔ Works with your existing app
+
+
+---
+
+👍 NEXT STEP
+
+Now your UI is already advanced level 🚀
+
+If you want, next I can help you:
+
+📊 Add total score per supplier (auto compute)
+
+🚫 Prevent duplicate submissions
+
+📈 Create dashboard/report view
+
+
+Just tell me 👍
+
+
+
+****
+
+
 Got you 👍 let’s redo the freeze Supplier & Code (Excel-style) cleanly using your current tree. I’ll make it simple and exact so you can apply it without breaking anything.
 
 
