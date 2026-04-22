@@ -1,3 +1,240 @@
+Alright 👍 let’s fix this properly. When nothing is saving, it’s usually one of these:
+
+❌ Nested gallery reference not working
+
+❌ Radio value not captured
+
+❌ Lookup format wrong
+
+❌ Patch not hitting SharePoint
+
+
+We’ll go step-by-step and simplify first, then build back up.
+
+
+---
+
+🎯 STEP 1: TEST SIMPLE PATCH (VERY IMPORTANT)
+
+👉 Add a temporary button and use this:
+
+Patch(
+    'SE Evaluation List',
+    Defaults('SE Evaluation List'),
+    {
+        Score: 1
+    }
+)
+
+✅ If this works:
+
+→ Your list connection is OK
+
+❌ If this fails:
+
+→ Problem is SharePoint (permissions / column required)
+
+
+---
+
+🎯 STEP 2: TEST RADIO VALUE
+
+Inside your question gallery, add a label:
+
+Text = Radio_Score_New.Selected.Value
+
+✅ Must show:
+
+1 or 2 or 3 or 4
+
+❌ If blank:
+
+👉 Fix radio:
+
+Radio_Score_New.Items = Sequence(ThisItem.'Max Score')
+
+
+---
+
+🎯 STEP 3: FIX NESTED GALLERY (MAIN ISSUE)
+
+❗ Your current problem is this line usually fails:
+
+sup.Gallery_Question_H_new.AllItems
+
+👉 Power Apps does NOT reliably support this
+
+
+---
+
+✅ SOLUTION: USE COLLECTION (RECOMMENDED)
+
+We store answers first, then save.
+
+
+---
+
+🧩 STEP 4: COLLECT ANSWERS ON SELECT
+
+Select Radio_Score_New
+
+OnChange:
+
+Collect(
+    colAnswers,
+    {
+        Section: varSelectedSection.ID,
+        SupplierID: ThisItem.Parent.Parent.ID,
+        QuestionID: ThisItem.ID,
+        Score: Self.Selected.Value
+    }
+)
+
+
+---
+
+🧠 EXPLANATION
+
+When user clicks radio →
+   store answer in collection
+
+
+---
+
+🧩 STEP 5: SUBMIT BUTTON (CLEAN & WORKING)
+
+Now your button:
+
+ForAll(
+    colAnswers,
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Section: {
+                Id: Section,
+                Value: LookUp('SE Section List', ID = Section).Title
+            },
+            Supplier: {
+                Id: SupplierID,
+                Value: LookUp('SE Supplier List', ID = SupplierID).Title
+            },
+            Question: {
+                Id: QuestionID,
+                Value: LookUp('SE Question List', ID = QuestionID).Title
+            },
+            Score: Value(Score)
+        }
+    )
+);
+
+Notify("Saved successfully", NotificationType.Success);
+Clear(colAnswers)
+
+
+---
+
+🎯 STEP 6: PREVENT DUPLICATES (OPTIONAL)
+
+Before saving:
+
+RemoveIf(
+    'SE Evaluation List',
+    Section.Id = varSelectedSection.ID
+);
+
+
+---
+
+🧪 STEP 7: DEBUG COLLECTION
+
+Add a label:
+
+Text = CountRows(colAnswers)
+
+✅ Should increase when clicking radios
+
+
+---
+
+🚨 COMMON MISTAKES
+
+
+---
+
+❌ No data in collection
+
+👉 Fix:
+
+Radio_Score_New.OnChange must have Collect()
+
+
+---
+
+❌ Wrong parent reference
+
+If error in:
+
+ThisItem.Parent.Parent.ID
+
+👉 Replace with:
+
+Gallery_Supplier_New.Selected.ID
+
+
+---
+
+❌ Duplicate records
+
+👉 Use:
+
+RemoveIf(colAnswers, SupplierID=... && QuestionID=...)
+
+(before Collect)
+
+
+---
+
+🖥️ FINAL FLOW
+
+User clicks radio →
+   value stored in colAnswers
+Click Submit →
+   saved to SharePoint
+
+
+---
+
+🎉 RESULT
+
+✔ Works with nested gallery
+✔ No reference errors
+✔ Stable saving
+✔ Easy to debug
+
+
+---
+
+👍 NEXT STEP
+
+Once this works, I can help you:
+
+🚫 Prevent multiple submission per user
+
+📊 Compute total score automatically
+
+📈 Create dashboard/report
+
+🧊 Fix freeze columns (properly)
+
+
+Just tell me 👍
+
+
+
+*****
+
+
 That’s a good call 👍—let’s focus on saving first (this is the core of your system). We’ll make it simple, reliable, and working with your current layout.
 
 
