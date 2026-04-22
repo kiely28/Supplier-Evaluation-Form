@@ -1,0 +1,841 @@
+In my existing sharepoint list,
+SE Evaluation List
+Suppliers - Lookup
+Suppliers - Lookup
+Questions - Lookup
+Score - Choice
+
+SE Question List
+Question No - Title
+Evaluation Contents - Single line text
+Section Incharge - Lookup
+Max Score - Number
+
+SE Section List
+Section - Title
+
+SE Supplier List
+Supplier Name - Title
+Supplier Code - Single line text
+Section - Lookup
+
+SE Access List
+Section - Lookup
+User - Person
+
+How to create in power apps like this:
+I will send the link in the selected Section per User
+
+For example if the section is PR PROC then i will send the form to Section Incharge to answer.
+
+For example in UI
+Section: PR PROC
+
+Supplier Code | Supplier Name | Question
+| M1R  | M5R |
+343434     | AOI   | ○ 1 ○ 2 ○ 3 | ○ 1 ○ 2 ○ 3 ○ 4 |
+
+
+****
+
+What you’re trying to build is doable—but the tricky part isn’t the UI, it’s filtering + routing + saving per Section/User correctly. Let’s break it into a clean, working approach based on your SharePoint structure.
+
+
+---
+
+🧠 Overall Concept
+
+You want:
+
+A link per Section (e.g., PR PROC)
+
+Only the assigned users (Section Incharge) can answer
+
+A matrix UI:
+
+Supplier Code | Supplier Name | Question1 | Question2 ...
+                                   ○1 ○2 ○3   ○1 ○2 ○3 ○4
+
+Save answers into SE Evaluation List
+
+
+
+---
+
+🔗 1. Pass Section via Link (IMPORTANT)
+
+When you send the link, use:
+
+https://apps.powerapps.com/play/...&Section=PR PROC
+
+
+---
+
+📌 2. Capture Section in Power Apps
+
+In App → OnStart:
+
+Set(varSection, Param("Section"));
+
+In Screen → OnVisible:
+
+Set(varUser, User().Email);
+
+
+---
+
+🔐 3. Restrict Access (SE Access List)
+
+Only allow users assigned to the section:
+
+If(
+    IsBlank(
+        LookUp(
+            'SE Access List',
+            Section.Value = varSection &&
+            User.Email = varUser
+        )
+    ),
+    Notify("You are not authorized for this section", NotificationType.Error);
+    Navigate(Screen_Denied)
+)
+
+
+---
+
+📊 4. Load Data (Core Logic)
+
+Suppliers (filtered by section)
+
+ClearCollect(
+    colSuppliers,
+    Filter('SE Supplier List', Section.Value = varSection)
+);
+
+Questions (filtered by Section Incharge)
+
+ClearCollect(
+    colQuestions,
+    Filter('SE Question List', Section Incharge.Value = varSection)
+);
+
+
+---
+
+🧱 5. UI STRUCTURE (Matrix Layout)
+
+🔹 Main Layout
+
+Use this structure:
+
+Screen
+│
+├── Label (Section Title)
+├── Horizontal Container (Header)
+│     Supplier Code | Supplier Name | Q1 | Q2 | Q3
+│
+└── Gallery_Suppliers (Vertical)
+      ├── Label Supplier Code
+      ├── Label Supplier Name
+      └── Gallery_Questions (Horizontal)
+              └── Radio Buttons (Score)
+
+
+---
+
+🧩 A. Header (Dynamic Questions)
+
+Gallery_Header (Horizontal)
+Items:
+
+colQuestions
+
+Inside:
+
+ThisItem.'Question No'
+
+
+---
+
+🧩 B. Supplier Rows
+
+Gallery_Suppliers
+Items:
+
+colSuppliers
+
+Inside:
+
+Supplier Code:
+
+
+ThisItem.'Supplier Code'
+
+Supplier Name:
+
+
+ThisItem.Title
+
+
+---
+
+🧩 C. Nested Questions (Per Supplier)
+
+Inside each supplier row → Add:
+
+Gallery_Questions (Horizontal)
+Items:
+
+colQuestions
+
+
+---
+
+🎯 D. Radio Button (Score Input)
+
+Inside Gallery_Questions:
+
+Items (Dynamic Score based on Max Score)
+
+Sequence(ThisItem.'Max Score')
+
+Display:
+
+ThisItem.Value
+
+
+---
+
+💾 6. Save Data (IMPORTANT PART)
+
+Add a Submit Button
+
+OnSelect:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+    With(
+        { supplier: ThisRecord },
+        ForAll(
+            colQuestions,
+            Patch(
+                'SE Evaluation List',
+                Defaults('SE Evaluation List'),
+                {
+                    Suppliers: supplier,
+                    Questions: ThisRecord,
+                    Score: LookUp(
+                        Gallery_Questions.AllItems,
+                        QuestionID = ThisRecord.ID
+                    ).RadioScore.Selected.Value
+                }
+            )
+        )
+    )
+)
+
+⚠️ You’ll need to:
+
+Add a hidden field or variable to track selected radio per question
+
+Or store selections in a collection (recommended)
+
+
+
+---
+
+✅ BETTER APPROACH (Highly Recommended)
+
+Instead of directly patching from UI, create a collection for answers:
+
+On Radio Select:
+
+Collect(
+    colAnswers,
+    {
+        SupplierID: ThisItem.SupplierID,
+        QuestionID: ThisItem.QuestionID,
+        Score: Radio1.Selected.Value
+    }
+)
+
+Then Submit:
+
+ForAll(
+    colAnswers,
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Suppliers: LookUp('SE Supplier List', ID = SupplierID),
+            Questions: LookUp('SE Question List', ID = QuestionID),
+            Score: Score
+        }
+    )
+)
+
+
+---
+
+🔁 7. Final Flow
+
+1. User clicks link → ?Section=PR PROC
+
+
+2. App filters:
+
+Suppliers
+
+Questions
+
+Access
+
+
+
+3. User answers matrix
+
+
+4. Click Submit → saved to SharePoint
+
+
+
+
+---
+
+🚨 Common Problems (You will hit these)
+
+❌ Nested gallery losing context → fix using With() or variables
+
+❌ Radio button resets → store values in collection
+
+❌ Duplicate entries → add validation before Patch
+
+❌ Slow performance → limit records per section
+
+
+
+---
+
+💡 If you want next step
+
+I can:
+
+Draw the **exact Power Apps Tree View**
+
+Give **control names (copy-paste ready)**
+
+Fix your **Save button (since you said earlier it's not working)**
+
+
+Just tell me 👍
+
+****
+
+For now please use a dropdown to select the Section but ready if i use the link. Please also give the tree view and control
+
+This is a new version of the earlier sharepoint power apps that i build
+
+*****
+
+Good call—using a Dropdown first + ready for link parameter is the cleanest way to develop and test 👍
+I’ll give you a working structure (tree view + controls + formulas) that you can copy directly, and later you just switch to link-based.
+
+
+---
+
+🧠 CORE IDEA (Hybrid Mode)
+
+If link has Section → use it
+
+If no link → user selects from Dropdown
+
+
+
+---
+
+🔧 1. VARIABLES (App Setup)
+
+App → OnStart
+
+Set(varSection, Param("Section"));
+Set(varUser, User().Email);
+
+
+---
+
+🧭 2. SCREEN STRUCTURE (TREE VIEW)
+
+Here’s your clean Power Apps tree view:
+
+Screen_Main
+│
+├── Container_Main (Vertical)
+│
+│   ├── Container_TopBar (Horizontal)
+│   │     ├── lbl_Title
+│   │     ├── Dropdown_Section
+│   │     └── btn_Load
+│
+│   ├── Container_Header (Horizontal)
+│   │     ├── lbl_Code_H
+│   │     ├── lbl_Supplier_H
+│   │     └── Gallery_Header_Questions
+│
+│   ├── Gallery_Suppliers (Vertical)
+│   │     ├── lbl_Code
+│   │     ├── lbl_Supplier
+│   │     └── Gallery_Questions (Horizontal)
+│   │            └── Radio_Score
+│
+│   └── btn_Submit
+
+
+---
+
+🎯 3. CONTROLS + FORMULAS
+
+
+---
+
+🔹 A. Dropdown Section
+
+Dropdown_Section
+
+Items = 'SE Section List'
+Value = "Title"
+
+
+---
+
+🔹 B. Load Button (IMPORTANT)
+
+btn_Load → OnSelect
+
+// If no link, use dropdown
+If(
+    IsBlank(varSection),
+    Set(varSection, Dropdown_Section.Selected.Title)
+);
+
+// Access validation
+If(
+    IsBlank(
+        LookUp(
+            'SE Access List',
+            Section.Value = varSection &&
+            User.Email = varUser
+        )
+    ),
+    Notify("No access to this section", NotificationType.Error),
+    
+    // Load data
+    ClearCollect(
+        colSuppliers,
+        Filter('SE Supplier List', Section.Value = varSection)
+    );
+
+    ClearCollect(
+        colQuestions,
+        Filter('SE Question List', Section Incharge.Value = varSection)
+    );
+
+    Clear(colAnswers)
+)
+
+
+---
+
+🔹 C. HEADER (Dynamic Questions)
+
+Static Labels
+
+lbl_Code_H.Text = "Supplier Code"
+
+lbl_Supplier_H.Text = "Supplier Name"
+
+
+
+---
+
+Gallery_Header_Questions
+
+Items = colQuestions
+TemplateSize = 80
+
+Inside:
+
+Text = ThisItem.'Question No'
+
+
+---
+
+🔹 D. SUPPLIER ROWS
+
+Gallery_Suppliers
+
+Items = colSuppliers
+TemplateSize = 70
+
+Inside:
+
+Supplier Code
+
+Text = ThisItem.'Supplier Code'
+Width = 120
+
+Supplier Name
+
+Text = ThisItem.Title
+Width = 180
+
+
+---
+
+🔹 E. QUESTIONS PER SUPPLIER
+
+Gallery_Questions (inside supplier gallery)
+
+Items = colQuestions
+TemplateSize = 120
+WrapCount = CountRows(colQuestions)
+
+
+---
+
+🎯 F. RADIO BUTTON (DYNAMIC SCORE)
+
+Radio_Score
+
+Items = Sequence(ThisItem.'Max Score')
+Layout = Layout.Horizontal
+
+Display:
+
+Text = ThisItem.Value
+
+
+---
+
+💾 4. CAPTURE ANSWERS (CRITICAL)
+
+Radio → OnSelect
+
+// Remove existing answer for same Supplier + Question
+RemoveIf(
+    colAnswers,
+    SupplierID = ThisItem.Parent.Parent.ID &&
+    QuestionID = ThisItem.ID
+);
+
+// Add new answer
+Collect(
+    colAnswers,
+    {
+        SupplierID: ThisItem.Parent.Parent.ID,
+        QuestionID: ThisItem.ID,
+        Score: Radio_Score.Selected.Value
+    }
+);
+
+👉 Explanation:
+
+Parent.Parent = Supplier row
+
+ThisItem = Question
+
+
+
+---
+
+💾 5. SUBMIT BUTTON
+
+btn_Submit → OnSelect
+
+ForAll(
+    colAnswers,
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Suppliers: LookUp('SE Supplier List', ID = SupplierID),
+            Questions: LookUp('SE Question List', ID = QuestionID),
+            Score: Score
+        }
+    )
+);
+
+Notify("Evaluation Submitted!", NotificationType.Success);
+
+
+---
+
+🔁 6. AUTO-LOAD IF LINK EXISTS (Optional but Clean)
+
+Screen → OnVisible
+
+If(
+    !IsBlank(varSection),
+    Select(btn_Load)
+)
+
+
+---
+
+🧪 HOW IT WORKS NOW
+
+Scenario 1 (Testing)
+
+1. Open app
+
+
+2. Select Section in Dropdown
+
+
+3. Click Load
+
+
+4. Answer → Submit
+
+
+
+
+---
+
+Scenario 2 (Production Link)
+
+https://apps.powerapps.com/play/...&Section=PR PROC
+
+Auto loads
+
+No dropdown needed
+
+
+
+---
+
+⚠️ COMMON ISSUES (YOU WILL ENCOUNTER)
+
+❌ Radio not saving
+
+Fix: Always use collection (colAnswers) → already handled
+
+
+---
+
+❌ Wrong Supplier ID
+
+If error: Replace:
+
+ThisItem.Parent.Parent.ID
+
+with:
+
+Gallery_Suppliers.Selected.ID
+
+(but only if needed)
+
+
+---
+
+❌ Duplicate records
+
+Add before Patch:
+
+RemoveIf(
+    'SE Evaluation List',
+    Suppliers.Id = SupplierID &&
+    Questions.Id = QuestionID
+)
+
+
+---
+
+💡 NEXT UPGRADE (WHEN YOU'RE READY)
+
+I can help you:
+
+Freeze **Supplier Code + Name (Excel-like)**
+
+Add **auto-save (no submit button)**
+
+Add **progress tracking per section**
+
+Improve performance (important if many suppliers/questions)
+
+
+Just tell me 👍
+
+****
+
+Please give the sample output for this
+
+
+****
+
+Here’s what your Power Apps Supplier Evaluation UI will look like based on your setup (Dropdown + Matrix layout):
+
+
+---
+
+🖥️ SAMPLE OUTPUT (USER VIEW)
+
+🔹 Top Section
+
+--------------------------------------------------------
+Supplier Evaluation
+--------------------------------------------------------
+
+Section: [ PR PROC ▼ ]   [ Load ]
+
+
+---
+
+🔹 Matrix Table Layout
+
+--------------------------------------------------------------------------------------------------
+Supplier Code | Supplier Name |   Q1   |   Q2   |   Q3   |   Q4
+--------------------------------------------------------------------------------------------------
+343434        | AOI           | ○1 ○2 ○3 | ○1 ○2 ○3 ○4 | ○1 ○2 ○3 | ○1 ○2 ○3 ○4
+112233        | ABC Corp      | ○1 ○2 ○3 | ○1 ○2 ○3 ○4 | ○1 ○2 ○3 | ○1 ○2 ○3 ○4
+556677        | XYZ Ltd       | ○1 ○2 ○3 | ○1 ○2 ○3 ○4 | ○1 ○2 ○3 | ○1 ○2 ○3 ○4
+--------------------------------------------------------------------------------------------------
+
+👉 Each row = Supplier
+👉 Each column after Supplier Name = Question
+👉 Each radio group = Score (based on Max Score)
+
+
+---
+
+🎯 ACTUAL INTERACTION (EXAMPLE)
+
+User selects answers like this:
+
+--------------------------------------------------------------------------------------------------
+Supplier Code | Supplier Name |   Q1   |   Q2   |   Q3   |   Q4
+--------------------------------------------------------------------------------------------------
+343434        | AOI           | ●2      | ●4      | ●3      | ●2
+112233        | ABC Corp      | ●3      | ●3      | ●2      | ●4
+556677        | XYZ Ltd       | ●1      | ●2      | ●3      | ●3
+--------------------------------------------------------------------------------------------------
+
+
+---
+
+💾 AFTER CLICKING SUBMIT
+
+Your SE Evaluation List (SharePoint) will store like this:
+
+Supplier	Question	Score
+
+AOI	Q1	2
+AOI	Q2	4
+AOI	Q3	3
+AOI	Q4	2
+ABC Corp	Q1	3
+ABC Corp	Q2	3
+...	...	...
+
+
+👉 Meaning:
+
+1 row per Supplier + Question
+
+Clean and scalable
+
+
+
+---
+
+🎨 VISUAL STRUCTURE (POWER APPS LOOK)
+
+Think of it like:
+
+[Dropdown Section]   [Load Button]
+
+[Header Row]
+| Code | Supplier | Q1 | Q2 | Q3 |
+
+[Scrollable Area]
+| 343434 | AOI | (Radio) | (Radio) | (Radio) |
+| 112233 | ABC | (Radio) | (Radio) | (Radio) |
+
+
+---
+
+⚠️ REALITY CHECK (IMPORTANT)
+
+What you built is basically:
+
+> 🟢 A dynamic Excel-like evaluation system inside Power Apps
+
+
+
+But:
+
+Power Apps does not truly support frozen columns
+
+Horizontal scrolling may feel tight on mobile
+
+Performance depends on number of:
+
+Suppliers
+
+Questions
+
+
+
+
+---
+
+💡 PRO TIPS (from experience)
+
+✔ Best column width suggestion:
+
+Code: 100px
+
+Supplier: 180px
+
+Question: 120px
+
+
+
+---
+
+✔ If many questions:
+
+Make header scrollable:
+
+Supplier | ← scroll → Q1 Q2 Q3 Q4 Q5 Q6 ...
+
+
+---
+
+✔ If many suppliers:
+
+Limit per section or paginate
+
+
+---
+
+🚀 If you want next level
+
+I can help you build:
+
+✅ “Frozen Supplier Column” workaround (Excel feel)
+
+✅ Auto-save (no Submit button)
+
+✅ Prevent duplicate answers per user
+
+✅ Show previous submitted scores (edit mode)
+
+
+Just tell me 👍
+
+
+
+****
+
+
+
