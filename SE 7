@@ -1,3 +1,208 @@
+Ahh—good catch. This is one of those confusing SharePoint + Power Apps quirks 👍
+
+
+---
+
+🎯 WHAT’S REALLY HAPPENING
+
+In SharePoint:
+
+Question No → (renamed column)
+Actual internal name = Title
+
+👉 Even if you renamed it to “Question No”, Power Apps often still uses:
+
+Title
+
+
+---
+
+✅ WHY YOUR TEST BEHAVES LIKE THIS
+
+❌ This errors:
+
+LookUp('SE Question List', 'Question No' = "M1R")
+
+Because:
+
+Power Apps does NOT recognize the display name
+
+Or it expects special syntax for renamed columns
+
+
+
+---
+
+✅ This works:
+
+LookUp('SE Question List', Title = "M1R")
+
+Because:
+
+Title is the internal column name
+
+
+
+---
+
+🔥 FINAL DECISION (IMPORTANT)
+
+👉 Use Title for your Question No
+
+
+---
+
+✅ FIX YOUR MAIN CODE
+
+Replace:
+
+'Question No' = "M1R"
+
+👉 WITH:
+
+Title = "M1R"
+
+
+---
+
+🧠 ALSO FIX THIS PART (SECOND ISSUE)
+
+Your column:
+
+Section In-charge (Lookup)
+
+Sometimes Power Apps reads it as:
+
+'Section In-charge'
+
+BUT the .Value part depends on the lookup configuration.
+
+
+---
+
+✅ SAFE VERSION (LESS ERROR-PRONE)
+
+Instead of:
+
+'Section In-charge'.Value = Dropdown_Section.Selected.Title
+
+👉 Use this:
+
+'Section In-charge'.Id = Dropdown_Section.Selected.ID
+
+✔ More reliable
+✔ Avoids text mismatch issues
+
+
+---
+
+✅ FINAL WORKING CODE (RECOMMENDED)
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "M1R" &&
+            'Section In-charge'.Id = Dropdown_Section.Selected.ID
+        ),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "M5R" &&
+            'Section In-charge'.Id = Dropdown_Section.Selected.ID
+        ),
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+
+---
+
+⚠️ VERY IMPORTANT LESSON (SAVE THIS)
+
+🔑 SharePoint Column Rules in Power Apps:
+
+What you see	What Power Apps may use
+
+Question No	Title
+Section In-charge	'Section In-charge'
+Lookup	.Id or .Value
+
+
+
+---
+
+🚨 PRO TIP (WILL SAVE YOU HOURS)
+
+If unsure, do this:
+
+👉 Click column in formula bar
+👉 Wait for IntelliSense suggestion
+
+Example:
+
+'SE Question List'.
+
+Then select from dropdown instead of typing manually
+
+
+---
+
+🚀 NEXT STEP (OPTIONAL BUT STRONGLY RECOMMENDED)
+
+Once this works, your next bottleneck will be:
+
+❌ Hardcoded M1R, M5R
+❌ Manual radio controls
+
+
+---
+
+I can help you upgrade to:
+
+✅ Auto-load questions
+✅ Dynamic columns
+✅ Cleaner code (no repetition)
+✅ Scalable system
+
+
+---
+
+Just say: 👉 "Make it dynamic"
+
+And I’ll guide you step-by-step (same level of detail 👍)
+
+
+
+*****
+
+
+
+Ill try to test with
+
+LookUp('SE Question List', 'Question No' = "M1R")
+
+But error in 'Question No'
+
+But if i check the column in list setting in sharepoint the column Question No is Title and if i change to Title no error
+
+
+****
+
+
 Good—this is a very common Power Apps issue, and the error message actually tells us exactly what’s wrong:
 
 > ❌ “Incompatible types for comparison… Error, Text”
