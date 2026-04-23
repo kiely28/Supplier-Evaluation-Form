@@ -517,3 +517,482 @@ I can help you build:
 
 
 Just tell me 👍
+
+
+
+****
+
+
+Can you help me on how to create the sharepoint list as mentioned earlier
+
+
+****
+
+Yes 👍 let’s build this step-by-step in SharePoint so your Power Apps will work perfectly later.
+
+We’ll create 4 lists: Sections, Suppliers, Questions, Evaluations.
+
+
+---
+
+🧩 STEP 1: Create “Sections” List
+
+Go to your **SharePoint site:
+
+👉 Click New → List → Blank list
+
+List Name:
+
+Sections
+
+Columns:
+
+Column Name	Type
+
+Title	Single line of text
+
+
+👉 Rename Title → Section Name (optional but cleaner)
+
+Sample Data:
+
+Section Name
+
+PR INK PROC
+PR PROC
+
+
+
+---
+
+🧩 STEP 2: Create “Suppliers” List
+
+👉 New List → Name:
+
+Suppliers
+
+Columns:
+
+Column Name	Type	Notes
+
+Title	Single line text	Supplier Name
+Supplier Code	Single line text	(use text to keep leading zeros)
+Section	Lookup	Link to Sections → Section Name
+
+
+
+---
+
+⚙️ IMPORTANT (Lookup Setup)
+
+When creating Section column:
+
+Type = Lookup
+
+Get information from: Sections
+
+Column: Section Name
+
+
+
+---
+
+Sample Data:
+
+Supplier Name	Supplier Code	Section
+
+LANXESS	341927	PR INK PROC
+FUSO	334542	PR INK PROC
+AOI	343434	PR PROC
+ASIA	456789	PR PROC
+BESTEC	567890	PR PROC
+
+
+
+---
+
+🧩 STEP 3: Create “Questions” List
+
+👉 New List → Name:
+
+Questions
+
+Columns:
+
+Column Name	Type
+
+Title	Single line text (Question No)
+Description	Single line text
+Section	Lookup (Sections)
+
+
+
+---
+
+Sample Data:
+
+Question No	Description	Section
+
+M1R	Total Service	PR INK PROC
+M6R	Sales	PR INK PROC
+D2R	Recovery	PR INK PROC
+D3R	Flexibility	PR INK PROC
+M1R		PR PROC
+M5R		PR PROC
+D3R		PR PROC
+Q4R		PR PROC
+
+
+
+---
+
+🧩 STEP 4: Create “Evaluations” List (MAIN)
+
+👉 New List → Name:
+
+Evaluations
+
+Columns:
+
+Column Name	Type
+
+Title	Single line text (optional, can leave unused)
+Section	Lookup (Sections)
+Supplier	Lookup (Suppliers)
+Question	Lookup (Questions)
+Score	Choice (1, 2, 3)
+
+
+
+---
+
+Setup Score Choices:
+
+1
+2
+3
+
+
+---
+
+🔗 RELATIONSHIP (VERY IMPORTANT)
+
+This is how everything connects:
+
+Sections
+   ↓
+Suppliers (per section)
+   ↓
+Questions (per section)
+   ↓
+Evaluations (answers)
+
+
+---
+
+✅ TEST YOUR SETUP
+
+Try adding 1 record in Evaluations:
+
+Section: PR PROC
+
+Supplier: AOI
+
+Question: M1R
+
+Score: 2
+
+
+👉 If all dropdowns show correct values → ✔️ GOOD SETUP
+
+
+---
+
+🔥 PRO TIP (Highly Recommended)
+
+Enable this in Lookup columns:
+
+👉 “Enforce relationship behavior” (if available)
+
+Prevent deleting section if used
+
+
+
+---
+
+🚀 NEXT STEP
+
+After this, you are ready for:
+
+👉 Power Apps
+
+Filter Suppliers by Section
+
+Filter Questions by Section
+
+Build your matrix UI
+
+
+
+---
+
+👍 If You Want
+
+I can give you next:
+
+✅ Exact Power Apps formulas (copy paste)
+
+✅ Auto-load questions per supplier (no manual setup)
+
+✅ Prevent duplicate evaluation per supplier
+
+✅ Export results to Excel format
+
+
+Just tell me 👌
+
+
+****
+
+
+The next step in the power apps please
+
+
+****
+
+Great—now that your SharePoint lists are ready, let’s build your Power Apps form (matrix style + link per section) step-by-step.
+
+We’ll use Power Apps connected to SharePoint.
+
+
+---
+
+🚀 STEP 1: Create the App
+
+1. Go to Power Apps
+
+
+2. Click Create → Canvas App (Tablet)
+
+
+3. Name it:
+
+
+
+Supplier Evaluation App
+
+
+---
+
+🔗 STEP 2: Connect SharePoint Lists
+
+In Data → Add data, connect:
+
+Sections
+
+Suppliers
+
+Questions
+
+Evaluations
+
+
+
+---
+
+🔑 STEP 3: Get Section from Link
+
+We want to open the app like:
+
+.../play?section=PR PROC
+
+In App → OnStart:
+
+Set(varSection, Param("section"))
+
+
+---
+
+🎯 STEP 4: Section Dropdown
+
+Insert Dropdown
+
+Name:
+
+Dropdown_Section
+
+Properties:
+
+Items = Sections
+Value = "Section Name"
+Default = varSection
+
+👉 If link is used → auto select section ✅
+
+
+---
+
+🧩 STEP 5: Supplier Gallery (Rows)
+
+Insert Vertical Gallery
+
+Name:
+
+Gallery_Suppliers
+
+Items:
+
+Filter(Suppliers, Section.Value = Dropdown_Section.Selected.'Section Name')
+
+Inside the gallery, add:
+
+Label → Supplier Name
+
+Label → Supplier Code
+
+
+
+---
+
+🧠 STEP 6: Add Questions as Columns
+
+For your example (PR PROC):
+
+M1R
+
+M5R
+
+D3R
+
+Q4R
+
+
+👉 Inside the supplier row, add:
+
+Layout example:
+
+Supplier	Code	M1R	M5R	D3R	Q4R
+
+
+
+
+---
+
+🎯 STEP 7: Add Score Selection (Radio Buttons)
+
+For each question, insert a Radio control
+
+Example:
+
+M1R Radio:
+
+Items = [1,2,3]
+
+M5R Radio:
+
+Items = [1,2,3]
+
+👉 Repeat for all questions
+
+
+---
+
+💾 STEP 8: Save Button (IMPORTANT)
+
+Insert a Button → “Submit”
+
+OnSelect:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch(Evaluations, Defaults(Evaluations),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: ThisRecord,
+        Question: LookUp(Questions, Title="M1R" && Section.Value = Dropdown_Section.Selected.'Section Name'),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch(Evaluations, Defaults(Evaluations),
+    {
+        Section: Dropdown_Section.Selected,
+        Supplier: ThisRecord,
+        Question: LookUp(Questions, Title="M5R" && Section.Value = Dropdown_Section.Selected.'Section Name'),
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+👉 Repeat for D3R, Q4R
+
+
+---
+
+🔥 STEP 9: Send Link per Section
+
+Now you can send:
+
+Example:
+
+https://apps.powerapps.com/play/APPID?section=PR PROC
+
+👉 Result:
+
+Section auto-selected
+
+Only suppliers & questions for that section appear
+
+
+
+---
+
+💡 OPTIONAL (Better UX)
+
+Disable Section dropdown:
+
+DisplayMode = DisplayMode.View
+
+
+---
+
+🧠 BEST PRACTICE (IMPORTANT)
+
+✔ Use Supplier Lookup properly
+✔ Make sure Question names EXACT match (M1R etc.)
+✔ Use Supplier Code as text (no missing 0 issue)
+
+
+---
+
+🔥 ADVANCED (If You Want Later)
+
+Instead of hardcoding (M1R, M5R), we can:
+
+Auto-load questions dynamically
+
+Auto-create columns
+
+Prevent duplicate submissions
+
+
+
+---
+
+🚀 If You Want Next Level
+
+I can help you build:
+
+✅ Fully dynamic matrix (no hardcoding questions)
+
+✅ Auto-save all answers per supplier
+
+✅ Prevent double submission
+
+✅ Export to Excel report (like your supplier evaluation file)
+
+
+Just tell me 👍
+
+
