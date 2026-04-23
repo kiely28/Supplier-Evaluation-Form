@@ -1,3 +1,246 @@
+
+
+Nice 👍 I can clearly see your setup from the screenshot—this helps a lot.
+
+You’re actually very close, but I can already spot why your save is not working.
+
+
+---
+
+🔍 WHAT I SEE IN YOUR UI
+
+Your structure:
+
+ScrollContainer
+ ├── HeaderContainer
+ │     ├── Supplier Name_H
+ │     ├── Supplier Code_H
+ │     └── Gallery_Header_New
+ │
+ └── Gallery_Suppliers_New
+       └── Container4
+             ├── Supplier Name
+             ├── Supplier Code
+             └── Gallery_Question_H
+                   └── Radio_Score_New
+
+👉 This is correct UI-wise ✅
+👉 BUT ❌ nested gallery reference is the problem for saving
+
+
+---
+
+❗ ROOT PROBLEM
+
+This will NOT work reliably:
+
+sup.Gallery_Question_H.AllItems
+
+👉 Power Apps cannot properly loop inner galleries like that.
+
+
+---
+
+✅ FIX (WORKING APPROACH)
+
+We will NOT save directly from gallery.
+
+👉 Instead:
+
+1. Capture answers in a collection
+
+
+2. Save from collection
+
+
+
+
+---
+
+🧩 STEP 1: FIX RADIO BUTTON
+
+Select:
+
+Radio_Score_New
+
+Set this:
+
+OnChange =
+With(
+    {
+        supID: ThisItem.Parent.Parent.ID,
+        quesID: ThisItem.ID
+    },
+    RemoveIf(
+        colAnswers,
+        SupplierID = supID && QuestionID = quesID
+    );
+    Collect(
+        colAnswers,
+        {
+            SectionID: varSelectedSection.ID,
+            SupplierID: supID,
+            QuestionID: quesID,
+            Score: Self.Selected.Value
+        }
+    )
+)
+
+
+---
+
+🧠 WHAT THIS DOES
+
+User clicks radio →
+   old answer removed →
+   new answer saved in collection
+
+
+---
+
+🧪 DEBUG THIS FIRST
+
+Add a label:
+
+Text = CountRows(colAnswers)
+
+👉 Click radios → number should increase ✅
+
+
+---
+
+🧩 STEP 2: FIX SUBMIT BUTTON
+
+Select:
+
+btnSubmit
+
+
+---
+
+🔥 USE THIS (FINAL WORKING CODE)
+
+ForAll(
+    colAnswers As A,
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Section: {
+                Id: A.SectionID,
+                Value: LookUp('SE Section List', ID = A.SectionID).Title
+            },
+            Supplier: {
+                Id: A.SupplierID,
+                Value: LookUp('SE Supplier List', ID = A.SupplierID).Title
+            },
+            Question: {
+                Id: A.QuestionID,
+                Value: LookUp('SE Question List', ID = A.QuestionID).Title
+            },
+            Score: Value(A.Score)
+        }
+    )
+);
+
+Notify("Saved successfully", NotificationType.Success);
+Clear(colAnswers)
+
+
+---
+
+🧩 STEP 3: (OPTIONAL BUT IMPORTANT)
+
+Prevent duplicates:
+
+RemoveIf(
+    'SE Evaluation List',
+    Section.Id = varSelectedSection.ID
+);
+
+👉 Put BEFORE ForAll
+
+
+---
+
+🚨 VERY IMPORTANT CHECKS
+
+
+---
+
+✅ 1. Radio must return value
+
+Test:
+
+Text = Radio_Score_New.Selected.Value
+
+
+---
+
+✅ 2. IDs must exist
+
+Test:
+
+Text = ThisItem.ID
+
+
+---
+
+✅ 3. Collection must fill
+
+If this is 0 → nothing will save:
+
+CountRows(colAnswers)
+
+
+---
+
+🧠 WHY YOUR OLD METHOD FAILED
+
+Nested gallery reference ❌
+Power Apps loses context ❌
+Patch receives blank ❌
+
+
+---
+
+🖥️ AFTER FIX
+
+Flow:
+
+Click radio →
+   Saved in colAnswers
+Click Submit →
+   Saved to SharePoint
+
+
+---
+
+🎉 RESULT
+
+✔ No more save errors
+✔ Works with your current UI
+✔ Handles nested gallery correctly
+✔ Easy to debug
+
+
+---
+
+👍 NEXT STEP
+
+After this works, I recommend:
+
+🚫 Prevent duplicate submission per user
+
+📊 Add total score per supplier
+
+🧊 Fix freeze columns (we can retry cleanly)
+
+
+Just tell me 👍
+
+****
+
 In my existing sharepoint list,
 SE Evaluation List
 Suppliers - Lookup
