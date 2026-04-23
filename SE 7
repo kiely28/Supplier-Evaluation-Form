@@ -1,0 +1,403 @@
+Great—this is a solid structure already. I’ll walk you through it in a beginner-friendly, step-by-step way, especially focusing on how to correctly build the gallery (matrix style) and connect it to your updated SharePoint lists.
+
+
+---
+
+🧩 OVERVIEW OF WHAT YOU’RE BUILDING
+
+You are creating:
+
+👉 A Supplier Evaluation Matrix UI
+
+Supplier	Code	M1R	M5R	D3R	Q4R
+
+
+
+Rows = Suppliers
+
+Columns = Questions
+
+Each cell = Score (Radio buttons)
+
+Data saved to SE Evaluation List
+
+
+
+---
+
+🚀 STEP 1: CONNECT YOUR UPDATED SHAREPOINT LISTS
+
+Go to:
+
+👉 Power Apps Studio → Data (left panel) → Add data
+
+Add these:
+
+SE Section List
+
+SE Supplier List
+
+SE Question List
+
+SE Evaluation List
+
+SE Access List (for future security)
+
+
+
+---
+
+🔗 STEP 2: GET SECTION FROM LINK
+
+1. Click App (top-most)
+
+2. Go to OnStart
+
+Paste:
+
+Set(varSection, Param("section"))
+
+👉 Then click Run OnStart
+
+
+---
+
+🎯 STEP 3: CREATE SECTION DROPDOWN
+
+Insert → Dropdown
+
+Rename:
+
+Dropdown_Section
+
+Set properties:
+
+Items = 'SE Section List'
+Value = "Title"
+Default = varSection
+
+
+---
+
+🧠 IMPORTANT NOTE
+
+Your column:
+
+Section - Title
+
+So use:
+
+Title (default SharePoint name)
+
+
+---
+
+🧩 STEP 4: CREATE SUPPLIER GALLERY (VERY IMPORTANT)
+
+This is the core part 👇
+
+
+---
+
+🧱 A. Insert the Gallery
+
+👉 Insert → Vertical Gallery
+
+Rename:
+
+Gallery_Suppliers
+
+
+---
+
+⚙️ B. Set Items Property
+
+Filter(
+    'SE Supplier List',
+    Section.Value = Dropdown_Section.Selected.Title
+)
+
+👉 This means:
+
+Only show suppliers based on selected section
+
+
+
+---
+
+🎨 C. DESIGN THE ROW (Inside Gallery)
+
+Inside the gallery, delete default controls then add:
+
+
+---
+
+1. Supplier Name Label
+
+Insert → Label
+
+Text = ThisItem.Title
+
+Rename:
+
+lbl_SupplierName
+
+
+---
+
+2. Supplier Code Label
+
+Insert → Label
+
+Text = ThisItem.'Supplier Code'
+
+Rename:
+
+lbl_SupplierCode
+
+
+---
+
+📐 STEP 5: ADD QUESTION COLUMNS (STATIC FIRST)
+
+For now, we do simple hardcoded version (easier to learn)
+
+
+---
+
+👉 Inside the SAME Gallery Row:
+
+Add 4 Radio controls:
+
+
+---
+
+🔹 M1R
+
+Rename:
+
+Radio_M1R
+
+Set:
+
+Items = [1,2,3]
+
+
+---
+
+🔹 M5R
+
+Radio_M5R
+Items = [1,2,3]
+
+
+---
+
+🔹 D3R
+
+Radio_D3R
+Items = [1,2,3]
+
+
+---
+
+🔹 Q4R
+
+Radio_Q4R
+Items = [1,2,3]
+
+
+---
+
+🧠 VISUAL LAYOUT TIP
+
+Arrange horizontally:
+
+[Supplier Name] [Code] [M1R] [M5R] [D3R] [Q4R]
+
+
+---
+
+💾 STEP 6: CREATE SAVE BUTTON
+
+Insert → Button
+
+Rename:
+
+btn_Submit
+
+
+---
+
+⚙️ OnSelect CODE (UPDATED FOR YOUR LIST)
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Section: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "M1R" &&
+            'Section Incharge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Section: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "M5R" &&
+            'Section Incharge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_M5R.Selected.Value
+    });
+
+    // D3R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Section: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "D3R" &&
+            'Section Incharge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_D3R.Selected.Value
+    });
+
+    // Q4R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Section: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "Q4R" &&
+            'Section Incharge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_Q4R.Selected.Value
+    })
+)
+
+
+---
+
+🔥 STEP 7: TEST YOUR APP
+
+Test flow:
+
+1. Select Section
+
+
+2. Suppliers appear
+
+
+3. Choose scores
+
+
+4. Click Submit
+
+
+5. Check SE Evaluation List
+
+
+
+👉 You should see records saved per:
+
+Supplier
+
+Question
+
+Score
+
+
+
+---
+
+🧩 STEP 8: SIMPLE TREE VIEW (WHAT YOUR APP SHOULD LOOK LIKE)
+
+Screen1
+│
+├── Dropdown_Section
+├── Gallery_Suppliers
+│    ├── lbl_SupplierName
+│    ├── lbl_SupplierCode
+│    ├── Radio_M1R
+│    ├── Radio_M5R
+│    ├── Radio_D3R
+│    ├── Radio_Q4R
+│
+├── btn_Submit
+
+
+---
+
+⚠️ COMMON ERRORS (VERY IMPORTANT)
+
+❌ "Nothing saves"
+
+✔ Check column names EXACTLY:
+
+Suppliers
+
+Questions
+
+Score
+
+
+
+---
+
+❌ Lookup not working
+
+✔ Check:
+
+'Section Incharge'.Value
+
+Matches your Section Title
+
+
+---
+
+❌ Radio returns blank
+
+✔ Make sure:
+
+Radio_M1R.Selected.Value
+
+
+---
+
+💡 NEXT LEVEL (RECOMMENDED AFTER THIS)
+
+Once this works, your current version has a limitation:
+
+👉 Questions are hardcoded
+
+
+---
+
+I can help you upgrade to:
+
+✅ Dynamic Questions (auto columns)
+✅ No need to manually add Radio buttons
+✅ Excel-like flexible layout
+✅ Prevent duplicate submissions
+✅ Role-based access using SE Access List
+
+
+---
+
+If you want, next step I suggest:
+
+👉 “Dynamic Matrix Version (like real Excel)”
+
+Just say: "Go dynamic version" 👍
