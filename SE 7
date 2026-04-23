@@ -1,3 +1,67 @@
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Section: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "M1R" &&
+            'Section Incharge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Section: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            Title = "M5R" &&
+            'Section Incharge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_M5R.Selected.Value
+    });
+)
+
+
+Issue
+
+Incompatible types for comparison. These types
+can't be compared: Error, Text.
+
+We can't evaluate your formula because the
+values being compared in the formula aren't the
+same type.
+
+Location
+btn_Submit
+.OnSelect
+
+
+SE Question List
+ Question No - Title
+ Evaluation Contents - Single line of text
+ Section In-charge - Lookup
+ Max Score - Number
+
+SE Evaluation List
+ Sections - Lookup
+ Suppliers - Lookup
+ Questions - Lookup
+ Score - Choice
+
+
+
+
+
+*****
+
+
 Great—this is a solid structure already. I’ll walk you through it in a beginner-friendly, step-by-step way, especially focusing on how to correctly build the gallery (matrix style) and connect it to your updated SharePoint lists.
 
 
