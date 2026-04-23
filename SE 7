@@ -1,3 +1,256 @@
+Good—this is you hitting a real-world Power Apps limitation (delegation), not a syntax mistake 👍
+
+Let’s break it down clearly so you don’t “fix the wrong thing.”
+
+
+---
+
+🎯 FIRST: SHOULD YOU RENAME COLUMNS?
+
+👉 Short answer: NO (not required)
+
+Renaming:
+
+Section In-charge → SectionInCharge
+
+
+✔ makes formulas cleaner
+❌ does NOT fix delegation
+
+So don’t rebuild your list just for this.
+
+
+---
+
+🚨 WHAT THE WARNING REALLY MEANS
+
+This part triggers it:
+
+'Section In-charge'.Id = Dropdown_Section.Selected.ID
+
+👉 SharePoint cannot delegate lookup .Id comparisons inside LookUp() in some cases.
+
+
+---
+
+🧠 IMPORTANT CONTEXT (VERY IMPORTANT FOR YOU)
+
+You are using this inside:
+
+ForAll(...)
+
+👉 And LookUp() is only retrieving ONE record
+
+So:
+
+👉 ⚠️ The warning is mostly safe to ignore IF:
+
+Your SE Question List is small (e.g. < 500–2000 rows)
+
+
+
+---
+
+✅ BEST PRACTICE FIX (RECOMMENDED)
+
+Instead of filtering SharePoint every time inside ForAll, do this:
+
+
+---
+
+🚀 STEP 1: LOAD QUESTIONS INTO COLLECTION (ONCE)
+
+Go to:
+
+👉 Screen → OnVisible
+
+Add:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+
+---
+
+🎯 WHY THIS WORKS
+
+✔ Delegation warning happens once (acceptable)
+✔ After that → everything is local (fast + safe)
+
+
+---
+
+🚀 STEP 2: USE COLLECTION IN PATCH
+
+Now replace your LookUp() with:
+
+LookUp(colQuestions, Title = "M1R")
+
+
+---
+
+✅ UPDATED FINAL CODE (NO DELEGATION ISSUE)
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(colQuestions, Title = "M1R"),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(colQuestions, Title = "M5R"),
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+
+---
+
+🔥 BONUS: WHEN TO RELOAD QUESTIONS
+
+Add this to:
+
+👉 Dropdown_Section.OnChange
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+
+---
+
+⚠️ IF YOU IGNORE THE WARNING
+
+It’s actually OK if:
+
+You only have ~10–50 questions per section
+
+Total questions < 2000
+
+
+👉 Which is very likely in your system
+
+
+---
+
+💡 CLEANER OPTION (ADVANCED BUT BETTER)
+
+If you want zero delegation warning + cleaner logic, best structure is:
+
+👉 Add a Text column in Question List:
+
+SectionName (Single line text)
+
+Then store:
+
+PR PROC
+
+
+---
+
+Then filter using:
+
+SectionName = Dropdown_Section.Selected.Title
+
+✔ Fully delegable
+✔ No lookup issues
+✔ Faster
+
+
+---
+
+🧠 FINAL RECOMMENDATION (FOR YOUR PROJECT)
+
+Since you're building a Supplier Evaluation System, I suggest:
+
+✅ NOW
+
+✔ Use collection (colQuestions) → fastest fix
+
+✅ LATER (best design)
+
+✔ Add SectionName text column
+
+
+---
+
+🚀 NEXT STEP (HIGH IMPACT)
+
+Right now your app still has:
+
+❌ Hardcoded M1R, M5R
+❌ Manual radio controls
+
+
+---
+
+👉 The real upgrade is:
+
+🔥 Dynamic Matrix System
+
+Auto-load questions
+
+Auto-create columns
+
+No hardcoding
+
+Scalable for any section
+
+
+
+---
+
+If you’re ready, say:
+
+👉 "Build dynamic matrix"
+
+That’s the part that will make your app feel like a real system 👍
+
+
+****
+
+
+If i paste the final working code (recommended),
+
+Issue
+
+Delegation warning. The highlighted part of this
+formula might not work correctly with column
+"SectionIn_x002d_charge.Id" on large data sets.
+
+The data source might not be able to process the
+formula and might return an incomplete data set.
+Your application might not return correct results
+or behave correctly if the data set is incomplete.
+
+Location
+btn_Submit
+OnSelect
+
+Or should rename the columns with spaces and hyphen in sharepoint list?
+
+
+
+****
+
+
 Issue
 
 Delegation warning. The highlighted part of this
