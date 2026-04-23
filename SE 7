@@ -1,3 +1,23 @@
+Issue
+
+Delegation warning. The highlighted part of this
+formula might not work correctly with column
+"SectionIn_x002d_charge.Id" on large data sets.
+
+The data source might not be able to process the
+formula and might return an incomplete data set.
+Your application might not return correct results
+or behave correctly if the data set is incomplete.
+
+Location
+btn_Submit
+OnSelect
+
+
+****
+
+
+
 Ahh—good catch. This is one of those confusing SharePoint + Power Apps quirks 👍
 
 
