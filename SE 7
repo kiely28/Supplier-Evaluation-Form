@@ -1,3 +1,220 @@
+Good—this is a very common Power Apps issue, and the error message actually tells us exactly what’s wrong:
+
+> ❌ “Incompatible types for comparison… Error, Text”
+
+
+
+
+---
+
+🎯 ROOT CAUSE
+
+This line is the problem:
+
+Title = "M1R"
+
+👉 In your SE Question List, you changed:
+
+❌ Title → no longer used as Question No
+
+✅ Question No is now your identifier
+
+
+So Power Apps is trying to compare:
+
+Title (empty / different type)
+
+"M1R" (Text)
+
+
+➡️ Result: Type mismatch error
+
+
+---
+
+✅ FIX 1: USE CORRECT COLUMN (VERY IMPORTANT)
+
+Replace:
+
+Title = "M1R"
+
+👉 WITH:
+
+'Question No' = "M1R"
+
+
+---
+
+🎯 ROOT CAUSE #2 (SECOND ISSUE)
+
+This part can also break:
+
+'Section Incharge'.Value = Dropdown_Section.Selected.Title
+
+Your actual column name is:
+
+Section In-charge (Lookup)
+
+👉 Power Apps is very strict with names
+
+
+---
+
+✅ FIX 2: CORRECT LOOKUP COLUMN NAME
+
+Replace:
+
+'Section Incharge'.Value
+
+👉 WITH:
+
+'Section In-charge'.Value
+
+
+---
+
+✅ FINAL FIXED CODE (CLEAN VERSION)
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            'Question No' = "M1R" &&
+            'Section In-charge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(
+            'SE Question List',
+            'Question No' = "M5R" &&
+            'Section In-charge'.Value = Dropdown_Section.Selected.Title
+        ),
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+
+---
+
+⚠️ IMPORTANT CHECKLIST (PLEASE VERIFY)
+
+✅ 1. Column Names EXACT match
+
+In SE Question List:
+
+'Question No'
+
+'Section In-charge'
+
+
+In SE Evaluation List:
+
+Sections
+
+Suppliers
+
+Questions
+
+Score
+
+
+
+---
+
+✅ 2. Lookup Value Match
+
+Make sure:
+
+Dropdown_Section.Selected.Title
+
+= same text as your Section list
+
+
+---
+
+✅ 3. Radio Control Scope (VERY IMPORTANT)
+
+Inside ForAll, this:
+
+Radio_M1R.Selected.Value
+
+❌ may cause issue because it doesn’t know which row
+
+
+---
+
+🔥 BETTER VERSION (RECOMMENDED FIX)
+
+Use ThisRecord reference:
+
+Score: ThisRecord.Radio_M1R.Selected.Value
+
+👉 But this only works if the radio is properly inside the gallery
+
+
+---
+
+🚨 IF STILL ERROR (QUICK TEST)
+
+Try this temporary test:
+
+LookUp('SE Question List', 'Question No' = "M1R")
+
+If this errors → problem is column name
+
+
+---
+
+💡 PRO TIP (VERY IMPORTANT FOR YOU)
+
+Since you are building a matrix system, your current approach:
+
+❌ Hardcoded "M1R", "M5R"
+
+Will become hard to maintain.
+
+
+---
+
+🚀 NEXT STEP (HIGHLY RECOMMENDED)
+
+After this works, I strongly suggest:
+
+👉 Build **Dynamic Questions Gallery (columns auto-generated)**
+
+This will:
+
+Remove hardcoding
+
+Make system scalable
+
+Match your SharePoint design perfectly
+
+
+
+---
+
+If you want, next I’ll guide you step-by-step:
+
+👉 Dynamic Matrix (like Excel table, auto questions)
+
+Just say: "Proceed dynamic version" 👍
+
+
+****
+
 ForAll(
     Gallery_Suppliers.AllItems,
 
