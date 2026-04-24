@@ -1,3 +1,67 @@
+
+When i paste this to Screen1.OnVisible
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+Error in ".Id ="
+
+Issue
+
+Delegation warning. The highlighted part of this
+formula might not work correctly with column
+"SectionIn_x002d_charge.Id" on large data sets.
+
+The data source might not be able to process the
+formula and might return an incomplete data set.
+Your application might not return correct results
+or behave correctly if the data set is incomplete.
+
+Location
+Screen1
+OnVisible
+
+Then if i paste this into btn_Submit.OnSelect still error in start of patch...
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(colQuestions, Title = "M1R"),
+        Score: Radio_M1R.Selected.Value
+    });
+
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected,
+        Suppliers: ThisRecord,
+        Questions: LookUp(colQuestions, Title = "M5R"),
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+
+Issue
+
+Invalid argument type. Expecting a Record value,
+but of a different schema.
+
+Location
+btn_Submit
+.OnSelect
+
+
+****
+
+
 Good—this is you hitting a real-world Power Apps limitation (delegation), not a syntax mistake 👍
 
 Let’s break it down clearly so you don’t “fix the wrong thing.”
