@@ -1,3 +1,42 @@
+When i paste this to Dropdown_Selection.OnChange
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+Error in ".Id ="
+
+Issue
+
+Delegation warning. The highlighted part of this
+formula might not work correctly with column
+"SectionIn_x002d_charge.Id" on large data sets.
+
+The data source might not be able to process the
+formula and might return an incomplete data set.
+Your application might not return correct results
+or behave correctly if the data set is incomplete.
+
+Location
+Dropdown_Section
+OnChange
+
+
+In btn_Submit.OnSelect, I change this:
+  Score: Radio_M1R.Selected.Value
+to this:
+  Score: { Value: Radio_M1R.Selected.Value }
+and its working now
+
+
+
+*****
+
+
 Nice—these are two different issues, and both are fixable. I’ll go straight to what matters so you don’t get stuck.
 
 
