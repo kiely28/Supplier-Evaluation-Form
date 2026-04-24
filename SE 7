@@ -26,13 +26,23 @@ Dropdown_Section
 OnChange
 
 
-In btn_Submit.OnSelect, I change this:
+
+Then in btn_Submit.OnSelect, I change this:
   Score: Radio_M1R.Selected.Value
 to this:
   Score: { Value: Radio_M1R.Selected.Value }
 and its working now
 
 
+Then please set to dynamic question matrix from SE Question List per Section selected in Dropdown_Section
+
+SharePoint List column and type
+
+SE Question List
+ Question No - Title
+ Evaluation Contents - Single line of text
+ Section In-charge - Lookup
+ Max Score - Number
 
 *****
 
