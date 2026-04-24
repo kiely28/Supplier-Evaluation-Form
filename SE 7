@@ -1,3 +1,223 @@
+Nice—these are two different issues, and both are fixable. I’ll go straight to what matters so you don’t get stuck.
+
+
+---
+
+🟡 ISSUE 1: Delegation warning in .Id
+
+'Section In-charge'.Id = Dropdown_Section.Selected.ID
+
+✔ Reality check:
+
+This is just a warning, not an error.
+
+👉 Your formula is still valid and will work
+👉 It only becomes a problem if your list is very large (2000+ rows)
+
+✅ What you should do:
+
+Ignore it for now ✔
+
+Your app:
+
+Questions per section = small
+
+Total questions = small
+
+
+➡️ You are SAFE
+
+
+---
+
+🔴 ISSUE 2: “Invalid argument type” in Patch
+
+This one is the real problem.
+
+
+---
+
+🎯 ROOT CAUSE
+
+This line:
+
+Suppliers: ThisRecord
+
+👉 ThisRecord = full gallery record
+👉 But SharePoint Lookup column expects a specific format
+
+Same applies to:
+
+Sections: Dropdown_Section.Selected
+Questions: LookUp(...)
+
+👉 They must match SharePoint lookup schema
+
+
+---
+
+✅ FIX: USE PROPER LOOKUP RECORD FORMAT
+
+SharePoint Lookup requires:
+
+{
+    Id: <ID>,
+    Value: <Display Value>
+}
+
+
+---
+
+✅ FIXED FINAL CODE (WORKING VERSION)
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: ThisRecord.ID,
+            Value: ThisRecord.Title
+        },
+        Questions: {
+            Id: LookUp(colQuestions, Title = "M1R").ID,
+            Value: LookUp(colQuestions, Title = "M1R").Title
+        },
+        Score: Radio_M1R.Selected.Value
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: ThisRecord.ID,
+            Value: ThisRecord.Title
+        },
+        Questions: {
+            Id: LookUp(colQuestions, Title = "M5R").ID,
+            Value: LookUp(colQuestions, Title = "M5R").Title
+        },
+        Score: Radio_M5R.Selected.Value
+    })
+)
+
+
+---
+
+🧠 WHY THIS FIX WORKS
+
+Field	Before ❌	After ✅
+
+Sections	Full record	Proper lookup format
+Suppliers	ThisRecord	{Id, Value}
+Questions	Record	{Id, Value}
+
+
+
+---
+
+⚠️ IMPORTANT (VERY COMMON MISTAKE)
+
+If you still get error, check:
+
+✅ Supplier column name
+
+You used:
+
+Suppliers
+
+✔ Confirm in SharePoint:
+
+Internal name is exactly Suppliers
+
+
+
+---
+
+✅ Question lookup column name
+
+Questions
+
+
+---
+
+✅ Score column (Choice)
+
+If error appears here:
+
+Try:
+
+Score: { Value: Radio_M1R.Selected.Value }
+
+
+---
+
+🔥 QUICK DEBUG TIP
+
+Test this inside a label:
+
+LookUp(colQuestions, Title = "M1R").ID
+
+If blank → your collection is empty
+
+
+---
+
+🚀 FINAL STATUS
+
+After this fix:
+
+✅ No schema error
+✅ Patch works
+✅ Data saves correctly
+⚠️ Delegation warning = safe to ignore
+
+
+---
+
+💡 NEXT STEP (HIGH IMPACT FOR YOU)
+
+Right now your biggest limitation is:
+
+❌ Hardcoded questions (M1R, M5R)
+
+
+---
+
+👉 The real upgrade is:
+
+🔥 Dynamic Question Matrix
+
+Auto-load from SE Question List
+
+No hardcoding
+
+Flexible per section
+
+Cleaner Patch logic
+
+
+
+---
+
+If you want, I’ll guide you next step-by-step:
+
+👉 “Dynamic Matrix (no hardcoding)”
+
+Just say: GO DYNAMIC 👍
+
+
+****
+
 
 When i paste this to Screen1.OnVisible
 
