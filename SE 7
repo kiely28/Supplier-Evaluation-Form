@@ -1,3 +1,318 @@
+Nice—this is exactly the right time to go dynamic. You already fixed the hard parts (Patch + Choice + Lookup), so now we’ll restructure your UI.
+
+I’ll guide you step-by-step so you get this working like an Excel-style matrix but dynamic per section.
+
+
+---
+
+🎯 GOAL (DYNAMIC MATRIX)
+
+Instead of hardcoding:
+
+❌ M1R, M5R, D3R…
+
+We will:
+
+✅ Load questions from SE Question List
+✅ Create columns dynamically
+✅ Adjust radio buttons based on Max Score
+
+
+---
+
+🧠 IMPORTANT IDEA (VERY SIMPLE)
+
+You will use:
+
+👉 Gallery inside Gallery
+
+Outer Gallery	Inner Gallery
+
+Suppliers (rows)	Questions (columns)
+
+
+
+---
+
+🚀 STEP 1: KEEP YOUR COLLECTION (THIS IS CORRECT)
+
+Even with delegation warning → OK ✔
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+👉 You already placed this in:
+
+Dropdown_Section.OnChange ✔
+
+
+
+---
+
+🚀 STEP 2: MODIFY YOUR SUPPLIER GALLERY
+
+You already have:
+
+Gallery_Suppliers
+
+Inside it:
+
+Supplier Name ✔
+
+Supplier Code ✔
+
+
+
+---
+
+🚀 STEP 3: ADD INNER GALLERY (KEY STEP 🔥)
+
+👉 Inside Gallery_Suppliers:
+
+Insert → Horizontal Gallery
+
+Rename:
+
+Gallery_Questions
+
+
+---
+
+⚙️ Set Items:
+
+colQuestions
+
+
+---
+
+🎯 RESULT
+
+Each supplier row will now show:
+
+[M1R] [M6R] [D2R] [D3R]   ← dynamic!
+
+
+---
+
+🚀 STEP 4: SHOW QUESTION HEADER
+
+Inside Gallery_Questions, add Label:
+
+Text = ThisItem.Title
+
+👉 This shows:
+
+M1R
+
+M6R
+
+etc.
+
+
+
+---
+
+🚀 STEP 5: DYNAMIC RADIO BUTTON (VERY IMPORTANT)
+
+Insert → Radio inside Gallery_Questions
+
+
+---
+
+⚙️ Set Items:
+
+Sequence(ThisItem.'Max Score')
+
+
+---
+
+🎯 WHAT THIS DOES
+
+Max Score	Result
+
+3	[1,2,3]
+4	[1,2,3,4]
+
+
+✔ Automatically adjusts per question
+✔ No hardcoding needed
+
+
+---
+
+🚀 STEP 6: STORE USER INPUT (IMPORTANT)
+
+Radio inside nested gallery is tricky.
+
+We need to capture selections.
+
+
+---
+
+👉 Add this to Radio:
+
+Default:
+
+Blank()
+
+
+---
+
+OnChange:
+
+Collect(
+    colAnswers,
+    {
+        SupplierID: ThisItem.Parent.ID,
+        QuestionID: ThisItem.ID,
+        Score: Self.Selected.Value
+    }
+)
+
+
+---
+
+⚠️ IMPORTANT
+
+Because this is nested:
+
+ThisItem = Question
+
+ThisItem.Parent = Supplier
+
+
+
+---
+
+🚀 STEP 7: UPDATE SAVE BUTTON (DYNAMIC 🔥)
+
+Now instead of hardcoding M1R, M5R…
+
+Use:
+
+ForAll(
+    colAnswers,
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: SupplierID,
+            Value: LookUp('SE Supplier List', ID = SupplierID).Title
+        },
+        Questions: {
+            Id: QuestionID,
+            Value: LookUp('SE Question List', ID = QuestionID).Title
+        },
+        Score: { Value: Score }
+    })
+)
+
+
+---
+
+🎯 FINAL RESULT
+
+For:
+
+PR Proc NP
+
+Supplier	M1R	M6R	D2R	D3R
+
+AOI	○○○	○○○	○○○○	○○○○
+
+
+
+---
+
+VP Proc NP
+
+Supplier	M1R	M5R	M6R	Q3R
+
+ASIA	○○○	○○○○	○○○	○○○
+
+
+✔ Fully dynamic
+✔ Based on SharePoint
+✔ No code changes needed per section
+
+
+---
+
+⚠️ COMMON ISSUES (WATCH THIS)
+
+❌ Duplicate answers
+
+Fix later by:
+
+Clearing collection before use
+
+
+Clear(colAnswers)
+
+
+---
+
+❌ Wrong Supplier ID
+
+If error:
+
+Replace:
+
+SupplierID: ThisItem.Parent.ID
+
+with:
+
+SupplierID: Gallery_Suppliers.Selected.ID
+
+(depending on structure)
+
+
+---
+
+🧠 YOUR CURRENT LEVEL
+
+You’ve now moved from:
+
+✅ Static form
+➡️ to
+🔥 Dynamic enterprise-style form
+
+
+---
+
+🚀 NEXT UPGRADE (HIGHLY RECOMMENDED)
+
+If you want to make this production-ready, next we can add:
+
+✅ Prevent duplicate submission per user
+✅ Edit existing evaluation (not just create)
+✅ Lock after submit
+✅ Role-based access (SE Access List)
+✅ Export to Excel (your original goal)
+
+
+---
+
+Just tell me:
+
+👉 “Add duplicate prevention”
+👉 “Add edit mode”
+👉 “Add access control”
+
+I’ll guide you step-by-step 👍
+
+
+****
+
+
 When i paste this to Dropdown_Selection.OnChange
 
 ClearCollect(
