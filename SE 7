@@ -1,3 +1,286 @@
+Great—this is the most important step in making your app dynamic. I’ll break this down very clearly so you can follow even if you’re new.
+
+
+---
+
+🌳 FINAL TREE VIEW (DYNAMIC VERSION)
+
+This is how your app structure should look:
+
+Screen1
+│
+├── Dropdown_Section
+│
+├── Gallery_Suppliers   (Vertical)
+│   │
+│   ├── lbl_SupplierName
+│   ├── lbl_SupplierCode
+│   │
+│   ├── Gallery_Questions   (Horizontal)   ⭐ KEY
+│   │   │
+│   │   ├── lbl_QuestionTitle
+│   │   ├── Radio_Score
+│
+├── btn_Submit
+
+
+---
+
+🎯 STEP 3 (DETAILED): CREATE INNER GALLERY (Questions)
+
+This is where most people get confused—so follow exact clicks.
+
+
+---
+
+🧩 STEP 3A: SELECT THE CORRECT PARENT
+
+👉 Click Gallery_Suppliers
+
+⚠️ This is VERY IMPORTANT
+If you don’t select this first, the structure will be wrong.
+
+
+---
+
+➕ STEP 3B: INSERT INNER GALLERY
+
+With Gallery_Suppliers selected:
+
+👉 Go to top menu:
+
+Insert → Gallery → Horizontal
+
+
+
+---
+
+✏️ STEP 3C: RENAME IT
+
+Rename to:
+
+Gallery_Questions
+
+
+---
+
+📦 STEP 3D: SET ITEMS
+
+Click Gallery_Questions, then set:
+
+Items = colQuestions
+
+
+---
+
+🧠 WHAT JUST HAPPENED
+
+You now have:
+
+Each Supplier row
+
+Inside it → a Questions gallery
+
+
+So visually:
+
+Supplier A → [M1R][M6R][D2R][D3R]
+Supplier B → [M1R][M6R][D2R][D3R]
+
+
+---
+
+🎨 STEP 3E: FIX SIZE & LAYOUT
+
+This is important so it looks like a table.
+
+Set:
+
+TemplateSize = 120   // width of each question column
+Height = 80–120
+
+Position it:
+
+To the right of Supplier Code
+
+
+
+---
+
+🏷️ STEP 3F: ADD QUESTION TITLE
+
+Inside Gallery_Questions:
+
+👉 Insert → Label
+
+Rename:
+
+lbl_QuestionTitle
+
+Set:
+
+Text = ThisItem.Title
+
+
+---
+
+🎯 RESULT
+
+You will now see:
+
+M1R   M6R   D2R   D3R
+
+Auto-generated ✔
+
+
+---
+
+🎛️ STEP 3G: ADD RADIO BUTTON
+
+Inside Gallery_Questions:
+
+👉 Insert → Radio
+
+Rename:
+
+Radio_Score
+
+
+---
+
+⚙️ SET ITEMS (VERY IMPORTANT)
+
+Items = Sequence(ThisItem.'Max Score')
+
+
+---
+
+🧠 WHAT THIS DOES
+
+Question	Max Score	Output
+
+M1R	3	○ ○ ○
+D2R	4	○ ○ ○ ○
+
+
+✔ Fully dynamic
+✔ No hardcoding
+
+
+---
+
+📌 STEP 3H: ALIGN UI (MAKE IT LOOK LIKE TABLE)
+
+Inside Gallery_Questions:
+
+Arrange vertically:
+
+[M1R]
+○ ○ ○
+
+
+---
+
+⚠️ CRITICAL UNDERSTANDING (NESTED LOGIC)
+
+Inside Gallery_Questions:
+
+Keyword	Refers to
+
+ThisItem	Question
+ThisItem.Title	M1R
+ThisItem.'Max Score'	3 or 4
+Parent	Supplier row
+
+
+
+---
+
+🚨 COMMON MISTAKES (VERY IMPORTANT)
+
+❌ Gallery not inside Supplier Gallery
+
+✔ Fix: Insert while Supplier Gallery is selected
+
+
+---
+
+❌ Questions not changing per section
+
+✔ Fix: Make sure:
+
+colQuestions
+
+updates on:
+
+Dropdown change ✔
+
+
+
+---
+
+❌ Radio shows 1,2,3,4,5 (wrong)
+
+✔ Fix:
+
+Sequence(ThisItem.'Max Score')
+
+
+---
+
+🧪 QUICK TEST CHECKLIST
+
+After Step 3:
+
+✔ Change section
+✔ Questions change
+✔ Different number of radio buttons per question
+
+
+---
+
+🎯 WHAT YOU JUST BUILT
+
+You now have:
+
+✅ Dynamic columns
+✅ Dynamic scoring scale
+✅ SharePoint-driven UI
+
+
+---
+
+🚀 NEXT STEP (IMPORTANT)
+
+Now that UI is working, next is:
+
+👉 Step 4: Capture answers correctly (colAnswers)
+
+Because right now:
+
+UI works
+
+But data capture must match nested structure
+
+
+
+---
+
+If you want, I’ll guide you next:
+
+👉 “Step 4 – Save dynamic answers properly”
+
+This is where most apps break—I'll make it simple 👍
+
+
+*****
+
+
+Please give the tree view and controls and explain on how to make the step 3
+
+****
+
+
 Nice—this is exactly the right time to go dynamic. You already fixed the hard parts (Patch + Choice + Lookup), so now we’ll restructure your UI.
 
 I’ll guide you step-by-step so you get this working like an Excel-style matrix but dynamic per section.
