@@ -1,3 +1,338 @@
+Perfect—this is the critical step that makes your dynamic matrix actually work end-to-end. Right now your UI is dynamic; now we’ll make sure every click is captured and saved correctly.
+
+
+---
+
+🎯 GOAL
+
+When user selects:
+
+Supplier	Question	Score
+
+AOI	M1R	3
+AOI	D2R	4
+
+
+👉 It should save correctly into SE Evaluation List
+
+
+---
+
+🧠 KEY IDEA (IMPORTANT)
+
+Because you are using:
+
+Gallery_Suppliers (outer)
+
+Gallery_Questions (inner)
+
+
+👉 You cannot rely on ForAll(Gallery...) anymore.
+
+Instead:
+
+✅ Store answers in a collection (colAnswers)
+✅ Then patch from that collection
+
+
+---
+
+🚀 STEP 1: CREATE ANSWER COLLECTION
+
+
+---
+
+📍 Where?
+
+👉 Select Screen1
+
+OnVisible:
+
+Clear(colAnswers)
+
+
+---
+
+📍 Also reset when section changes
+
+👉 Dropdown_Section.OnChange
+
+Clear(colAnswers)
+
+
+---
+
+🚀 STEP 2: CAPTURE RADIO SELECTION
+
+
+---
+
+📍 Select:
+
+👉 Radio_Score (inside Gallery_Questions)
+
+
+---
+
+⚙️ Set OnChange:
+
+With(
+    {
+        supplierId: Gallery_Suppliers.Selected.ID,
+        supplierName: Gallery_Suppliers.Selected.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    // Remove existing answer (avoid duplicates)
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    // Add new answer
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Self.Selected.Value
+        }
+    )
+)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Every click:
+
+1. Removes old answer
+
+
+2. Saves new one
+
+
+
+So collection always has:
+
+SupplierID | QuestionID | Score
+
+
+---
+
+⚠️ IMPORTANT FIX (VERY IMPORTANT)
+
+Using:
+
+Gallery_Suppliers.Selected
+
+❌ can fail if user didn’t click row
+
+
+---
+
+✅ BETTER VERSION (RECOMMENDED)
+
+Replace:
+
+Gallery_Suppliers.Selected
+
+👉 WITH:
+
+ThisItem.Parent
+
+
+---
+
+🔥 FINAL CORRECT OnChange
+
+With(
+    {
+        supplierId: ThisItem.Parent.ID,
+        supplierName: ThisItem.Parent.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Self.Selected.Value
+        }
+    )
+)
+
+
+---
+
+🧪 TEST THIS FIRST
+
+👉 Add a temporary Gallery:
+
+Items = colAnswers
+
+You should see:
+
+SupplierID	QuestionID	Score
+
+
+
+✔ If this works → proceed
+
+
+---
+
+🚀 STEP 3: SAVE BUTTON (FINAL PATCH)
+
+
+---
+
+📍 Select:
+
+👉 btn_Submit
+
+
+---
+
+⚙️ OnSelect:
+
+ForAll(
+    colAnswers,
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: SupplierID,
+            Value: SupplierName
+        },
+        Questions: {
+            Id: QuestionID,
+            Value: QuestionTitle
+        },
+        Score: { Value: Score }
+    })
+)
+
+
+---
+
+🎯 RESULT
+
+✔ Saves per:
+
+Supplier
+
+Question
+
+Score
+
+
+✔ Works for ANY section
+✔ Works for ANY number of questions
+
+
+---
+
+⚠️ COMMON ERRORS (CHECK THESE)
+
+
+---
+
+❌ Missing answers
+
+✔ Ensure user clicked radio button
+
+
+---
+
+❌ Duplicate entries
+
+✔ Already handled by:
+
+RemoveIf(...)
+
+
+---
+
+❌ Score not saving
+
+✔ You already fixed:
+
+Score: { Value: Score }
+
+
+---
+
+💡 OPTIONAL (VERY USEFUL)
+
+After submit:
+
+Clear(colAnswers);
+Notify("Evaluation submitted successfully", NotificationType.Success)
+
+
+---
+
+🧠 WHAT YOU HAVE NOW
+
+You built:
+
+✅ Dynamic matrix UI
+✅ Dynamic scoring (based on Max Score)
+✅ Clean answer storage
+✅ SharePoint integration
+
+
+---
+
+🚀 NEXT LEVEL (HIGHLY RECOMMENDED)
+
+Now your system is functional—but not yet “enterprise-ready”.
+
+Next upgrades I recommend:
+
+🔒 Prevent duplicate submission per user
+
+✏️ Edit existing evaluation
+
+👤 Section-based access (SE Access List)
+
+📊 Export to Excel (your original goal)
+
+
+---
+
+If you want next:
+
+👉 "Prevent duplicate submission"
+👉 "Edit mode"
+👉 "Export to Excel"
+
+I’ll guide you step-by-step 👍
+
+
+
+*****
+
+
 Alright—if M1R saves but M5R does not populate the Questions column, then the problem is NOT the radio button anymore.
 
 👉 The issue is here:
