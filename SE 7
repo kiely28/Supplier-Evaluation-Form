@@ -1,3 +1,48 @@
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: ThisRecord.ID,
+            Value: ThisRecord.Title
+        },
+        Questions: {
+            Id: LookUp(colQuestions, Title = "M1R").ID,
+            Value: LookUp(colQuestions, Title = "M1R").Title
+        },
+        //Score: Radio_M1R.Selected.Value
+        Score: { Value: Radio_M1R.Selected.Value }
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: ThisRecord.ID,
+            Value: ThisRecord.Title
+        },
+        Questions: {
+            Id: LookUp(colQuestions, Title = "M5R").ID,
+            Value: LookUp(colQuestions, Title = "M5R").Title
+        },
+        //Score: Radio_M5R.Selected.Value
+        Score: { Value: Radio_M5R.Selected.Value }
+    })
+)
+
+
+****
+
 Great—this is the most important step in making your app dynamic. I’ll break this down very clearly so you can follow even if you’re new.
 
 
