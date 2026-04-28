@@ -1,3 +1,182 @@
+The issue isn’t SharePoint itself—it’s how Power Apps is resolving your controls inside the ForAll loop.
+
+Right now, Radio_M1R works but Radio_M5R doesn’t, which usually means only one of those controls is properly scoped inside the gallery row.
+
+🔍 Root Cause
+
+Inside this block:
+
+ForAll(
+    Gallery_Suppliers.AllItems,
+
+You are looping per supplier row, but your radio controls (Radio_M1R, Radio_M5R) are likely inside the gallery template.
+
+👉 Problem:
+
+Radio_M1R is probably uniquely referenced (or happens to work)
+
+Radio_M5R is not being correctly referenced per row
+
+Power Apps may be treating it as a single control instead of per-record control
+
+
+
+---
+
+✅ Fix 1: Use ThisRecord + control reference inside gallery
+
+Inside a gallery, you must reference controls relative to each row.
+
+Change this:
+
+Score: { Value: Radio_M5R.Selected.Value }
+
+👉 To this:
+
+Score: { Value: ThisRecord.Radio_M5R.Selected.Value }
+
+BUT ⚠️ this only works if:
+
+Radio_M5R is inside the gallery
+
+You are using modern Power Apps behavior
+
+
+
+---
+
+✅ Fix 2 (Most Reliable): Use Gallery.AllItems with control reference
+
+Instead of ThisRecord, use:
+
+Score: { Value: Gallery_Suppliers.Selected.Radio_M5R.Selected.Value }
+
+❌ Not ideal in ForAll
+
+
+---
+
+✅ Fix 3 (Best Practice): Use As keyword
+
+This is the cleanest and most stable solution:
+
+ForAll(
+    Gallery_Suppliers.AllItems As sup,
+
+    // M1R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: sup.ID,
+            Value: sup.Title
+        },
+        Questions: {
+            Id: LookUp(colQuestions, Title = "M1R").ID,
+            Value: LookUp(colQuestions, Title = "M1R").Title
+        },
+        Score: { Value: sup.Radio_M1R.Selected.Value }
+    });
+
+    // M5R
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+        Suppliers: {
+            Id: sup.ID,
+            Value: sup.Title
+        },
+        Questions: {
+            Id: LookUp(colQuestions, Title = "M5R").ID,
+            Value: LookUp(colQuestions, Title = "M5R").Title
+        },
+        Score: { Value: sup.Radio_M5R.Selected.Value }
+    })
+)
+
+
+---
+
+🔥 Why M1R works but M5R doesn’t
+
+Common reasons:
+
+1. Radio_M5R name mismatch (check spelling EXACTLY)
+
+
+2. Control is not inside the gallery template
+
+
+3. Control is inside another container (not directly accessible)
+
+
+4. Default value not set → .Selected is blank
+
+
+
+
+---
+
+✅ Debug Tip
+
+Add a label inside the gallery:
+
+Radio_M5R.Selected.Value
+
+If it’s blank → that’s your problem.
+
+
+---
+
+✅ Extra Improvement (Performance)
+
+Right now you're doing LookUp() twice per patch.
+
+Better:
+
+With(
+    {
+        qM1R: LookUp(colQuestions, Title = "M1R"),
+        qM5R: LookUp(colQuestions, Title = "M5R")
+    },
+    ForAll(
+        Gallery_Suppliers.AllItems As sup,
+        ...
+    )
+)
+
+
+---
+
+💡 Summary
+
+Your issue is control scoping inside gallery
+
+Fix by using As sup and sup.Radio_M5R
+
+Ensure Radio_M5R is inside gallery template
+
+Check .Selected.Value is not blank
+
+
+
+---
+
+If you want, I can: ✅ Review your **tree view (like before)**
+✅ Fix your **entire submit logic (optimized + no duplicates)**
+✅ Add **validation (required answers before submit)**
+
+
+
+*****
+
+
 ForAll(
     Gallery_Suppliers.AllItems,
 
