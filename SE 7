@@ -1,3 +1,198 @@
+Alright—if M1R saves but M5R does not populate the Questions column, then the problem is NOT the radio button anymore.
+
+👉 The issue is here:
+
+LookUp(colQuestions, Title = "M5R")
+
+
+---
+
+🔴 Most Likely Root Cause
+
+Your colQuestions does NOT contain a record where Title = "M5R"
+
+So this part:
+
+Id: LookUp(colQuestions, Title = "M5R").ID
+
+returns BLANK, and SharePoint cannot save the lookup → result: empty Questions column
+
+
+---
+
+✅ Step 1: Verify your data (VERY IMPORTANT)
+
+Go to your SE Question List and check:
+
+Is the Title EXACTLY "M5R"?
+
+Not "M5"
+
+Not "M5 " (with space)
+
+Not lowercase "m5r"
+
+
+
+👉 Power Apps is case-sensitive + exact match
+
+
+---
+
+✅ Step 2: Debug inside Power Apps
+
+Add this temporarily (outside or in a label):
+
+LookUp(colQuestions, Title = "M5R").Title
+
+👉 If this returns blank, then confirmed:
+❌ No matching record
+
+
+---
+
+✅ Step 3: Check your collection load
+
+Your collection:
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+👉 Possible issue:
+
+M5R exists in SharePoint
+
+BUT it is assigned to a different Section
+
+So it is NOT included in colQuestions
+
+
+
+---
+
+🔥 VERY COMMON SCENARIO
+
+M1R belongs to selected section ✅
+
+M5R belongs to another section ❌
+
+
+➡️ Result:
+
+M1R → found → saved
+
+M5R → NOT found → blank
+
+
+
+---
+
+✅ Fix Option 1: Remove Section filter (for testing)
+
+Try:
+
+ClearCollect(
+    colQuestions,
+    'SE Question List'
+)
+
+👉 If M5R suddenly works → confirmed: filter issue
+
+
+---
+
+✅ Fix Option 2: Use safer lookup (recommended)
+
+Instead of directly accessing .ID, do this:
+
+With(
+    {
+        qM5R: LookUp(colQuestions, Title = "M5R")
+    },
+    Patch('SE Evaluation List', Defaults('SE Evaluation List'),
+    {
+        Questions: If(
+            !IsBlank(qM5R),
+            {
+                Id: qM5R.ID,
+                Value: qM5R.Title
+            }
+        )
+    })
+)
+
+
+---
+
+✅ Fix Option 3: Show available questions (debug view)
+
+Add a gallery:
+
+Items = colQuestions
+
+Show:
+
+ThisItem.Title
+
+👉 Check if M5R appears
+
+
+---
+
+⚠️ Also check this (hidden issue)
+
+Sometimes SharePoint column is:
+
+Title ≠ Question Code
+
+
+Example:
+
+Title = "Material Quality Check"
+
+Question No = "M5R"
+
+
+👉 If that’s your case → use:
+
+LookUp(colQuestions, 'Question No' = "M5R")
+
+
+---
+
+💡 Final Diagnosis Summary
+
+If M5R not saving: ✔ Lookup returns blank
+✔ Not in filtered collection
+✔ Title mismatch
+✔ Wrong column used (Title vs Question No)
+
+
+---
+
+🚀 Recommended Final Fix
+
+If your real identifier is Question No, update BOTH:
+
+LookUp(colQuestions, 'Question No' = "M5R")
+
+
+---
+
+If you want, send me: 📸 Screenshot of SE Question List (columns + sample data)
+📸 Your gallery controls (Radio + labels)
+
+I’ll pinpoint the exact issue and fix it cleanly.
+
+
+****
+
+
 The issue isn’t SharePoint itself—it’s how Power Apps is resolving your controls inside the ForAll loop.
 
 Right now, Radio_M1R works but Radio_M5R doesn’t, which usually means only one of those controls is properly scoped inside the gallery row.
