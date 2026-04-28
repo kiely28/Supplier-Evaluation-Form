@@ -1,3 +1,262 @@
+You’re very close—the behavior you’re seeing is normal for nested galleries. Right now, your question title (M1R, M6R…) is inside each row, so it repeats per supplier.
+
+👉 What you want is a true table layout:
+
+Header row (questions shown once)
+
+Data rows (only radio buttons)
+
+
+
+---
+
+🎯 TARGET STRUCTURE
+
+Supplier Name | Supplier Code | M1R | M6R | D2R | D3R
+-----------------------------------------------------
+AOI           | 343434        | ○○○ | ○○○○ | ○○○ | ○○○
+ASIA          | 456789        | ○○○ | ○○○○ | ○○○ | ○○○
+
+
+---
+
+🧩 SOLUTION OVERVIEW
+
+👉 Separate your UI into:
+
+1. Header Section (NEW)
+
+Shows question titles once
+
+
+2. Body (Your existing Gallery_Suppliers)
+
+Shows only radio buttons (no titles)
+
+
+
+---
+
+🌳 UPDATED TREE VIEW
+
+Screen1
+│
+├── Dropdown_Section
+│
+├── Container_Header   ⭐ NEW
+│   ├── lbl_Header_SupplierName
+│   ├── lbl_Header_SupplierCode
+│   ├── Gallery_HeaderQuestions   (Horizontal)
+│   │   ├── lbl_Header_Question
+│
+├── Gallery_Suppliers (Vertical)
+│   ├── lbl_SupplierName
+│   ├── lbl_SupplierCode
+│   ├── Gallery_Questions (Horizontal)
+│   │   ├── Radio_Score   (NO LABEL HERE ❗)
+│
+├── btn_Submit
+
+
+---
+
+🚀 STEP 1: CREATE HEADER CONTAINER
+
+👉 Insert → Horizontal Container (or just use labels)
+
+Rename:
+
+Container_Header
+
+
+---
+
+🧾 STEP 2: ADD FIXED HEADERS
+
+Inside Container_Header:
+
+Supplier Name
+
+Text = "Supplier Name"
+
+
+---
+
+Supplier Code
+
+Text = "Supplier Code"
+
+
+---
+
+🚀 STEP 3: ADD HEADER QUESTIONS (KEY STEP 🔥)
+
+
+---
+
+👉 Insert → Horizontal Gallery
+
+Rename:
+
+Gallery_HeaderQuestions
+
+
+---
+
+⚙️ Set Items:
+
+colQuestions
+
+
+---
+
+➕ Inside it → Add Label:
+
+Text = ThisItem.Title
+
+
+---
+
+🎯 RESULT
+
+Now you will see:
+
+Supplier Name | Supplier Code | M1R | M6R | D2R | D3R
+
+✔ Dynamic based on section
+✔ Updates automatically
+
+
+---
+
+🚀 STEP 4: REMOVE QUESTION TITLE FROM BODY
+
+
+---
+
+👉 Go to:
+
+Gallery_Questions (inside suppliers)
+
+
+---
+
+❌ DELETE:
+
+lbl_QuestionTitle
+
+
+---
+
+✔ KEEP ONLY:
+
+Radio_Score
+
+
+---
+
+🎯 RESULT
+
+Now each row becomes:
+
+AOI | 343434 | ○○○ | ○○○○ | ○○○ | ○○○
+
+✔ Clean
+✔ Table format
+
+
+---
+
+🎨 STEP 5: ALIGN HEADER & BODY (VERY IMPORTANT)
+
+To make it look like a real table:
+
+
+---
+
+👉 Set SAME width for both:
+
+Header Gallery:
+
+TemplateSize = 120
+
+Body Gallery (Questions):
+
+TemplateSize = 120
+
+
+---
+
+👉 Align positions:
+
+Make sure:
+
+Header questions start exactly where body questions start
+
+Supplier Name + Code widths match
+
+
+
+---
+
+💡 PRO TIP (MAKE IT LOOK PROFESSIONAL)
+
+Add borders:
+
+BorderStyle = BorderStyle.Solid
+
+Add background to header:
+
+Fill = RGBA(240,240,240,1)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Before ❌	After ✅
+
+Questions repeated per row	Questions shown once
+Hard to read	Table format
+Not scalable visually	Clean matrix
+
+
+
+---
+
+🚀 FINAL RESULT
+
+✔ Dynamic header
+✔ Dynamic columns
+✔ Clean matrix UI
+✔ Works for ANY section
+
+
+---
+
+🔥 NEXT UPGRADE (OPTIONAL BUT POWERFUL)
+
+Now that UI is clean, next you can add:
+
+✅ Freeze header (scrollable body)
+✅ Show previous scores (edit mode)
+✅ Disable after submit
+✅ Highlight missing answers
+
+
+---
+
+If you want next:
+
+👉 "Freeze header + scroll body"
+👉 "Load existing answers (edit mode)"
+
+I’ll guide you step-by-step 👍
+
+
+*****
+
+
 Perfect—this is the critical step that makes your dynamic matrix actually work end-to-end. Right now your UI is dynamic; now we’ll make sure every click is captured and saved correctly.
 
 
