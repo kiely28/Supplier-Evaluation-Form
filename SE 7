@@ -1,3 +1,331 @@
+Great—this is the part that makes your app feel like a real system. We’ll build the right (scrollable) side and make sure it lines up perfectly with your frozen left.
+
+
+---
+
+🎯 GOAL FOR STEP 2
+
+You already have the left:
+
+[ Supplier Name | Supplier Code ]
+
+Now we build the right:
+
+[ M1R | M6R | D2R | D3R ]  → scroll →
+[ ○○○ | ○○○○ | ○○○ | ○○○ ]
+
+✔ One horizontal scroll
+✔ Perfect alignment with left side
+✔ Dynamic based on colQuestions
+
+
+---
+
+🌳 TARGET STRUCTURE (RIGHT SIDE)
+
+Container_Scroll (Vertical)   ⭐ scrollable area
+│
+├── Gallery_HeaderQuestions   (Horizontal)
+│   ├── lbl_Header_Question
+│
+├── Gallery_Suppliers_Questions (Vertical)
+│   ├── Gallery_Questions (Horizontal)
+│       ├── Radio_Score
+
+
+---
+
+🚀 STEP 2A: CREATE SCROLLABLE CONTAINER
+
+👉 Insert → Vertical Container
+
+Rename:
+
+Container_Scroll
+
+
+---
+
+⚙️ SET IMPORTANT PROPERTIES
+
+Width = Parent.Width - Container_Frozen.Width
+
+👉 This ensures it takes remaining space
+
+
+---
+
+Enable horizontal scroll:
+
+OverflowX = Scroll
+
+
+---
+
+🚀 STEP 2B: CREATE HEADER (QUESTIONS)
+
+
+---
+
+👉 Insert → Horizontal Gallery
+
+Rename:
+
+Gallery_HeaderQuestions
+
+
+---
+
+⚙️ Properties:
+
+Items = colQuestions
+TemplateSize = 120
+Height = 50
+
+
+---
+
+👉 Inside it → Add Label
+
+Text = ThisItem.Title
+
+
+---
+
+🎯 RESULT
+
+M1R | M6R | D2R | D3R
+
+(dynamic ✔)
+
+
+---
+
+🚀 STEP 2C: CREATE BODY (SUPPLIERS)
+
+
+---
+
+👉 Insert → Vertical Gallery
+
+Rename:
+
+Gallery_Suppliers_Questions
+
+
+---
+
+⚙️ Set Items:
+
+Gallery_Suppliers.Items
+
+👉 This ensures same suppliers as left side
+
+
+---
+
+🚀 STEP 2D: ADD INNER QUESTION GALLERY
+
+
+---
+
+👉 Inside Gallery_Suppliers_Questions
+
+Insert → Horizontal Gallery
+
+Rename:
+
+Gallery_Questions
+
+
+---
+
+⚙️ Set:
+
+Items = colQuestions
+TemplateSize = 120
+
+
+---
+
+🚀 STEP 2E: ADD RADIO BUTTON
+
+
+---
+
+👉 Inside Gallery_Questions
+
+Insert → Radio
+
+
+---
+
+⚙️ Set Items:
+
+Items = Sequence(ThisItem.'Max Score')
+
+
+---
+
+🎯 RESULT
+
+Each row becomes:
+
+○○○ | ○○○○ | ○○○ | ○○○
+
+✔ Dynamic per question
+✔ Based on Max Score
+
+
+---
+
+🎯 STEP 2F: PERFECT ALIGNMENT (VERY IMPORTANT)
+
+Now we make it look like a real table.
+
+
+---
+
+✅ MATCH COLUMN WIDTH
+
+Set SAME value:
+
+Gallery_HeaderQuestions.TemplateSize = 120
+Gallery_Questions.TemplateSize = 120
+
+
+---
+
+✅ MATCH LEFT SIDE WIDTH
+
+Make sure:
+
+Column	Width
+
+Supplier Name	200
+Supplier Code	120
+Question column	120
+
+
+
+---
+
+✅ MATCH ROW HEIGHT
+
+Set:
+
+Gallery_Suppliers_Frozen.TemplateSize = 80
+Gallery_Suppliers_Questions.TemplateSize = 80
+
+
+---
+
+⚠️ VERY IMPORTANT (ALIGNMENT RULE)
+
+Both must use:
+
+Items = Gallery_Suppliers.Items
+
+So rows line up perfectly ✔
+
+
+---
+
+🎯 STEP 2G: REMOVE EXTRA SCROLLBARS
+
+
+---
+
+👉 In Header Gallery:
+
+ShowScrollbar = false
+
+
+---
+
+👉 Now only Container_Scroll scrolls ✔
+
+
+---
+
+🧠 FINAL RESULT (AFTER STEP 2)
+
+[Supplier Name | Supplier Code] || [M1R | M6R | D2R | D3R →]
+AOI  | 343434  || ○○○ | ○○○○ | ○○○ | ○○○
+ASIA | 456789  || ○○○ | ○○○○ | ○○○ | ○○○
+
+✔ Frozen left
+✔ Scrollable right
+✔ Clean alignment
+
+
+---
+
+🚨 COMMON ISSUES (CHECK THIS)
+
+
+---
+
+❌ Rows not aligned
+
+✔ Fix:
+
+Gallery_Suppliers_Questions.Items = Gallery_Suppliers.Items
+
+
+---
+
+❌ Header not aligned with body
+
+✔ Fix:
+
+Same TemplateSize
+
+
+---
+
+❌ Multiple scrollbars
+
+✔ Fix:
+
+Only Container_Scroll should scroll
+
+
+---
+
+🧠 WHAT YOU JUST BUILT
+
+This is now:
+
+✅ Excel-like UI
+✅ Dynamic columns
+✅ Frozen columns
+✅ Scalable design
+
+
+---
+
+🚀 NEXT STEP (FINAL POLISH)
+
+Now we can make it even better:
+
+👉 Step 3: Sync header with scroll (perfect UX)
+👉 Step 4: Save + load answers cleanly (edit mode)
+
+
+---
+
+If you want:
+
+👉 "Sync header scroll perfectly"
+👉 "Load saved answers back to radio buttons"
+
+I’ll guide you next 👍
+
+
+*****
+
+
 Good question—that confusion is totally expected 👍
 The issue is simply this:
 
