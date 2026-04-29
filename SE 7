@@ -1,3 +1,310 @@
+You’ve built almost everything correctly—the problem now is too many scrollable controls + one missing connection.
+Right now, each gallery is trying to scroll on its own, which breaks the “Excel-like” behavior.
+
+Let’s fix this cleanly.
+
+
+---
+
+🎯 WHAT’S WRONG (BASED ON YOUR DESCRIPTION)
+
+Control	Problem
+
+Gallery_Suppliers_Frozen	Has vertical scroll ❌
+Gallery_HeaderQuestions	Has horizontal scroll ❌
+Gallery_Suppliers_Questions	Has vertical scroll ❌
+Gallery_Questions	Has horizontal scroll ❌
+Questions not changing	Not linked to Dropdown ❌
+
+
+
+---
+
+🧠 CORE RULE (VERY IMPORTANT)
+
+👉 Only ONE control should scroll per direction
+
+Direction	Allowed Scroll
+
+Vertical	ONE parent container
+Horizontal	ONE parent container
+
+
+Everything else = no scroll
+
+
+---
+
+✅ FINAL SCROLL ARCHITECTURE (CLEAN)
+
+Vertical scroll → ONE container
+Horizontal scroll → ONE container
+
+
+---
+
+🌳 CORRECT STRUCTURE (SIMPLIFIED)
+
+Container_Main (Horizontal)
+│
+├── Container_Frozen (LEFT)
+│   ├── Header_Frozen
+│   ├── Gallery_Suppliers_Frozen   ❌ NO scroll
+│
+├── Container_Scroll (RIGHT)
+│   ├── Header_Questions           ❌ NO scroll
+│   ├── Gallery_Suppliers_Questions ❌ NO scroll
+│
+Screen scroll handles vertical
+Container_Scroll handles horizontal
+
+
+---
+
+🚀 FIX 1: REMOVE EXTRA SCROLLBARS
+
+
+---
+
+🔧 Gallery_Suppliers_Frozen
+
+Set:
+
+ShowScrollbar = false
+
+👉 It should NOT scroll
+
+
+---
+
+🔧 Gallery_Suppliers_Questions
+
+ShowScrollbar = false
+
+
+---
+
+🔧 Gallery_HeaderQuestions
+
+ShowScrollbar = false
+
+
+---
+
+🔧 Gallery_Questions
+
+ShowScrollbar = false
+
+
+---
+
+🚀 FIX 2: ENABLE ONLY ONE HORIZONTAL SCROLL
+
+
+---
+
+👉 Select: Container_Scroll
+
+Set:
+
+OverflowX = Scroll
+
+👉 This is now your ONLY horizontal scrollbar
+
+
+---
+
+🚀 FIX 3: FIX VERTICAL SCROLL
+
+
+---
+
+👉 Use SCREEN scroll instead
+
+Set:
+
+Screen1.Scrollable = true
+
+
+---
+
+OR (better control):
+
+Wrap both left + right in a vertical container:
+
+Container_VerticalScroll
+
+Then:
+
+OverflowY = Scroll
+
+
+---
+
+🚀 FIX 4: CONNECT QUESTIONS TO DROPDOWN (IMPORTANT)
+
+You said:
+
+> ❌ Gallery_Questions not connected to Dropdown_Section
+
+
+
+
+---
+
+👉 Make sure this exists:
+
+Dropdown_Section.OnChange
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+
+---
+
+👉 ALSO run on load:
+
+Screen1.OnVisible
+
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Id = Dropdown_Section.Selected.ID
+    )
+)
+
+
+---
+
+🚀 FIX 5: VERIFY ALL ITEMS PROPERTY
+
+
+---
+
+✅ Header
+
+Gallery_HeaderQuestions.Items = colQuestions
+
+
+---
+
+✅ Inner Questions
+
+Gallery_Questions.Items = colQuestions
+
+
+---
+
+❌ If still not updating
+
+👉 Add temporary label:
+
+CountRows(colQuestions)
+
+If = 0 → your filter is wrong
+
+
+---
+
+🚀 FIX 6: FORCE RESET WHEN SECTION CHANGES
+
+Sometimes galleries don’t refresh.
+
+👉 Add this:
+
+Reset(Gallery_HeaderQuestions);
+Reset(Gallery_Suppliers_Questions)
+
+
+---
+
+🎯 FINAL EXPECTED BEHAVIOR
+
+
+---
+
+✔ Vertical scroll
+
+Whole screen scrolls
+
+Both left & right move together
+
+
+
+---
+
+✔ Horizontal scroll
+
+ONLY right side scrolls
+
+Header + body move together
+
+
+
+---
+
+✔ Dynamic questions
+
+Change section → questions update
+
+Radio count adjusts automatically
+
+
+
+---
+
+🚨 QUICK DEBUG CHECKLIST
+
+✔ Only 1 horizontal scrollbar?
+✔ Only 1 vertical scrollbar?
+✔ colQuestions not empty?
+✔ Same TemplateSize used?
+✔ Galleries using same Items?
+
+
+---
+
+🧠 WHY YOUR CURRENT VERSION BROKE
+
+Because:
+
+❌ Nested galleries each had scroll
+❌ No single “scroll controller”
+❌ Questions not refreshed
+
+
+---
+
+🚀 NEXT STEP (HIGH IMPACT)
+
+Now your UI will be clean.
+
+Next I recommend:
+
+👉 Sync header perfectly with scroll (advanced polish)
+👉 Load saved answers back (edit mode)
+👉 Prevent duplicate submissions
+
+
+---
+
+If you want:
+
+👉 "Fix perfect scroll sync"
+👉 "Add edit mode"
+
+I’ll guide you next 👍
+
+
+****
+
+
 Gallery_Suppliers_Frozen have vertical scroll bar
 Gallery_HeaderQuestions have horizontal Scroll bar
 Gallery_Suppliers_Questions have vertical scroll bar
