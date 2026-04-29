@@ -1,3 +1,13 @@
+Gallery_Suppliers_Frozen have vertical scroll bar
+Gallery_HeaderQuestions have horizontal Scroll bar
+Gallery_Suppliers_Questions have vertical scroll bar
+Gallery_Questions have horizontal Scroll bar
+
+not connected to Dropdown_Section
+
+
+***
+
 Great—this is the part that makes your app feel like a real system. We’ll build the right (scrollable) side and make sure it lines up perfectly with your frozen left.
 
 
