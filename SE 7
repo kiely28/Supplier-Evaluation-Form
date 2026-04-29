@@ -1,4 +1,289 @@
+You’re hitting a classic UI limitation in Power Apps: each gallery scrolls independently. That’s why you see two horizontal scrollbars and why the header doesn’t stay aligned with the rows.
 
+👉 The fix is not a property tweak—you need to change the layout structure so that:
+
+Supplier Name + Code = frozen (fixed)
+
+Questions area = one shared horizontal scroll region
+
+
+
+---
+
+🎯 TARGET BEHAVIOR
+
+[Supplier Name | Supplier Code] || [ M1R | M6R | D2R | D3R → scroll → ]
+AOI   | 343434  ||  ○○○ | ○○○○ | ○○○ | ○○○
+ASIA  | 456789  ||  ○○○ | ○○○○ | ○○○ | ○○○
+
+✔ Left side = fixed
+✔ Right side = scrollable (one scrollbar only)
+
+
+---
+
+🌳 NEW STRUCTURE (IMPORTANT CHANGE)
+
+Screen1
+│
+├── Dropdown_Section
+│
+├── Container_Main (Horizontal)
+│   │
+│   ├── Container_Frozen (LEFT - fixed)
+│   │   ├── Header_Frozen
+│   │   ├── Gallery_Suppliers_Frozen
+│   │
+│   ├── Container_Scroll (RIGHT - scrollable)
+│       ├── Header_Questions
+│       ├── Gallery_Suppliers_Questions
+
+
+---
+
+🚀 STEP-BY-STEP IMPLEMENTATION
+
+
+---
+
+🧊 STEP 1: CREATE FROZEN LEFT SIDE
+
+👉 Insert → Vertical Container
+
+Rename:
+
+Container_Frozen
+
+
+---
+
+Inside it:
+
+🔹 Header
+
+Add 2 labels:
+
+"Supplier Name"
+"Supplier Code"
+
+
+---
+
+🔹 Supplier List (Frozen)
+
+Insert → Vertical Gallery
+Rename:
+
+Gallery_Suppliers_Frozen
+
+Set:
+
+Items = Gallery_Suppliers.Items
+
+
+---
+
+Inside it:
+
+ThisItem.Title          // Supplier Name
+ThisItem.'Supplier Code'
+
+
+---
+
+👉 RESULT
+
+Left side is now fixed ✔
+
+
+---
+
+➡️ STEP 2: CREATE SCROLLABLE RIGHT SIDE
+
+
+---
+
+👉 Insert → Vertical Container
+
+Rename:
+
+Container_Scroll
+
+
+---
+
+⚙️ VERY IMPORTANT SETTINGS
+
+Set:
+
+Width = Parent.Width - Container_Frozen.Width
+OverflowX = Scroll
+
+
+---
+
+🧾 STEP 3: HEADER (QUESTIONS)
+
+Insert → Horizontal Gallery
+
+Rename:
+
+Gallery_HeaderQuestions
+
+Set:
+
+Items = colQuestions
+TemplateSize = 120
+
+
+---
+
+Inside:
+
+Text = ThisItem.Title
+
+
+---
+
+📊 STEP 4: BODY (QUESTIONS PER SUPPLIER)
+
+Insert → Vertical Gallery
+
+Rename:
+
+Gallery_Suppliers_Questions
+
+Set:
+
+Items = Gallery_Suppliers.Items
+
+
+---
+
+Inside it → Insert Horizontal Gallery
+
+Rename:
+
+Gallery_Questions
+
+Set:
+
+Items = colQuestions
+TemplateSize = 120
+
+
+---
+
+Inside that → Radio
+
+Items = Sequence(ThisItem.'Max Score')
+
+
+---
+
+🎯 CRITICAL ALIGNMENT STEP
+
+To sync scrolling:
+
+👉 BOTH must scroll together:
+
+Gallery_HeaderQuestions
+
+Container_Scroll
+
+
+
+---
+
+👉 Set:
+
+Gallery_HeaderQuestions.X = -Container_Scroll.ScrollX
+
+
+---
+
+🧠 WHAT THIS DOES
+
+✔ One scrollbar (Container_Scroll)
+✔ Header moves together with body
+✔ Supplier columns stay frozen
+
+
+---
+
+⚠️ IMPORTANT LIMITATION
+
+Power Apps does NOT natively support perfect synchronized scroll, so:
+
+👉 This trick is the closest real solution
+
+
+---
+
+💡 ALTERNATIVE (SIMPLER BUT LESS PERFECT)
+
+If sync becomes tricky:
+
+👉 Hide scrollbars in header:
+
+ShowScrollbar = false
+
+
+---
+
+🎨 UI POLISH
+
+Make it look like Excel:
+
+BorderStyle = Solid
+Fill (Header) = Light Gray
+
+
+---
+
+🧪 FINAL CHECK
+
+✔ Only ONE horizontal scroll
+✔ Supplier Name stays visible
+✔ Questions scroll smoothly
+✔ Header aligned with columns
+
+
+---
+
+🚀 WHAT YOU JUST BUILT
+
+This is now:
+
+✅ Enterprise-style matrix UI
+✅ Frozen columns
+✅ Dynamic columns
+✅ Scalable design
+
+
+---
+
+🔥 NEXT UPGRADE (HIGH VALUE)
+
+Now that UI is pro-level, next you can add:
+
+👉 Edit mode (load previous answers)
+👉 Highlight unanswered cells
+👉 Auto-save (no submit button)
+
+
+---
+
+If you want:
+
+👉 "Make header perfectly synced" (advanced trick)
+👉 "Add edit mode"
+
+I’ll guide you next 👍
+
+
+
+*****
 
 Gallery_HeaderQuestion have horizontal scroll bar
 also in Gallery_Question have horizontal scroll bar 
