@@ -1,3 +1,255 @@
+Good question—that confusion is totally expected 👍
+The issue is simply this:
+
+> ❌ A Vertical Container stacks items top → bottom
+✔ You need a Horizontal layout for the header row
+
+
+
+
+---
+
+🎯 WHAT YOU ACTUALLY NEED
+
+Inside the left frozen section, you need:
+
+Supplier Name | Supplier Code
+
+👉 That means:
+
+The container is vertical (overall layout)
+
+But the header row inside it must be horizontal
+
+
+
+---
+
+🧩 CORRECT STRUCTURE (STEP 1 FIXED)
+
+Container_Frozen (Vertical)
+│
+├── Container_Header_Frozen (Horizontal)  ⭐ THIS IS THE FIX
+│   ├── lbl_Header_SupplierName
+│   ├── lbl_Header_SupplierCode
+│
+├── Gallery_Suppliers_Frozen (Vertical)
+│   ├── lbl_SupplierName
+│   ├── lbl_SupplierCode
+
+
+---
+
+🚀 STEP 1 (DETAILED – EXACT CLICKS)
+
+
+---
+
+🧊 STEP 1A: CREATE MAIN FROZEN CONTAINER
+
+👉 Insert → Vertical Container
+
+Rename:
+
+Container_Frozen
+
+👉 This is correct (don’t change this)
+
+
+---
+
+➕ STEP 1B: ADD HEADER CONTAINER (IMPORTANT)
+
+👉 Click Container_Frozen first
+Then:
+
+👉 Insert → Horizontal Container
+
+Rename:
+
+Container_Header_Frozen
+
+
+---
+
+🎯 WHY THIS FIXES YOUR ISSUE
+
+Container Type	Behavior
+
+Vertical	Stacks top → bottom
+Horizontal	Arranges left → right
+
+
+So now:
+
+Supplier Name | Supplier Code
+
+
+---
+
+🏷️ STEP 1C: ADD HEADER LABELS
+
+Inside Container_Header_Frozen:
+
+
+---
+
+👉 Insert Label 1
+
+Text = "Supplier Name"
+
+
+---
+
+👉 Insert Label 2
+
+Text = "Supplier Code"
+
+
+---
+
+📐 STEP 1D: FIX WIDTH (VERY IMPORTANT)
+
+To align with body later:
+
+
+---
+
+Supplier Name:
+
+Width = 200
+
+
+---
+
+Supplier Code:
+
+Width = 120
+
+
+---
+
+🚀 STEP 1E: ADD SUPPLIER GALLERY (FROZEN BODY)
+
+
+---
+
+👉 Select Container_Frozen
+
+Insert → Vertical Gallery
+
+Rename:
+
+Gallery_Suppliers_Frozen
+
+
+---
+
+⚙️ Set Items:
+
+Gallery_Suppliers.Items
+
+
+---
+
+👉 Inside gallery:
+
+Add 2 labels:
+
+
+---
+
+Supplier Name
+
+Text = ThisItem.Title
+Width = 200
+
+
+---
+
+Supplier Code
+
+Text = ThisItem.'Supplier Code'
+Width = 120
+
+
+---
+
+🎯 VISUAL RESULT AFTER STEP 1
+
+Supplier Name | Supplier Code
+--------------------------------
+AOI           | 343434
+ASIA          | 456789
+
+✔ Proper alignment
+✔ Frozen layout ready
+
+
+---
+
+⚠️ COMMON MISTAKES (YOU JUST HIT ONE)
+
+
+---
+
+❌ Using Vertical container for header
+
+Result:
+
+Supplier Name
+Supplier Code
+
+
+---
+
+✅ Correct: Horizontal container inside Vertical container
+
+
+---
+
+💡 PRO TIP (VERY IMPORTANT FOR NEXT STEP)
+
+Make sure:
+
+👉 Header width = Body width
+
+So later it aligns perfectly with scrollable questions.
+
+
+---
+
+🧠 SIMPLE WAY TO REMEMBER
+
+Vertical container = rows
+
+Horizontal container = columns
+
+
+
+---
+
+🚀 NEXT STEP
+
+Now that your left frozen side is correct, next we align it with:
+
+👉 Scrollable questions (right side)
+
+
+---
+
+If you want, next I can guide:
+
+👉 Step 2 – Scrollable questions side (perfect alignment)
+👉 Step 3 – Sync header + body scroll (clean UI)
+
+Just tell me 👍
+
+
+
+*****
+
+
 You’re hitting a classic UI limitation in Power Apps: each gallery scrolls independently. That’s why you see two horizontal scrollbars and why the header doesn’t stay aligned with the rows.
 
 👉 The fix is not a property tweak—you need to change the layout structure so that:
