@@ -1,3 +1,11 @@
+
+
+Gallery_HeaderQuestion have horizontal scroll bar
+also in Gallery_Question have horizontal scroll bar 
+
+
+*****
+
 You’re very close—the behavior you’re seeing is normal for nested galleries. Right now, your question title (M1R, M6R…) is inside each row, so it repeats per supplier.
 
 👉 What you want is a true table layout:
