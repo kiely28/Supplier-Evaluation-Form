@@ -1,3 +1,182 @@
+Good 👍 that red line is a very common Power Apps issue—and it’s fixable.
+
+
+---
+
+❗ WHY YOU GET ERROR ON .Supplier.Id
+
+).Supplier.Id   ❌
+
+👉 Because:
+
+Filter(...) returns a table
+
+.Supplier.Id tries to access a column inside a nested record
+
+Power Apps sometimes cannot resolve it directly
+
+
+
+---
+
+✅ FIX 1 (RECOMMENDED – USE ShowColumns)
+
+Replace your formula with this:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID &&
+    ID in
+    ShowColumns(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        "Supplier"
+    ).Supplier.Id
+)
+
+
+---
+
+❗ BUT if STILL ERROR → use the safest method 👇
+
+
+---
+
+✅ FIX 2 (BEST & CLEAN – USE COLLECTION)
+
+
+---
+
+🧩 STEP 1: Create filtered supplier IDs
+
+In Dropdown_Section.OnChange or OnVisible:
+
+ClearCollect(
+    colAssignedSuppliers,
+    ForAll(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    )
+)
+
+
+---
+
+🧩 STEP 2: Use it in your gallery
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID &&
+    ID in colAssignedSuppliers
+)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+colAssignedSuppliers = [1, 2, 3]
+
+Then:
+Supplier.ID in [1,2,3] ✅
+
+
+---
+
+🧪 DEBUG TIP
+
+Add label:
+
+Text = Concat(colAssignedSuppliers, Value & ", ")
+
+👉 Should show IDs like:
+
+1, 2, 3
+
+
+---
+
+🚨 COMMON ERRORS
+
+
+---
+
+❌ Supplier.Id not recognized
+
+👉 Check:
+
+Supplier column is Lookup
+
+Not text column
+
+
+
+---
+
+❌ User.Email error
+
+👉 Use fallback:
+
+User.Claims = "i:0#.f|membership|" & User().Email
+
+
+---
+
+❌ Empty result
+
+👉 Means:
+
+No assignment for that user + section
+
+
+---
+
+🎯 FINAL RECOMMENDATION
+
+👉 Use FIX 2 (collection) because:
+
+✔ No red errors
+✔ Easier to debug
+✔ Faster performance
+✔ More stable
+
+
+---
+
+🎉 RESULT
+
+✔ No more .Supplier.Id error
+✔ Correct supplier filtering
+✔ Works with your assignment logic
+
+
+---
+
+👍 NEXT STEP
+
+Once this works, we can improve:
+
+🔐 Lock per user submission
+
+📊 Show only assigned questions
+
+📈 Dashboard per supplier
+
+
+Just tell me 👍
+
+
+
+*****
+
+
 Good question 👍—you’re now moving into role-based assignment per section + per supplier, which is exactly what your app needs.
 
 Right now you only have:
