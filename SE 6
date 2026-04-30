@@ -1,3 +1,53 @@
+
+My error is in if i put in Radio_Score_New.DisplayMode:
+
+error in ".Parent" in "ThisItem.Parent"
+
+If(
+    ThisItem.Parent.Parent.ID in
+    Filter(
+        colAssignment,
+        Section.Value = varSelectedSection.Title &&
+        User.Email = User().Email
+    ).Supplier.Id,
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+This is my existing Radio_Score_New.Onchange
+
+With(
+    {
+        supplierId: Gallery_Suppliers_New.Selected.ID,
+        supplierName: Gallery_Suppliers_New.Selected.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    // Remove existing answer (avoid duplicates)
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    // Add new answer
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Self.Selected.Value
+        }
+    )
+)
+
+
+******
+
+
 Good catch 👍—those red lines are very common in Power Apps, and they come from context + data type issues.
 
 Let’s fix both errors cleanly 👇
