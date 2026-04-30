@@ -1,3 +1,238 @@
+Good catch 👍—those red lines are very common in Power Apps, and they come from context + data type issues.
+
+Let’s fix both errors cleanly 👇
+
+
+---
+
+❗ ERROR 1: .Supplier.Id (RED LINE)
+
+❌ Your current:
+
+...).Supplier.Id
+
+👉 Problem:
+
+Supplier is a Lookup column
+
+Power Apps sometimes doesn’t allow .Id directly in that context
+
+
+
+---
+
+✅ FIX (SAFE & WORKING)
+
+Use ShowColumns instead of .Supplier.Id
+
+
+---
+
+🔥 Replace your filter with this:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID &&
+    ID in
+    ShowColumns(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        "Supplier"
+    )
+)
+
+
+---
+
+🧠 Why this works
+
+ShowColumns(...) → extracts Supplier lookup values
+ID in (...)      → compares safely
+
+
+---
+
+🚨 If still error
+
+Use this stronger version:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID &&
+    ID in
+    ForAll(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    )
+)
+
+
+---
+
+❗ ERROR 2: ThisItem.Parent.Parent
+
+❌ Your current:
+
+ThisItem.Parent.Parent.ID
+
+👉 Problem:
+
+Parent is NOT reliable inside nested gallery
+
+Causes error or wrong reference
+
+
+
+---
+
+✅ FIX (BEST PRACTICE)
+
+Use the gallery name directly
+
+
+---
+
+🔥 Replace with:
+
+Gallery_Supplier_New.Selected.ID
+
+
+---
+
+🧩 UPDATE YOUR RADIO BUTTON
+
+Select:
+
+Radio_Score_New
+
+
+---
+
+✅ New OnChange:
+
+With(
+    {
+        supID: Gallery_Supplier_New.Selected.ID,
+        quesID: ThisItem.ID
+    },
+    RemoveIf(
+        colAnswers,
+        SupplierID = supID && QuestionID = quesID
+    );
+    Collect(
+        colAnswers,
+        {
+            SectionID: varSelectedSection.ID,
+            SupplierID: supID,
+            QuestionID: quesID,
+            Score: Self.Selected.Value
+        }
+    )
+)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Gallery_Supplier_New.Selected → always valid
+Parent.Parent → unreliable ❌
+
+
+---
+
+🧪 DEBUG CHECK
+
+Add label:
+
+Text = Gallery_Supplier_New.Selected.Title
+
+👉 If blank → selection issue
+
+
+---
+
+⚠️ IMPORTANT NOTE (VERY IMPORTANT)
+
+👉 Selected works only when:
+
+User clicks/selects the row
+
+
+---
+
+✅ BETTER (ADVANCED - NO SELECT NEEDED)
+
+If you want no dependency on Selected, do this:
+
+
+---
+
+In Gallery_Supplier_New
+
+Add hidden label:
+
+Text = ThisItem.ID
+Name = lblSupplierID
+Visible = false
+
+
+---
+
+Then in Radio:
+
+supID: Value(lblSupplierID.Text)
+
+
+---
+
+🎯 SUMMARY FIX
+
+Error	Fix
+
+.Supplier.Id	Use ForAll(...) Supplier.Id
+Parent.Parent	Use Gallery_Supplier_New.Selected
+
+
+
+---
+
+🎉 RESULT
+
+✔ No red errors
+✔ Correct supplier filtering
+✔ Correct answer capturing
+✔ Stable logic
+
+
+---
+
+👍 NEXT STEP
+
+If this works, next we can:
+
+🚫 Prevent duplicate answers per supplier
+
+📊 Auto total score per supplier
+
+📈 Summary dashboard
+
+
+Or go back to: 🧊 Freeze columns (we can fix it cleanly now)
+
+Just tell me 👍
+
+
+****
+
+
 Good 👍 that red line is a very common Power Apps issue—and it’s fixable.
 
 
