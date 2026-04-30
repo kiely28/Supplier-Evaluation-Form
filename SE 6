@@ -1,3 +1,270 @@
+Good question 👍—you’re now moving into role-based assignment per section + per supplier, which is exactly what your app needs.
+
+Right now you only have:
+
+Section → Questions → Suppliers
+
+👉 You want:
+
+Section + Supplier → Assigned User(s)
+
+
+---
+
+🎯 GOAL
+
+Example:
+
+Section: PR INK Proc
+
+Supplier      → User
+AOI           → King
+Threebond     → King
+Resonac       → King
+
+👉 Only King can answer those suppliers in that section
+
+
+---
+
+🧩 STEP 1: CREATE NEW SHAREPOINT LIST
+
+In SharePoint, create:
+
+SE Assignment List
+
+
+---
+
+📋 Columns:
+
+Column Name	Type
+
+Title	(auto)
+Section	Lookup → SE Section List
+Supplier	Lookup → SE Supplier List
+User	Person (single)
+
+
+
+---
+
+🧠 DATA EXAMPLE
+
+Section	Supplier	User
+
+PR INK Proc	AOI	King
+PR INK Proc	Threebond	King
+PR INK Proc	Resonac	King
+
+
+
+---
+
+🧩 STEP 2: LOAD ASSIGNMENTS IN APP
+
+In Screen1.OnVisible:
+
+ClearCollect(
+    colAssignment,
+    'SE Assignment List'
+);
+
+
+---
+
+🧩 STEP 3: FILTER SUPPLIERS BASED ON USER
+
+👉 This is the key change
+
+
+---
+
+🔥 UPDATE THIS:
+
+Your current:
+
+Gallery_Supplier_New.Items =
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID
+)
+
+
+---
+
+✅ REPLACE WITH THIS:
+
+Filter(
+    'SE Supplier List',
+    Section.Id = varSelectedSection.ID &&
+    ID in
+    Filter(
+        colAssignment,
+        Section.Value = varSelectedSection.Title &&
+        User.Email = User().Email
+    ).Supplier.Id
+)
+
+
+---
+
+🧠 WHAT THIS DOES
+
+Get suppliers in section
+   ↓
+Check assignment list
+   ↓
+Show ONLY suppliers assigned to current user
+
+
+---
+
+🧪 EXAMPLE RESULT
+
+
+---
+
+👤 King logs in
+
+PR INK Proc
+→ AOI
+→ Threebond
+→ Resonac
+
+
+---
+
+👤 Another user logs in
+
+PR INK Proc
+→ (no suppliers shown)
+
+
+---
+
+🧩 STEP 4: OPTIONAL – SHOW ALL BUT DISABLE
+
+If you want:
+
+👉 Show ALL suppliers but disable those not assigned
+
+
+---
+
+In Radio_Score_New.DisplayMode:
+
+If(
+    ThisItem.Parent.Parent.ID in
+    Filter(
+        colAssignment,
+        Section.Value = varSelectedSection.Title &&
+        User.Email = User().Email
+    ).Supplier.Id,
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+
+---
+
+🎯 OPTION COMPARISON
+
+Option	Behavior
+
+Filter suppliers	User sees ONLY assigned
+Disable inputs	User sees all but cannot answer others
+
+
+
+---
+
+🧠 BEST PRACTICE
+
+👉 Use BOTH:
+
+✔ Filter suppliers
+✔ Disable radio
+
+
+---
+
+🚨 IMPORTANT NOTES
+
+
+---
+
+❗ Person column check
+
+Use:
+
+User.Email = User().Email
+
+If error, use:
+
+User.Claims = "i:0#.f|membership|" & User().Email
+
+
+---
+
+❗ Lookup comparison
+
+Use:
+
+Section.Value
+Supplier.Id
+
+
+---
+
+🖥️ FINAL FLOW
+
+User opens app
+→ Select section
+→ System checks assignment
+→ Only assigned suppliers appear
+→ User answers
+→ Save works normally
+
+
+---
+
+🎉 RESULT
+
+✔ Per Section + Supplier + User control
+✔ Clean filtering
+✔ Secure input
+✔ Scalable
+
+
+---
+
+👍 NEXT STEP
+
+Now your system supports:
+
+✅ Section-based questions
+✅ Supplier filtering
+✅ User assignment
+✅ Saving answers
+
+Next we can add:
+
+🚫 Prevent duplicate submission per user per supplier
+
+📊 Auto score computation
+
+📈 Dashboard per section
+
+
+Just tell me 👍
+
+
+
+*****
+
+
+
 How to create in sharepoint a per section, per supplier, per question
 
 For example in section PR INK PROC, the supplier is (supplier name) LANXESS, FUSO (supplier code) 341927, 334542
