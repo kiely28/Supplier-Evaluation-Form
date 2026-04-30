@@ -1,3 +1,214 @@
+You’re very close 👍—the error you’re getting is because ThisItem.Parent is not valid in that context (especially inside nested galleries).
+
+Let’s fix your DisplayMode properly without using Parent.
+
+
+---
+
+❗ WHY YOUR CURRENT FORMULA FAILS
+
+ThisItem.Parent.Parent.ID ❌
+
+👉 In Power Apps, Parent:
+
+refers to layout/container, not always the gallery row
+
+becomes unreliable inside nested galleries
+
+
+
+---
+
+🎯 CORRECT APPROACH
+
+You already did the right thing in OnChange:
+
+supplierId: Gallery_Suppliers_New.Selected.ID ✅
+
+👉 So we’ll use the SAME approach for DisplayMode.
+
+
+---
+
+✅ FIX FOR Radio_Score_New.DisplayMode
+
+✔ Use Gallery_Suppliers_New.Selected
+
+If(
+    Gallery_Suppliers_New.Selected.ID in
+    ForAll(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    ),
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+
+---
+
+🧠 EXPLANATION
+
+Get selected supplier →
+Check if it exists in assignment list →
+Allow edit or disable
+
+
+---
+
+⚠️ IMPORTANT LIMITATION
+
+👉 This ONLY works when:
+
+User clicks/selects the supplier row
+
+Otherwise:
+
+Selected = blank ❌
+
+
+---
+
+🚀 BETTER (RECOMMENDED - NO SELECTION NEEDED)
+
+We will store SupplierID per row so each radio knows its supplier.
+
+
+---
+
+🧩 STEP 1: ADD HIDDEN LABEL
+
+Inside Gallery_Suppliers_New → Container4
+
+Add:
+
+lblSupplierID
+
+Set:
+
+Text = ThisItem.ID
+Visible = false
+
+
+---
+
+🧩 STEP 2: FIX DisplayMode (BEST VERSION)
+
+Now in Radio_Score_New.DisplayMode:
+
+If(
+    Value(lblSupplierID.Text) in
+    ForAll(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    ),
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+
+---
+
+🧠 WHY THIS IS BEST
+
+Each row has its own SupplierID ✅
+No need for Selected ❌
+No Parent usage ❌
+Works reliably in nested galleries ✅
+
+
+---
+
+🔧 OPTIONAL (FASTER PERFORMANCE)
+
+Instead of recalculating every time, create a collection:
+
+
+---
+
+In OnVisible:
+
+ClearCollect(
+    colUserSuppliers,
+    ForAll(
+        Filter(
+            colAssignment,
+            Section.Value = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    )
+)
+
+
+---
+
+Then DisplayMode becomes:
+
+If(
+    Value(lblSupplierID.Text) in colUserSuppliers,
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+
+---
+
+🧪 DEBUG TIP
+
+Add label:
+
+Text = lblSupplierID.Text
+
+👉 Verify supplier ID per row
+
+
+---
+
+🎉 RESULT
+
+✔ No more .Parent error
+✔ Works per supplier row
+✔ Correct user access control
+✔ Stable for nested gallery
+
+
+---
+
+👍 NEXT STEP
+
+Now your system supports:
+
+✅ Per section
+✅ Per supplier
+✅ Per user access
+✅ Answer collection
+
+Next I recommend:
+
+🚫 Prevent duplicate submission per user
+
+📊 Auto total score per supplier
+
+📈 Summary dashboard
+
+
+Or go back to: 🧊 Freeze columns (we can fix it cleanly now)
+
+Just tell me 👍
+
+
+
+*****
+
 
 My error is in if i put in Radio_Score_New.DisplayMode:
 
