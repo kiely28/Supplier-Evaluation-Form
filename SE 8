@@ -1,0 +1,106 @@
+Nice 👍 that’s an easy and useful feature.
+
+You can get the logged-in user info in Power Apps using the built-in User() function.
+
+
+---
+
+🎯 GOAL
+
+Welcome King RJ!
+
+
+---
+
+🧩 STEP 1: ADD A LABEL
+
+Insert a label (you already have Label1, you can reuse it)
+
+
+---
+
+🧩 STEP 2: SET TEXT PROPERTY
+
+✅ Simple version
+
+"Welcome " & User().FullName & "!"
+
+
+---
+
+🧠 WHAT YOU CAN GET FROM User()
+
+Property	Example
+
+User().FullName	King RJ
+User().Email	king@email.com
+User().Image	profile picture
+
+
+
+---
+
+🧩 OPTIONAL: DISPLAY FIRST NAME ONLY
+
+If you want:
+
+Welcome King!
+
+Use:
+
+"Welcome " & First(Split(User().FullName, " ")).Result & "!"
+
+
+---
+
+🧩 OPTIONAL: STORE IN VARIABLE (BEST PRACTICE)
+
+In Screen1.OnVisible:
+
+Set(varUserName, User().FullName)
+
+Then label:
+
+"Welcome " & varUserName & "!"
+
+
+---
+
+🧩 OPTIONAL: ADD PROFILE PICTURE
+
+Insert Image control:
+
+Image = User().Image
+
+
+---
+
+🎉 FINAL RESULT
+
+✔ Shows logged-in user
+✔ Dynamic per login
+✔ Works automatically
+
+
+---
+
+👍 BONUS IDEA (USEFUL FOR YOUR APP)
+
+You can also show:
+
+"Welcome " & varUserName & 
+" - Section: " & varSelectedSection.Title
+
+
+---
+
+If you want next, I can help you:
+
+Show **user role / assigned suppliers**
+
+Add **logout / switch user simulation**
+
+Track **who submitted evaluation**
+
+
+Just tell me 👍
