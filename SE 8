@@ -1,3 +1,22 @@
+"Welcome " & First(Split(User().FullName, " ")).Result & "!"
+
+Issue
+
+Name isn't valid. 'Result' isn't recognized.
+
+This error appears most commonly when a
+formula refers to something that no longer exists
+(for example, a control that you've deleted).
+
+Location
+Ibl_User
+Text
+
+
+
+****
+
+
 ForAll(
     colAnswers,
     Patch('SE Evaluation List', Defaults('SE Evaluation List'),
