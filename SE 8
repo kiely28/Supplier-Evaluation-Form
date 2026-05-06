@@ -1,3 +1,98 @@
+Good catch 👍—this is a version/behavior difference in Power Apps.
+
+The error:
+
+'Result' isn't recognized
+
+happens because your Split() output column is not named Result in your environment.
+
+
+---
+
+✅ SIMPLE FIX (USE Index)
+
+Instead of First(...).Result, use:
+
+"Welcome " & Index(Split(User().FullName, " "), 1).Value & "!"
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Split() returns a table
+
+In newer Power Apps versions, the column is Value, not Result
+
+Index(...,1) safely gets the first word
+
+
+
+---
+
+🧩 ALTERNATIVE (CHECK YOUR COLUMN NAME)
+
+If you want to confirm, temporarily use:
+
+First(Split(User().FullName, " "))
+
+👉 It will show something like:
+
+{ Value: "King" }
+
+or
+
+{ Result: "King" }
+
+
+---
+
+🎯 MOST COMPATIBLE VERSION (SAFE)
+
+If you want something that works in almost all environments:
+
+"Welcome " & Left(User().FullName, Find(" ", User().FullName & " ") - 1) & "!"
+
+
+---
+
+🎉 RESULT
+
+✔ No error
+✔ Shows first name only
+✔ Works across versions
+
+
+---
+
+👍 BONUS
+
+If you want fallback (in case no space in name):
+
+"Welcome " & 
+If(
+    IsError(Find(" ", User().FullName)),
+    User().FullName,
+    Left(User().FullName, Find(" ", User().FullName) - 1)
+) 
+& "!"
+
+
+---
+
+If you want next:
+
+Show user role (King = PR INK)
+
+Show assigned suppliers dynamically
+
+Add user-based dashboard
+
+
+Just tell me 👍
+
+*****
+
 "Welcome " & First(Split(User().FullName, " ")).Result & "!"
 
 Issue
