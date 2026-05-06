@@ -1,3 +1,109 @@
+Sure 👍 here are several alternative instruction sentences you can use—grouped by tone so you can choose what fits your app best.
+
+
+---
+
+🟢 SIMPLE & CLEAR
+
+“Please complete the evaluation below.”
+
+“Kindly answer all questions in this evaluation.”
+
+“Fill out the evaluation form below.”
+
+“Provide your responses for each item.”
+
+
+
+---
+
+🔵 FRIENDLY
+
+“Hi! Please take a moment to complete this evaluation.”
+
+“We’d appreciate your feedback—please answer the questions below.”
+
+“Let’s get started! Kindly complete the evaluation below.”
+
+“Please share your assessment by answering the following questions.”
+
+
+
+---
+
+🟣 PROFESSIONAL
+
+“Kindly complete the supplier evaluation form below.”
+
+“Please provide your evaluation for the items listed below.”
+
+“Your input is required—please complete all evaluation fields.”
+
+“Ensure all questions are answered accurately before submission.”
+
+
+
+---
+
+🟠 WITH INSTRUCTION / GUIDANCE
+
+“Please select a rating for each question.”
+
+“Choose the appropriate score for every item.”
+
+“Complete all required fields before submitting the evaluation.”
+
+“Make sure all questions are answered prior to submission.”
+
+
+
+---
+
+🔴 STRICT / FORMAL (if required)
+
+“All questions must be answered before submission.”
+
+“Incomplete evaluations will not be accepted.”
+
+“Please ensure all required fields are completed.”
+
+
+
+---
+
+⭐ RECOMMENDED (BEST BALANCE)
+
+You can use this in your label:
+
+"Please complete the evaluation below by selecting a score for each question."
+
+
+---
+
+🎯 WITH USER + SECTION (BEST UX)
+
+"Welcome " & User().FullName & 
+"! Please complete the evaluation for " & varSelectedSection.Title & 
+" by selecting a score for each question."
+
+
+---
+
+If you want next, I can help you:
+
+✅ Add **required validation before submit**
+
+🚫 Show **“You missed some answers”**
+
+📊 Show **progress (e.g., 5/10 completed)**
+
+
+Just tell me 👍
+
+
+****
+
+
 Good catch 👍—this is a version/behavior difference in Power Apps.
 
 The error:
