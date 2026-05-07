@@ -1,3 +1,277 @@
+Great idea 👍 — this is a very important business rule for your supplier evaluation system.
+
+You want:
+
+A user can submit evaluation ONLY ONCE per year
+
+Example:
+
+King already submitted PR INK Proc for 2026
+→ Cannot submit again in 2026
+→ Allowed again in 2027
+
+
+---
+
+🎯 RECOMMENDED APPROACH
+
+Add these columns in your SharePoint list:
+
+In SE Evaluation List
+
+Column	Type
+
+Submitted By	Person
+Evaluation Year	Number
+
+
+
+---
+
+🧩 STEP 1: CREATE NEW COLUMNS
+
+In SharePoint → SE Evaluation List
+
+Add:
+
+
+---
+
+✅ Submitted By
+
+Type: Person or Group
+
+
+---
+
+✅ Evaluation Year
+
+Type: Number
+
+
+---
+
+🧩 STEP 2: SAVE THESE VALUES
+
+Update your Patch():
+
+
+---
+
+Add:
+
+'Submitted By': {
+    Claims: "i:0#.f|membership|" & User().Email,
+    DisplayName: User().FullName,
+    Email: User().Email
+},
+
+'Evaluation Year': Year(Today())
+
+
+---
+
+✅ UPDATED PATCH
+
+ForAll(
+    colAnswers,
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Sections: {
+                Id: Dropdown_Section.Selected.ID,
+                Value: Dropdown_Section.Selected.Title
+            },
+
+            Suppliers: {
+                Id: SupplierID,
+                Value: SupplierName
+            },
+
+            Questions: {
+                Id: QuestionID,
+                Value: QuestionTitle
+            },
+
+            Score: {
+                Value: Score
+            },
+
+            'Submitted By': {
+                Claims: "i:0#.f|membership|" & User().Email,
+                DisplayName: User().FullName,
+                Email: User().Email
+            },
+
+            'Evaluation Year': Year(Today())
+        }
+    )
+)
+
+
+---
+
+🧩 STEP 3: ADD VALIDATION BEFORE SAVE
+
+Before your ForAll(...)
+
+
+---
+
+Add this:
+
+If(
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections.Value = Dropdown_Section.Selected.Title &&
+            'Submitted By'.Email = User().Email &&
+            'Evaluation Year' = Year(Today())
+        )
+    ) > 0,
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    // SAVE HERE
+)
+
+
+---
+
+✅ COMPLETE FLOW
+
+If(
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections.Value = Dropdown_Section.Selected.Title &&
+            'Submitted By'.Email = User().Email &&
+            'Evaluation Year' = Year(Today())
+        )
+    ) > 0,
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+        colAnswers,
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                Sections: {
+                    Id: Dropdown_Section.Selected.ID,
+                    Value: Dropdown_Section.Selected.Title
+                },
+
+                Suppliers: {
+                    Id: SupplierID,
+                    Value: SupplierName
+                },
+
+                Questions: {
+                    Id: QuestionID,
+                    Value: QuestionTitle
+                },
+
+                Score: {
+                    Value: Score
+                },
+
+                'Submitted By': {
+                    Claims: "i:0#.f|membership|" & User().Email,
+                    DisplayName: User().FullName,
+                    Email: User().Email
+                },
+
+                'Evaluation Year': Year(Today())
+            }
+        )
+    );
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers)
+)
+
+
+---
+
+🎯 RESULT
+
+
+---
+
+✅ First submission (2026)
+
+Saved successfully
+
+
+---
+
+❌ Second submission (2026)
+
+You already submitted this evaluation for this year.
+
+
+---
+
+✅ Next year (2027)
+
+Allowed again
+
+
+---
+
+🚀 BETTER VERSION (OPTIONAL)
+
+You can make validation:
+
+Per User + Per Section + Per Supplier + Per Year
+
+instead of just per section.
+
+
+---
+
+🎉 YOU NOW HAVE
+
+✅ One submission per year
+✅ User tracking
+✅ Audit-ready records
+✅ Clean validation logic
+
+
+---
+
+👍 NEXT RECOMMENDED FEATURE
+
+Now you should add:
+
+📅 Submission date/time
+
+📊 Total supplier score
+
+📈 Ranking/dashboard
+
+✏️ Edit before final submit
+
+
+Just tell me 👍
+
+
+
+****
+
 Great 👍 your save logic is already working.
 Now let’s add validation before submit so users cannot submit incomplete evaluations.
 
