@@ -1,3 +1,247 @@
+Great 👍 your save logic is already working.
+Now let’s add validation before submit so users cannot submit incomplete evaluations.
+
+
+---
+
+🎯 COMMON VALIDATIONS
+
+You can validate:
+
+Validation	Purpose
+
+No section selected	Prevent blank section
+No answers yet	Prevent empty submit
+Incomplete answers	Ensure all questions answered
+Duplicate submission	Prevent resubmission
+
+
+
+---
+
+✅ SIMPLE VALIDATION (RECOMMENDED FIRST)
+
+
+---
+
+🧩 STEP 1: CHECK IF SECTION IS SELECTED
+
+
+---
+
+Update btn_Submit.OnSelect
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+        colAnswers,
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                Sections: {
+                    Id: Dropdown_Section.Selected.ID,
+                    Value: Dropdown_Section.Selected.Title
+                },
+                Suppliers: {
+                    Id: SupplierID,
+                    Value: SupplierName
+                },
+                Questions: {
+                    Id: QuestionID,
+                    Value: QuestionTitle
+                },
+                Score: { Value: Score }
+            }
+        )
+    );
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    )
+)
+
+
+---
+
+🎯 RESULT
+
+
+---
+
+❌ No section
+
+Please select a section first.
+
+
+---
+
+✅ Valid submit
+
+Evaluation submitted successfully.
+
+
+---
+
+🚀 BETTER VALIDATION (CHECK IF NO ANSWERS)
+
+
+---
+
+Add this:
+
+If(
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer at least one question.",
+        NotificationType.Error
+    ),
+
+    // SAVE HERE
+)
+
+
+---
+
+🔥 BEST VERSION (SECTION + ANSWERS VALIDATION)
+
+Use this complete version:
+
+
+---
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before submitting.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+        colAnswers,
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                Sections: {
+                    Id: Dropdown_Section.Selected.ID,
+                    Value: Dropdown_Section.Selected.Title
+                },
+                Suppliers: {
+                    Id: SupplierID,
+                    Value: SupplierName
+                },
+                Questions: {
+                    Id: QuestionID,
+                    Value: QuestionTitle
+                },
+                Score: { Value: Score }
+            }
+        )
+    );
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers)
+)
+
+
+---
+
+🧩 OPTIONAL: REQUIRE ALL QUESTIONS ANSWERED ⭐
+
+
+---
+
+Example logic:
+
+Expected answers:
+
+Suppliers × Questions
+
+
+---
+
+Formula:
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+)
+
+
+---
+
+🔥 FULL REQUIRED VALIDATION
+
+If(
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please complete all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    // SAVE HERE
+)
+
+
+---
+
+🎯 FINAL RESULT
+
+✔ Prevent blank submit
+✔ Prevent incomplete answers
+✔ Better UX
+✔ Cleaner data
+
+
+---
+
+👍 NEXT LEVEL (RECOMMENDED)
+
+After validation, next you should add:
+
+🚫 Prevent duplicate submission per user
+
+📅 Submission timestamp
+
+👤 Submitted by user
+
+📊 Auto total score
+
+
+Just tell me 👍
+
+
+
+****
+
+
 Sure 👍 here are several alternative instruction sentences you can use—grouped by tone so you can choose what fits your app best.
 
 
