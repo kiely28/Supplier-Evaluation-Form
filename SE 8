@@ -1,3 +1,317 @@
+Perfect 👍 adding a comment textbox per question is a very good enhancement for evaluations.
+
+You want this layout:
+
+Supplier | Code | M1R | Comment | M5R | Comment
+AOI      | 123  | ○○○ | [textbox]
+
+
+---
+
+🎯 GOAL
+
+For every question:
+
+Radio buttons + Comment textbox
+
+and save both into SE Evaluation List.
+
+
+---
+
+🧩 STEP 1: ADD COMMENT COLUMN IN SHAREPOINT
+
+In SharePoint → SE Evaluation List
+
+Add:
+
+Column Name	Type
+
+Comment	Multiple lines of text
+
+
+
+---
+
+🧩 STEP 2: ADD TEXT INPUT INSIDE QUESTION GALLERY
+
+Go to:
+
+Gallery_Question_H
+
+Insert:
+
+Text input
+
+Rename:
+
+txt_Comment
+
+
+---
+
+🧩 STEP 3: POSITION THE TEXTBOX
+
+Example:
+
+
+---
+
+Radio button
+
+X = 0
+Width = 100
+
+
+---
+
+Comment textbox
+
+X = Radio_Score_New.X + Radio_Score_New.Width + 10
+Width = 150
+Height = 35
+
+
+---
+
+🧩 STEP 4: UPDATE COLLECTION
+
+Currently your Radio_Score_New.OnChange:
+
+Collect(
+    colAnswers,
+    {
+        SupplierID: supplierId,
+        SupplierName: supplierName,
+        QuestionID: questionId,
+        QuestionTitle: questionTitle,
+        Score: Self.Selected.Value
+    }
+)
+
+
+---
+
+✅ ADD COMMENT
+
+Replace with:
+
+Collect(
+    colAnswers,
+    {
+        SupplierID: supplierId,
+        SupplierName: supplierName,
+        QuestionID: questionId,
+        QuestionTitle: questionTitle,
+        Score: Self.Selected.Value,
+        Comment: txt_Comment.Text
+    }
+)
+
+
+---
+
+⚠️ IMPORTANT ISSUE
+
+👉 If user types comment AFTER selecting radio:
+
+Collection will NOT update automatically ❌
+
+
+---
+
+✅ BEST PRACTICE (RECOMMENDED)
+
+Instead of saving on Radio change only:
+
+👉 Save/update from BOTH:
+
+Radio.OnChange
+
+TextInput.OnChange
+
+
+
+---
+
+🧩 STEP 5: CREATE COMMON SAVE FORMULA
+
+
+---
+
+In Radio_Score_New.OnChange
+
+With(
+    {
+        supplierId: Gallery_Suppliers_New.Selected.ID,
+        supplierName: Gallery_Suppliers_New.Selected.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Self.Selected.Value,
+            Comment: txt_Comment.Text
+        }
+    )
+)
+
+
+---
+
+🧩 STEP 6: SAME FOR txt_Comment.OnChange
+
+With(
+    {
+        supplierId: Gallery_Suppliers_New.Selected.ID,
+        supplierName: Gallery_Suppliers_New.Selected.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Radio_Score_New.Selected.Value,
+            Comment: Self.Text
+        }
+    )
+)
+
+
+---
+
+🧩 STEP 7: SAVE COMMENT TO SHAREPOINT
+
+Update your Patch:
+
+
+---
+
+Add:
+
+Comment: Comment
+
+
+---
+
+✅ FINAL PATCH
+
+Patch(
+    'SE Evaluation List',
+    Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+
+        Suppliers: {
+            Id: SupplierID,
+            Value: SupplierName
+        },
+
+        Questions: {
+            Id: QuestionID,
+            Value: QuestionTitle
+        },
+
+        Score: {
+            Value: Score
+        },
+
+        Comment: Comment
+    }
+)
+
+
+---
+
+🎯 FINAL RESULT
+
+Question:
+M1R
+
+○1 ○2 ○3
+[Comment textbox]
+
+
+---
+
+🎉 SAVED DATA
+
+Supplier	Question	Score	Comment
+
+AOI	M1R	3	Good support
+
+
+
+---
+
+🚀 OPTIONAL IMPROVEMENTS
+
+You can also add:
+
+💬 Required comment if low score
+
+📏 Auto-expand textbox
+
+🟡 Character limit
+
+📝 Placeholder text
+
+
+Example:
+
+HintText = "Enter comments here..."
+
+
+---
+
+👍 NEXT RECOMMENDED FEATURE
+
+Now your app is becoming enterprise-level 👍
+
+Next I recommend:
+
+📊 Total score calculation
+
+📈 Supplier ranking
+
+🖨️ PDF export
+
+📧 Email notification after submit
+
+
+Just tell me 👍
+
+
+******
+
+
+
 Great idea 👍 — this is a very important business rule for your supplier evaluation system.
 
 You want:
