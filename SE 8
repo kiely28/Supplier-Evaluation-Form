@@ -1,3 +1,287 @@
+Perfect 👍 now I understand exactly what you want.
+
+You want:
+
+Supplier | Code | M1R | M5R | D3R | Comment
+AOI      | 123  | ○○○ | ○○○ | ○○○ | [textbox]
+
+✅ ONE comment textbox per supplier row
+✅ Comment placed at the END
+✅ NOT per question
+
+That is actually the better design 👍
+
+
+---
+
+🎯 WHAT TO CHANGE
+
+Instead of:
+
+Comment inside Gallery_Question_H ❌
+
+You should place:
+
+Comment textbox inside Container4 ✅
+
+
+---
+
+🧠 YOUR CURRENT TREE
+
+Gallery_Suppliers_New
+ └── Container4
+      ├── Supplier Name
+      ├── Supplier Code
+      └── Gallery_Question_H
+           └── Radio_Score_New
+
+
+---
+
+✅ NEW STRUCTURE
+
+Gallery_Suppliers_New
+ └── Container4
+      ├── Supplier Name
+      ├── Supplier Code
+      ├── Gallery_Question_H
+      │     └── Radio_Score_New
+      └── txt_Comment
+
+
+---
+
+🧩 STEP 1: ADD TEXT INPUT
+
+Inside:
+
+Container4
+
+Insert:
+
+Text input
+
+Rename:
+
+txt_Comment
+
+
+---
+
+🧩 STEP 2: POSITION COMMENT AT END
+
+
+---
+
+Example sizes:
+
+
+---
+
+Supplier Name
+
+Width = 150
+
+
+---
+
+Supplier Code
+
+Width = 120
+
+
+---
+
+Questions Gallery
+
+Width = CountRows(colQuestions) * 110
+
+
+---
+
+Comment textbox
+
+X = Gallery_Question_H.X + Gallery_Question_H.Width + 10
+Width = 200
+Height = 35
+
+
+---
+
+🧩 STEP 3: ADD COMMENT HEADER
+
+In:
+
+HeaderContainer
+
+Add label:
+
+Comment_H
+
+
+---
+
+Set:
+
+Text = "Comment"
+
+
+---
+
+Position:
+
+X = Gallery_Header_New.X + Gallery_Header_New.Width + 10
+Width = 200
+
+
+---
+
+🧩 STEP 4: SAVE COMMENT
+
+Now comment is:
+
+Per supplier row
+
+not per question.
+
+
+---
+
+🧩 STEP 5: UPDATE COLLECTION
+
+In your Radio_Score_New.OnChange
+
+
+---
+
+ADD:
+
+Comment: txt_Comment.Text
+
+
+---
+
+✅ UPDATED VERSION
+
+With(
+    {
+        supplierId: Gallery_Suppliers_New.Selected.ID,
+        supplierName: Gallery_Suppliers_New.Selected.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Self.Selected.Value,
+            Comment: txt_Comment.Text
+        }
+    )
+)
+
+
+---
+
+🧩 STEP 6: SAVE TO SHAREPOINT
+
+In Patch:
+
+
+---
+
+Add:
+
+Comment: Comment
+
+
+---
+
+🎯 FINAL UI RESULT
+
+Supplier | Code | M1R | M5R | D3R | Comment
+--------------------------------------------------------
+AOI      | 123  | ○○○ | ○○○ | ○○○ | [textbox]
+ASIA     | 456  | ○○○ | ○○○ | ○○○ | [textbox]
+
+
+---
+
+🎉 BENEFITS
+
+✔ Cleaner UI
+✔ Easier encoding
+✔ Better for horizontal matrix
+✔ One overall supplier comment
+
+
+---
+
+🚀 OPTIONAL IMPROVEMENTS
+
+You can also make:
+
+
+---
+
+Multi-line comment
+
+Mode = TextMode.MultiLine
+
+
+---
+
+Placeholder
+
+HintText = "Enter overall supplier comments..."
+
+
+---
+
+Required comment for low score
+
+Example:
+
+If(
+    Value(Radio_Score_New.Selected.Value) <= 1,
+    txt_Comment.Required = true
+)
+
+
+---
+
+👍 NEXT RECOMMENDED FEATURE
+
+You now almost have a complete supplier evaluation system 👍
+
+Next I recommend:
+
+📊 Total score per supplier
+
+📈 Automatic ranking
+
+📧 Email notification
+
+🖨️ PDF report export
+
+
+Just tell me 👍
+
+
+****
+
+
 Perfect 👍 adding a comment textbox per question is a very good enhancement for evaluations.
 
 You want this layout:
