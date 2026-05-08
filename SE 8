@@ -1,3 +1,99 @@
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before submitting.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please complete all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections.Value = Dropdown_Section.Selected.Title &&
+            'Created By'.Email = User().Email &&
+            'Evaluation Year' = Year(Today())
+        )
+    ) > 0,
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: ID,
+            SupplierComment: txt_Comment.Text
+        }
+    )
+
+    ForAll(
+        colAnswers,
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                Sections: {
+                    Id: Dropdown_Section.Selected.ID,
+                    Value: Dropdown_Section.Selected.Title
+                },
+                Suppliers: {
+                    Id: SupplierID,
+                    Value: SupplierName
+                },
+                Questions: {
+                    Id: QuestionID,
+                    Value: QuestionTitle
+                },
+                Score: { Value: Score },
+
+                'Evaluation Year': Year(Today()),
+
+                //Comment: Comment
+                Comment:
+            LookUp(
+                colSupplierComments,
+                SupplierID = ThisRecord.SupplierID
+            ).SupplierComment
+
+            }
+        )
+    );
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers)
+)
+
+
+
+
+****
+
+
 Yes 👍 that behavior is expected based on your current structure.
 
 Right now your save logic is:
