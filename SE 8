@@ -1,3 +1,15 @@
+Error in .AllItems, and ID, in
+
+Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: ID,
+            SupplierComment: txt_Comment.Text
+        }
+    )
+In this code:
+
 If(
     IsBlank(Dropdown_Section.Selected),
 
