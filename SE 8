@@ -1,3 +1,203 @@
+Absolutely 👍
+Here is the exact control and property to update based on your current app structure.
+
+
+---
+
+🎯 WHAT YOU WILL UPDATE
+
+You will update:
+
+btn_Submit → OnSelect
+
+ONLY.
+
+
+---
+
+🧩 YOUR CURRENT TREE VIEW
+
+Screen1
+├── Dropdown_Section
+├── ScrollContainer
+│   ├── HeaderContainer
+│   └── Gallery_Suppliers_New
+│       └── Container4
+│           ├── Supplier Name
+│           ├── Supplier Code
+│           ├── Gallery_Question_H
+│           │   └── Radio_Score_New
+│           └── txt_Comment
+├── btn_Submit
+
+
+---
+
+✅ CONTROL TO UPDATE
+
+
+---
+
+Select:
+
+btn_Submit
+
+
+---
+
+Property:
+
+OnSelect
+
+
+---
+
+✅ REPLACE ONLY THIS VALIDATION BLOCK
+
+Find THIS inside your current btn_Submit.OnSelect:
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+),
+
+Notify(
+    "Please complete all evaluation questions.",
+    NotificationType.Error
+),
+
+
+---
+
+✅ REPLACE WITH THIS
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+),
+
+Notify(
+    "Please answer all evaluation questions.",
+    NotificationType.Error
+),
+
+CountRows(
+    Filter(
+        Gallery_Suppliers_New.AllItems,
+        IsBlank(txt_Comment.Text)
+    )
+) > 0,
+
+Notify(
+    "Please complete all supplier comments.",
+    NotificationType.Error
+),
+
+
+---
+
+🎯 WHAT THIS FIXES
+
+
+---
+
+BEFORE ❌
+
+If:
+
+radios complete
+
+only 1 supplier has comment
+
+
+It wrongly says:
+
+Please complete all evaluation questions.
+
+
+---
+
+AFTER ✅
+
+Now it correctly says:
+
+Please complete all supplier comments.
+
+
+---
+
+🧠 WHY
+
+Because now:
+
+
+---
+
+Validation 1
+
+Checks radios only
+
+
+---
+
+Validation 2
+
+Checks supplier comments only
+
+
+---
+
+🎯 FINAL LOCATION SUMMARY
+
+Control	Property	Update
+
+btn_Submit	OnSelect	Replace validation block
+
+
+
+---
+
+🚨 IMPORTANT
+
+This validation assumes:
+
+txt_Comment
+
+is INSIDE:
+
+Gallery_Suppliers_New → Container4
+
+which matches your current UI 👍
+
+
+---
+
+🎉 RESULT
+
+✔ Proper validation
+✔ Better error messages
+✔ Comment checking works correctly
+✔ Radios validation stays working
+
+
+---
+
+🚀 NEXT RECOMMENDED FIX
+
+Your next improvement should be:
+
+✅ Prevent duplicate rows in colAnswers
+
+because currently if users change radio values many times, your counts can become inaccurate.
+
+That is the next important stability fix 👍
+
+
+*****
+
+
 I see the issue 👍
 Your validation:
 
