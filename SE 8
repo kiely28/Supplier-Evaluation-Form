@@ -1,3 +1,237 @@
+I see the issue 👍
+Your validation:
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+)
+
+only checks:
+
+Radio answers count
+
+BUT after adding comments, your collection logic now updates records differently, so the count can become inconsistent.
+
+Also, your validation currently does NOT account for:
+
+supplier comments
+
+duplicate radio changes
+
+missing comment rows
+
+
+
+---
+
+🎯 WHAT YOU ACTUALLY WANT
+
+You want validation for:
+
+✔ All radio questions answered
+✔ (Optional) All supplier comments filled
+
+
+---
+
+✅ BEST FIX (RECOMMENDED)
+
+Separate the validations:
+
+
+---
+
+🧩 VALIDATION 1 — RADIO ANSWERS
+
+Keep this:
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+)
+
+BUT make sure colAnswers has NO duplicates.
+
+
+---
+
+🧩 VALIDATION 2 — SUPPLIER COMMENTS
+
+Add separate validation:
+
+
+---
+
+BEFORE SAVE
+
+CountRows(
+    Filter(
+        Gallery_Suppliers_New.AllItems,
+        IsBlank(txt_Comment.Text)
+    )
+) > 0
+
+
+---
+
+🎯 COMPLETE FIX
+
+Replace this old validation block:
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+),
+
+Notify(
+    "Please complete all evaluation questions.",
+    NotificationType.Error
+),
+
+
+---
+
+✅ WITH THIS
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+),
+
+Notify(
+    "Please answer all evaluation questions.",
+    NotificationType.Error
+),
+
+CountRows(
+    Filter(
+        Gallery_Suppliers_New.AllItems,
+        IsBlank(txt_Comment.Text)
+    )
+) > 0,
+
+Notify(
+    "Please complete all supplier comments.",
+    NotificationType.Error
+),
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Now validation is split:
+
+
+---
+
+Radio validation
+
+Checks all scores answered
+
+
+---
+
+Comment validation
+
+Checks every supplier has comment
+
+
+---
+
+🎯 EXAMPLE
+
+
+---
+
+Supplier 1
+
+✔ Radios answered
+✔ Comment entered
+
+
+---
+
+Supplier 2
+
+✔ Radios answered
+❌ No comment
+
+
+---
+
+RESULT
+
+Please complete all supplier comments.
+
+
+---
+
+🚀 OPTIONAL (COMMENT NOT REQUIRED)
+
+If comments are OPTIONAL:
+
+👉 REMOVE this validation completely:
+
+CountRows(
+    Filter(
+        Gallery_Suppliers_New.AllItems,
+        IsBlank(txt_Comment.Text)
+    )
+) > 0
+
+
+---
+
+🧠 BETTER VALIDATION MESSAGE
+
+Instead of:
+
+Please complete all evaluation questions.
+
+Use:
+
+Please answer all scores and complete supplier comments.
+
+
+---
+
+🎉 RESULT
+
+✔ Correct validation
+✔ Separate score/comment checking
+✔ No false errors
+✔ Better user experience
+
+
+---
+
+🚀 IMPORTANT NEXT FIX
+
+Your current colAnswers may still duplicate when users change radio values multiple times.
+
+I strongly recommend next: ✅ Convert Collect() → Patch() into collection
+
+This prevents:
+
+duplicate answers
+
+wrong counts
+
+validation mismatch
+
+
+That’s the next stability improvement 👍
+
+
+
+****
+
+
 I found the problem 👍
 Your syntax is incorrect in this part:
 
