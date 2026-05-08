@@ -1,3 +1,177 @@
+Perfect 👍 I’ll indicate exactly which control/property to update.
+
+You want:
+
+✔ All radio questions answered
+✔ Supplier comments are OPTIONAL
+
+So we only validate radio answers.
+
+
+---
+
+🎯 CONTROL TO UPDATE
+
+Update this control:
+
+btn_Submit
+
+Property:
+
+OnSelect
+
+
+---
+
+🧩 FIND THIS OLD VALIDATION
+
+Inside btn_Submit.OnSelect
+
+Find this block:
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+),
+
+Notify(
+    "Please complete all evaluation questions.",
+    NotificationType.Error
+),
+
+
+---
+
+✅ REPLACE WITH THIS
+
+CountRows(colAnswers) <>
+(
+    CountRows(Gallery_Suppliers_New.AllItems) *
+    CountRows(colQuestions)
+),
+
+Notify(
+    "Please answer all radio evaluation questions.",
+    NotificationType.Error
+),
+
+
+---
+
+🎯 RESULT
+
+Now validation only checks:
+
+✔ Radio buttons answered
+❌ Comments are NOT required
+
+
+---
+
+🧠 WHAT HAPPENS NOW
+
+
+---
+
+Example:
+
+Supplier	Radios	Comment
+
+AOI	✔	✔
+ASIA	✔	❌
+
+
+
+---
+
+RESULT
+
+✅ Submit ALLOWED
+
+because:
+
+Comments are optional
+
+
+---
+
+🚫 WHAT TO REMOVE (IMPORTANT)
+
+If you added this earlier:
+
+CountRows(
+    Filter(
+        Gallery_Suppliers_New.AllItems,
+        IsBlank(txt_Comment.Text)
+    )
+) > 0
+
+DELETE it completely ❌
+
+because that validation forces comments.
+
+
+---
+
+🎯 FINAL LOGIC
+
+Your app now validates ONLY:
+
+Supplier count × Question count
+=
+Total radio answers
+
+
+---
+
+🧪 OPTIONAL DEBUG LABEL
+
+You can add temporary label:
+
+"Answers: " & CountRows(colAnswers)
+
+Expected:
+
+Suppliers × Questions
+
+Example:
+
+2 suppliers × 4 questions = 8 answers
+
+
+---
+
+🎉 FINAL RESULT
+
+✔ Comments optional
+✔ Radios required
+✔ No false validation error
+✔ Cleaner submit flow
+
+
+---
+
+🚀 NEXT IMPORTANT IMPROVEMENT
+
+Your app is almost complete 👍
+
+Next I strongly recommend:
+
+✅ Prevent duplicate answers inside colAnswers
+
+because if user changes radio multiple times:
+
+CountRows(colAnswers)
+
+can become incorrect.
+
+That’s the next stability fix.
+
+
+****
+
+
 Absolutely 👍
 Here is the exact control and property to update based on your current app structure.
 
