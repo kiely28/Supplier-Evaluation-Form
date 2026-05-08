@@ -1,3 +1,269 @@
+Yes 👍 that behavior is expected based on your current structure.
+
+Right now your save logic is:
+
+1 row in SharePoint = 1 Question
+
+Example:
+
+Supplier	Question	Score	Comment
+
+AOI	M1R	3	(blank)
+AOI	M5R	2	(blank)
+AOI	D3R	4	Good supplier
+
+
+👉 Because the comment textbox exists only once per supplier row, the comment gets attached only to the LAST collected record.
+
+
+---
+
+🎯 BEST SOLUTION
+
+Since your comment is:
+
+Per Supplier
+
+NOT per question,
+
+👉 you should save the same comment to ALL questions of that supplier.
+
+
+---
+
+✅ FIX
+
+When collecting answers, always include:
+
+Comment: txt_Comment.Text
+
+BUT the issue is:
+
+Comment textbox changes AFTER radios were selected
+
+So old collection records still contain blank comment.
+
+
+---
+
+✅ BEST PRACTICE (RECOMMENDED)
+
+Instead of relying only on collection comment:
+
+👉 Read textbox directly during submit.
+
+
+---
+
+🔥 FIX YOUR btn_Submit.OnSelect
+
+Instead of:
+
+Comment: Comment
+
+we will dynamically get supplier comment.
+
+
+---
+
+🧩 STEP 1: CREATE COMMENT COLLECTION
+
+Before saving:
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: ID,
+            SupplierComment: txt_Comment.Text
+        }
+    )
+);
+
+
+---
+
+🧠 WHAT THIS DOES
+
+Reads ALL supplier comments from UI
+Stores them separately
+
+
+---
+
+🧩 STEP 2: USE COMMENT IN PATCH
+
+Now update your Patch():
+
+
+---
+
+Replace:
+
+Comment: Comment
+
+
+---
+
+WITH:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+✅ FINAL SAVE LOGIC
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: ID,
+            SupplierComment: txt_Comment.Text
+        }
+    )
+);
+
+ForAll(
+    colAnswers,
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Sections: {
+                Id: Dropdown_Section.Selected.ID,
+                Value: Dropdown_Section.Selected.Title
+            },
+
+            Suppliers: {
+                Id: SupplierID,
+                Value: SupplierName
+            },
+
+            Questions: {
+                Id: QuestionID,
+                Value: QuestionTitle
+            },
+
+            Score: {
+                Value: Score
+            },
+
+            Comment:
+            LookUp(
+                colSupplierComments,
+                SupplierID = ThisRecord.SupplierID
+            ).SupplierComment
+        }
+    )
+);
+
+
+---
+
+🎯 RESULT
+
+Now ALL records of supplier AOI will contain:
+
+Good supplier
+
+
+---
+
+✅ OUTPUT
+
+Supplier	Question	Score	Comment
+
+AOI	M1R	3	Good supplier
+AOI	M5R	2	Good supplier
+AOI	D3R	4	Good supplier
+
+
+
+---
+
+🧠 WHY THIS IS BEST
+
+Because:
+
+Comment belongs to supplier
+NOT question
+
+This keeps your data consistent.
+
+
+---
+
+🚀 EVEN BETTER DESIGN (OPTIONAL)
+
+Enterprise systems usually split:
+
+
+---
+
+Table 1 — Evaluation Header
+
+Supplier	Comment
+
+AOI	Good supplier
+
+
+
+---
+
+Table 2 — Evaluation Details
+
+Supplier	Question	Score
+
+AOI	M1R	3
+
+
+
+---
+
+But your current design is still OK 👍
+
+
+---
+
+🎉 RESULT
+
+✔ Comment saved correctly
+✔ Same comment across supplier questions
+✔ Clean matrix UI
+✔ No missing comments
+
+
+---
+
+👍 NEXT RECOMMENDED FEATURE
+
+Now I strongly recommend:
+
+📊 Total score calculation
+
+📈 Supplier ranking
+
+🚫 Prevent editing after submit
+
+🖨️ Export to PDF/Excel
+
+
+Just tell me 👍
+
+****
+
+
 Perfect 👍 now I understand exactly what you want.
 
 You want:
