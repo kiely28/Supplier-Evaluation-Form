@@ -1,0 +1,28 @@
+txt_Comment.OnChange
+
+With(
+    {
+        supplierId: Gallery_Suppliers_New.Selected.ID,
+        supplierName: Gallery_Suppliers_New.Selected.Title,
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Radio_Score_New.Selected.Value,
+            Comment: Self.Text
+        }
+    )
+)
