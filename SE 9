@@ -1,3 +1,233 @@
+Ahh now I see the REAL issue 👍
+
+The problem is:
+
+txt_Comment inside gallery
+
+When using:
+
+S.txt_Comment.Text
+
+inside ForAll(Gallery.AllItems) Power Apps often reads only the FIRST textbox value from gallery controls ❌
+
+That is a common gallery limitation in Power Apps.
+
+
+---
+
+🎯 BEST FIX (RECOMMENDED)
+
+Instead of reading textbox values directly during submit:
+
+✅ Save supplier comments into a separate collection while typing.
+
+
+---
+
+🧩 STEP 1 — CREATE COMMENT COLLECTION
+
+We will use:
+
+colSupplierComments
+
+Structure:
+
+SupplierID	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+
+---
+
+🎯 CONTROL TO UPDATE
+
+Update:
+
+txt_Comment
+
+Property:
+
+OnChange
+
+
+---
+
+❌ REMOVE
+
+Remove:
+
+Blank()
+
+
+---
+
+✅ REPLACE WITH THIS
+
+RemoveIf(
+    colSupplierComments,
+    SupplierID = ThisItem.ID
+);
+
+Collect(
+    colSupplierComments,
+    {
+        SupplierID: ThisItem.ID,
+        SupplierComment: Self.Text
+    }
+)
+
+
+---
+
+🧠 WHAT THIS DOES
+
+Whenever user types:
+
+Kuroda → Test
+
+collection becomes:
+
+SupplierID	SupplierComment
+
+1	Test
+
+
+
+---
+
+Then:
+
+Threebond → Only
+
+collection becomes:
+
+SupplierID	SupplierComment
+
+1	Test
+2	Only
+
+
+✅ Correct per supplier
+
+
+---
+
+🧩 STEP 2 — UPDATE btn_Submit
+
+Now we NO LONGER need this block:
+
+
+---
+
+❌ DELETE THIS
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems As S,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: S.ID,
+            SupplierComment: S.txt_Comment.Text
+        }
+    )
+);
+
+REMOVE IT COMPLETELY ❌
+
+
+---
+
+🧩 STEP 3 — KEEP THIS IN PATCH
+
+This part is CORRECT already:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+✅ Keep it
+
+
+---
+
+🎯 FINAL RESULT
+
+
+---
+
+Supplier comments
+
+Supplier	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+
+---
+
+SharePoint save
+
+Supplier	Question	Comment
+
+Kuroda	M1R	Test
+Kuroda	M5R	Test
+Threebond	M1R	Only
+Threebond	M5R	Only
+
+
+✅ PERFECT
+
+
+---
+
+🎉 WHY THIS IS BEST
+
+✔ No gallery textbox issue
+✔ Correct supplier comments
+✔ Cleaner architecture
+✔ Better performance
+✔ Reliable submit behavior
+
+
+---
+
+🚀 VERY IMPORTANT NEXT IMPROVEMENT
+
+Now your app structure is actually good 👍
+
+Next I strongly recommend:
+
+✅ Change colAnswers logic from:
+
+RemoveIf + Collect
+
+to:
+
+Patch(local collection)
+
+This prevents:
+
+duplicate rows
+
+wrong counts
+
+unstable validation
+
+
+That’s the next enterprise-level improvement 👍
+
+
+
+*****
+
+
 I found the REAL issue 👍
 
 Your problem is NOT in btn_Submit.
