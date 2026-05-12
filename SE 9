@@ -1,3 +1,30 @@
+Here’s a professional email draft you can use for the request to update the GNS+ validation process:
+
+Dear Sir/Ma’am,
+
+Good day.
+
+I would like to request an enhancement update for the GNS+ Application Form regarding the validation of employee information.
+
+Currently, the GNS+ Application Form retrieves employee details directly from NAMES. However, when section in-charges from other departments submit requests for updates, mismatches in GNS+ User IDs are often overlooked due to the auto-populated fields.
+
+This issue commonly occurs for employees who initially used the “PH” format during requisition because they did not yet have an APO account, but have recently created their APO accounts. As a result, incorrect GNS+ User IDs are sometimes registered in the system.
+
+To ensure data consistency and prevent incorrect entries, we would like to propose that the system validate employee information against Tbl_Authority before retrieving details from NAMES.
+
+Please see the attached PowerPoint proposal titled:
+“Enhancement of GNS+ Application Form Data Validation using Tbl_Authority”
+
+We appreciate your support and consideration regarding this enhancement request.
+
+Thank you very much.
+
+Best regards,
+[Your Name]
+
+****
+
+
 Title of Proposal in Powerpoint:
 Enhancement of GNS+ Application Form Data Validation using 
 Tbl Authority
