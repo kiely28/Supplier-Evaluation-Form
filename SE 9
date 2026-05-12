@@ -1,3 +1,184 @@
+I found the issue 👍
+The problem is:
+
+ThisItem.ID
+
+inside txt_Comment.OnChange
+
+❌ ThisItem there refers to the QUESTION item (inside Gallery_Question_H), NOT the supplier row.
+
+So both suppliers can end up using the same ID or wrong context.
+
+
+---
+
+🎯 CORRECT FIX
+
+You need to store:
+
+SUPPLIER ID from Gallery_Suppliers_New
+
+NOT question ID.
+
+
+---
+
+🧩 CONTROL TO UPDATE
+
+Update:
+
+txt_Comment
+
+Property:
+
+OnChange
+
+
+---
+
+❌ REMOVE CURRENT CODE
+
+Delete current code in txt_Comment.OnChange.
+
+
+---
+
+✅ REPLACE WITH THIS
+
+RemoveIf(
+    colSupplierComments,
+    SupplierID = Parent.Parent.ThisItem.ID
+);
+
+Collect(
+    colSupplierComments,
+    {
+        SupplierID: Parent.Parent.ThisItem.ID,
+        SupplierComment: Self.Text
+    }
+)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Your structure:
+
+Gallery_Suppliers_New
+ └── Container4
+      └── txt_Comment
+
+So:
+
+Parent.Parent.ThisItem.ID
+
+correctly points to:
+
+current supplier row
+
+NOT question row.
+
+
+---
+
+🎯 EXAMPLE
+
+
+---
+
+Supplier: Kuroda
+
+SupplierID = 1
+Comment = Test
+
+
+---
+
+Supplier: Threebond
+
+SupplierID = 2
+Comment = Only
+
+
+---
+
+Collection becomes:
+
+SupplierID	SupplierComment
+
+1	Test
+2	Only
+
+
+✅ Correct
+
+
+---
+
+🧩 KEEP THIS IN btn_Submit
+
+This is already correct:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+🚨 IMPORTANT
+
+Also REMOVE this entire block from btn_Submit if still present:
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems As S,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: S.ID,
+            SupplierComment: S.txt_Comment.Text
+        }
+    )
+);
+
+❌ REMOVE IT
+
+because it causes the “all suppliers get same comment” issue.
+
+
+---
+
+🎉 FINAL RESULT
+
+Supplier	Comment Saved
+
+Kuroda	Test
+Threebond	Only
+
+
+✅ Correct per supplier
+✅ Correct in SharePoint
+✅ Works with multiple suppliers
+
+
+---
+
+🚀 NEXT IMPORTANT IMPROVEMENT
+
+Your app is now becoming very solid 👍
+
+Next I strongly recommend: ✅ Replace RemoveIf + Collect in radio answers with Patch() to avoid duplicate answer rows when users change selections multiple times.
+
+
+
+*****
+
+
 Ahh now I see the REAL issue 👍
 
 The problem is:
