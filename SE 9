@@ -1,3 +1,202 @@
+Got it 👍 If the tree view is already correct, then the remaining issue is this:
+
+txt_Comment.OnChange is unreliable
+
+because Power Apps does NOT always trigger OnChange before clicking Submit.
+
+So:
+
+Kuroda comment saved
+
+Threebond textbox still not committed to collection yet
+
+Submit reads old collection value ❌
+
+
+
+---
+
+🎯 MOST RELIABLE FIX (RECOMMENDED)
+
+Do NOT use txt_Comment.OnChange at all.
+
+Instead:
+
+✅ Read textbox values DIRECTLY during submit using a hidden label.
+
+This is the most stable method for gallery text inputs.
+
+
+---
+
+🧩 STEP 1 — ADD HIDDEN LABEL
+
+Inside:
+
+Container4
+
+Add:
+
+Label
+
+Rename:
+
+lblSupplierID
+
+
+---
+
+🧩 STEP 2 — SET LABEL TEXT
+
+Property:
+
+Text
+
+Set:
+
+ThisItem.ID
+
+
+---
+
+🧩 STEP 3 — HIDE LABEL
+
+Set:
+
+Visible = false
+
+
+---
+
+🧩 STEP 4 — REMOVE txt_Comment.OnChange
+
+Control:
+
+txt_Comment
+
+Property:
+
+OnChange
+
+Set:
+
+Blank()
+
+or leave empty.
+
+
+---
+
+🧩 STEP 5 — UPDATE btn_Submit
+
+NOW replace this block:
+
+
+---
+
+❌ REMOVE THIS
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems As S,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: S.ID,
+            SupplierComment: S.txt_Comment.Text
+        }
+    )
+);
+
+
+---
+
+✅ REPLACE WITH THIS
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: Value(lblSupplierID.Text),
+            SupplierComment: txt_Comment.Text
+        }
+    )
+);
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Inside ForAll(AllItems):
+
+lblSupplierID.Text
+txt_Comment.Text
+
+correctly reference EACH row controls.
+
+This is MUCH more reliable than:
+
+ThisItem
+
+Selected
+
+Parent.Parent
+
+OnChange
+
+
+
+---
+
+🎯 FINAL RESULT
+
+Supplier	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+
+---
+
+✅ SharePoint Output
+
+Supplier	Question	Comment
+
+Kuroda	M1R	Test
+Threebond	M1R	Only
+
+
+✅ Correct per supplier.
+
+
+---
+
+🚀 IMPORTANT
+
+Keep this part in Patch:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+🎉 THIS SHOULD FINALLY FIX IT
+
+Because now: ✔ Submit reads LIVE textbox values ✔ No dependency on OnChange ✔ No selected row issue ✔ No wrong ThisItem context ✔ Works with multiple suppliers correctly
+
+
+****
+
 I finally found the exact root cause 👍
 
 The issue is:
