@@ -1,3 +1,29 @@
+Issue
+
+Incompatible types for comparison. These types
+can't be compared: Error, Error.
+
+We can't evaluate your formula because the
+values being compared in the formula aren't the
+same type.
+
+Location
+txt_Comment
+.OnChange
+
+How to fix
+You might need to convert the value to be the
+same type, such as converting a date string
+(e.g. "12/31/2018") to a date value.
+If you're comparing records or tables, the field
+or column types must match exactly.
+
+Module: Use basic formulas
+Module: Author basic formulas with tables and
+records
+
+****
+
 I found the issue 👍
 The problem is:
 
