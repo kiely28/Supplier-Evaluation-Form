@@ -1,3 +1,202 @@
+The error happens because this part is invalid:
+
+Parent.Parent.ThisItem.ID
+
+Inside txt_Comment, Power Apps cannot properly resolve ThisItem from nested parents, so it becomes an Error type ❌
+
+
+---
+
+🎯 CORRECT FIX
+
+Instead of using:
+
+Parent.Parent.ThisItem.ID
+
+use the gallery directly:
+
+
+---
+
+✅ UPDATE THIS CONTROL
+
+Control:
+
+txt_Comment
+
+Property:
+
+OnChange
+
+
+---
+
+✅ REPLACE WITH THIS
+
+RemoveIf(
+    colSupplierComments,
+    SupplierID = Gallery_Suppliers_New.Selected.ID
+);
+
+Collect(
+    colSupplierComments,
+    {
+        SupplierID: Gallery_Suppliers_New.Selected.ID,
+        SupplierComment: Self.Text
+    }
+)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+When typing comment:
+
+Current supplier row becomes selected automatically
+
+So:
+
+Gallery_Suppliers_New.Selected.ID
+
+gets the correct supplier.
+
+
+---
+
+🎯 IMPORTANT NEXT STEP
+
+To make this VERY reliable:
+
+
+---
+
+🧩 UPDATE THIS PROPERTY
+
+Control:
+
+Gallery_Suppliers_New
+
+Property:
+
+TemplateFill
+
+Optional:
+
+If(
+    ThisItem.IsSelected,
+    RGBA(230,230,230,1),
+    White
+)
+
+This visually shows selected supplier row 👍
+
+
+---
+
+🎯 RESULT
+
+
+---
+
+Kuroda comment
+
+SupplierID = Kuroda
+Comment = Test
+
+
+---
+
+Threebond comment
+
+SupplierID = Threebond
+Comment = Only
+
+
+---
+
+SharePoint
+
+Supplier	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+✅ Correct
+
+
+---
+
+🚨 VERY IMPORTANT
+
+REMOVE this block from btn_Submit if still there:
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems As S,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: S.ID,
+            SupplierComment: S.txt_Comment.Text
+        }
+    )
+);
+
+❌ DELETE IT COMPLETELY
+
+because it causes duplicated/incorrect comments.
+
+
+---
+
+🎉 FINAL ARCHITECTURE
+
+
+---
+
+Radio answers
+
+Stored in:
+
+colAnswers
+
+
+---
+
+Supplier comments
+
+Stored in:
+
+colSupplierComments
+
+
+---
+
+Submit
+
+Uses:
+
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+🚀 NEXT RECOMMENDED IMPROVEMENT
+
+Your app is now very close to production-ready 👍
+
+Next I strongly recommend: ✅ Replace Collect() with Patch() in colAnswers to prevent duplicate answer rows when changing radio values.
+
+
+**
+
+
 Issue
 
 Incompatible types for comparison. These types
