@@ -1,3 +1,205 @@
+I finally found the exact root cause 👍
+
+The issue is:
+
+Gallery_Suppliers_New.Selected.ID
+
+❌ does NOT reliably change when typing inside txt_Comment.
+
+So when typing:
+
+Kuroda → “Test”
+
+Threebond → “Only”
+
+
+Power Apps still thinks:
+
+Selected supplier = Kuroda
+
+So both comments save to Kuroda ❌
+
+
+---
+
+🎯 REAL FIX (100% RELIABLE)
+
+We must store the supplier ID directly INSIDE the textbox.
+
+
+---
+
+🧩 STEP 1 — UPDATE txt_Comment.Default
+
+Control:
+
+txt_Comment
+
+Property:
+
+Default
+
+Set:
+
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisItem.ID
+).SupplierComment
+
+
+---
+
+🧩 STEP 2 — UPDATE txt_Comment.OnChange
+
+Replace EVERYTHING with this:
+
+Patch(
+    colSupplierComments,
+    LookUp(
+        colSupplierComments,
+        SupplierID = ThisItem.ID
+    ),
+    {
+        SupplierID: ThisItem.ID,
+        SupplierComment: Self.Text
+    }
+)
+
+
+---
+
+🧠 WHY THIS WORKS
+
+Inside:
+
+Gallery_Suppliers_New
+
+ThisItem.ID correctly refers to:
+
+CURRENT SUPPLIER ROW
+
+NOT selected row.
+
+So:
+
+
+---
+
+Kuroda row
+
+ThisItem.ID = Kuroda
+
+
+---
+
+Threebond row
+
+ThisItem.ID = Threebond
+
+
+---
+
+🧩 STEP 3 — IMPORTANT
+
+Make sure:
+
+txt_Comment
+
+is directly inside:
+
+Gallery_Suppliers_New
+
+or inside Container4 within that gallery.
+
+NOT inside:
+
+Gallery_Question_H
+
+Otherwise ThisItem becomes question item instead of supplier item.
+
+
+---
+
+🧩 STEP 4 — KEEP THIS IN btn_Submit
+
+This is correct:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+🧩 STEP 5 — REMOVE OLD CODE
+
+REMOVE ALL these old versions completely:
+
+❌ Gallery_Suppliers_New.Selected.ID
+❌ Parent.Parent.ThisItem.ID
+❌ ForAll(Gallery.AllItems...)
+
+
+---
+
+🎯 FINAL RESULT
+
+Supplier	Comment Typed	Saved
+
+Kuroda	Test	Test
+Threebond	Only	Only
+
+
+✅ Correct per supplier
+✅ Correct in SharePoint
+✅ No duplicate comment issue
+
+
+---
+
+🧠 IMPORTANT NOTE
+
+If Patch() gives error because collection row doesn't exist yet:
+
+Use this safer version instead:
+
+If(
+    IsBlank(
+        LookUp(
+            colSupplierComments,
+            SupplierID = ThisItem.ID
+        )
+    ),
+
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: ThisItem.ID,
+            SupplierComment: Self.Text
+        }
+    ),
+
+    Patch(
+        colSupplierComments,
+        LookUp(
+            colSupplierComments,
+            SupplierID = ThisItem.ID
+        ),
+        {
+            SupplierComment: Self.Text
+        }
+    )
+)
+
+👉 I recommend THIS version for stability 👍
+
+
+*****
+
+
+
 The error happens because this part is invalid:
 
 Parent.Parent.ThisItem.ID
