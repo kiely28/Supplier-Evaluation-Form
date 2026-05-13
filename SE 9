@@ -1,3 +1,173 @@
+That means your collection:
+
+colSupplierComments
+
+still contains OLD values from the previous submission.
+
+So when user does not type a new comment:
+
+LookUp(colSupplierComments,...)
+
+still finds the previous comment ❌
+
+
+---
+
+🎯 FIX
+
+You must clear:
+
+colSupplierComments
+
+AFTER successful submit.
+
+
+---
+
+🧩 UPDATE THIS CONTROL
+
+Control:
+
+btn_Submit
+
+Property:
+
+OnSelect
+
+
+---
+
+❌ CURRENT ENDING
+
+You currently have:
+
+Notify(
+    "Evaluation submitted successfully.",
+    NotificationType.Success
+);
+
+Clear(colAnswers)
+
+
+---
+
+✅ REPLACE WITH THIS
+
+Notify(
+    "Evaluation submitted successfully.",
+    NotificationType.Success
+);
+
+Clear(colAnswers);
+Clear(colSupplierComments)
+
+
+---
+
+🎯 RESULT
+
+After submit:
+
+Collection	Cleared
+
+colAnswers	✅
+colSupplierComments	✅
+
+
+So next run starts fresh.
+
+
+---
+
+🚀 OPTIONAL (BETTER UX)
+
+Also reset textboxes after submit.
+
+
+---
+
+🧩 UPDATE txt_Comment
+
+Control:
+
+txt_Comment
+
+Property:
+
+Default
+
+Set:
+
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisItem.ID
+).SupplierComment
+
+
+---
+
+🧩 THEN ADD THIS AFTER CLEAR
+
+In btn_Submit.OnSelect:
+
+Reset(txt_Comment)
+
+BUT since textbox is inside gallery:
+
+Reset(txt_Comment)
+
+may only reset one row.
+
+So better:
+
+
+---
+
+✅ ADD THIS
+
+Create variable:
+
+Set(varResetComments, true);
+Set(varResetComments, false)
+
+
+---
+
+🧩 txt_Comment.Reset
+
+Set:
+
+varResetComments
+
+
+---
+
+🎯 FINAL ENDING
+
+Notify(
+    "Evaluation submitted successfully.",
+    NotificationType.Success
+);
+
+Clear(colAnswers);
+Clear(colSupplierComments);
+
+Set(varResetComments, true);
+Set(varResetComments, false)
+
+
+---
+
+🎉 RESULT
+
+✔ Old comments removed
+✔ Textboxes reset
+✔ New evaluation starts clean
+✔ No previous comments reused
+
+
+****
+
 Perfect — this means your colSupplierComments is already working correctly ✅
 
 3:Test | 5:Only
