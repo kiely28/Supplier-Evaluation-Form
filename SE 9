@@ -1,3 +1,10 @@
+
+please find attached the stored procedure script currently used in the previous update for your reference.
+
+
+****
+
+
 I understand now 👍
 This is a known limitation/behavior in Power Apps when reading controls inside gallery rows during ForAll(AllItems).
 
