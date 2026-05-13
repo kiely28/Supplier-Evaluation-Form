@@ -1,3 +1,88 @@
+Here’s another sample with a more technical and professional format:
+
+Dear Sir/Ma’am,
+
+Good day.
+
+Please refer to the technical information below regarding the requested enhancement for the GNS+ Application Form:
+
+Current Environment:
+
+- Database: db_ei
+- Stored Procedure: gn_usdetails
+- Related Table: tbl_m
+
+Requested Enhancement:
+
+- Add validation checking using Tbl_Authority prior to retrieving employee details from NAMES.
+- Ensure that the latest APO account information is validated before auto-populating GNS+ User ID details.
+
+Purpose of Update:
+
+- Prevent incorrect GNS+ User ID registration
+- Improve data accuracy and consistency
+- Minimize discrepancies encountered during stocktaking activities
+
+We hope for your support and approval regarding this enhancement request.
+
+Thank you very much.
+
+Best regards,
+[Your Name]Another concise version:
+
+Dear Sir/Ma’am,
+
+Good day.
+
+Please see below the related system details for the proposed enhancement update:
+
+System Details:
+
+- DB Name: db_ei
+- SP Name: gn_usdetails
+- Table Name: tbl_m
+
+Proposed Update:
+Implement validation against Tbl_Authority before the system retrieves employee information from NAMES to avoid mismatched or outdated GNS+ User IDs.
+
+This enhancement will support better data integrity and reduce errors, especially during stocktaking operations.
+
+Thank you for your consideration.
+
+Best regards,
+[Your Name]
+
+
+
+
+******
+
+
+
+Here’s an additional email section you can send separately or insert into the existing email for the technical update details:
+
+Dear Sir/Ma’am,
+
+Good day.
+
+For additional reference regarding the proposed enhancement for the GNS+ Application Form validation, please see the technical details below:
+
+- Database Name: db_ei
+- Stored Procedure Name: gn_usdetails
+- Table Name: tbl_m
+
+The requested update is to enhance the validation process by checking the employee information against Tbl_Authority before retrieving data from NAMES through the existing stored procedure.
+
+This enhancement is expected to help prevent incorrect GNS+ User ID registration and improve data consistency, especially during stocktaking activities.
+
+Thank you very much.
+
+Best regards,
+[Your Name]
+
+
+*****
+
 
 -- Old 
 --SELECT EmployeeNo, CASE WHEN APOAccount = EmployeeNo THEN 'PH'+EmployeeNo ELSE APOAccount END AS APOAccount, FirstName, LastName, DepartmentName AS Section, EmailAddress, CASE WHEN LTRIM(RTRIM(Position)) = 'SENIOR SUPERVISOR' THEN 'SSV' WHEN LTRIM(RTRIM(Position)) = 'ASSISTANT MANAGER' THEN 'AMG' WHEN LTRIM(RTRIM(Position)) = 'SENIOR GENERAL MANAGER' THEN 'SGM' WHEN LTRIM(RTRIM(Position)) = 'DEPARTMENT MANAGER' THEN 'DM' WHEN LTRIM(RTRIM(Position)) = 'SENIOR OPERATOR' THEN 'S OPERATOR' ELSE LTRIM(RTRIM(Position)) END AS Position, DateHired
