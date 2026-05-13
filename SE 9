@@ -1,3 +1,44 @@
+
+-- Old 
+--SELECT EmployeeNo, CASE WHEN APOAccount = EmployeeNo THEN 'PH'+EmployeeNo ELSE APOAccount END AS APOAccount, FirstName, LastName, DepartmentName AS Section, EmailAddress, CASE WHEN LTRIM(RTRIM(Position)) = 'SENIOR SUPERVISOR' THEN 'SSV' WHEN LTRIM(RTRIM(Position)) = 'ASSISTANT MANAGER' THEN 'AMG' WHEN LTRIM(RTRIM(Position)) = 'SENIOR GENERAL MANAGER' THEN 'SGM' WHEN LTRIM(RTRIM(Position)) = 'DEPARTMENT MANAGER' THEN 'DM' WHEN LTRIM(RTRIM(Position)) = 'SENIOR OPERATOR' THEN 'S OPERATOR' ELSE LTRIM(RTRIM(Position)) END AS Position, DateHired
+--FROM [172.16.52.184].[db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER]
+--WHERE EmployeeNo = @EmpNo or APOAccount = @EmpNo
+
+-- New 05/07/26
+	SELECT
+		m.EmployeeNo,
+		CASE 
+			WHEN g.userid IS NOT NULL THEN g.userid
+			WHEN m.APOAccount = m.EmployeeNo THEN 'PH' + m.EmployeeNo
+			ELSE m.APOAccount
+		END AS APOAccount,
+		m.FirstName, 
+		m.LastName, 
+		m.DepartmentName AS Section, 
+		m.EmailAddress,
+		CASE
+			WHEN LTRIM(RTRIM(m.Position)) = 'SENIOR SUPERVISOR' THEN 'SSV' 
+			WHEN LTRIM(RTRIM(m.Position)) = 'ASSISTANT MANAGER' THEN 'AMG' 
+			WHEN LTRIM(RTRIM(m.Position)) = 'SENIOR GENERAL MANAGER' THEN 'SGM' 
+			WHEN LTRIM(RTRIM(m.Position)) = 'DEPARTMENT MANAGER' THEN 'DM'
+			WHEN LTRIM(RTRIM(m.Position)) = 'SENIOR OPERATOR' THEN 'S OPERATOR' 
+			ELSE LTRIM(RTRIM(m.Position)) 
+		END AS Position,
+		m.DateHired
+	FROM [172.16.52.184].[db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER] AS m
+	LEFT JOIN (
+		SELECT DISTINCT userid, employeeno
+		FROM [172.16.52.232].[db_GNSYS_users].[dbo].[tbl_authority]
+	) AS g ON m.EmployeeNo = g.employeeno
+	WHERE m.EmployeeNo = @EmpNo or m.APOAccount = @EmpNo
+
+
+END
+
+
+****
+
+
 Here’s the revised version with the stocktaking concern added naturally into the email:
 
 Dear Sir/Ma’am,
