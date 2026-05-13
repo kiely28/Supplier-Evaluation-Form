@@ -1,3 +1,224 @@
+I understand now 👍
+This is a known limitation/behavior in Power Apps when reading controls inside gallery rows during ForAll(AllItems).
+
+The most reliable solution is:
+
+✅ Save the comment immediately into a collection while typing
+✅ Do NOT read textbox controls during submit
+
+Your previous attempts failed because:
+
+ThisItem context changed
+
+gallery control references reused first row
+
+Selected row not updated reliably
+
+
+
+---
+
+🎯 FINAL WORKING SOLUTION
+
+We will use:
+
+colSupplierComments
+
+ONLY.
+
+
+---
+
+🧩 STEP 1 — INITIALIZE COLLECTION
+
+Update:
+
+Screen1.OnVisible
+
+Add:
+
+Clear(colSupplierComments)
+
+
+---
+
+🧩 STEP 2 — UPDATE txt_Comment
+
+Control:
+
+txt_Comment
+
+Property:
+
+OnChange
+
+
+---
+
+✅ REPLACE WITH THIS EXACT CODE
+
+If(
+    IsBlank(
+        LookUp(
+            colSupplierComments,
+            SupplierID = ThisItem.ID
+        )
+    ),
+
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: ThisItem.ID,
+            SupplierComment: Self.Text
+        }
+    ),
+
+    Patch(
+        colSupplierComments,
+        LookUp(
+            colSupplierComments,
+            SupplierID = ThisItem.ID
+        ),
+        {
+            SupplierComment: Self.Text
+        }
+    )
+)
+
+
+---
+
+🚨 VERY IMPORTANT
+
+This ONLY works if:
+
+txt_Comment
+
+is directly inside:
+
+Gallery_Suppliers_New
+
+or inside Container4 under that gallery.
+
+NOT inside:
+
+Gallery_Question_H_New
+
+
+---
+
+🧩 STEP 3 — REMOVE THIS ENTIRE BLOCK
+
+From:
+
+btn_Submit.OnSelect
+
+DELETE THIS COMPLETELY:
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems As S,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: S.ID,
+            SupplierComment: S.txt_Comment.Text
+        }
+    )
+);
+
+❌ REMOVE EVERYTHING
+
+
+---
+
+🧩 STEP 4 — KEEP THIS IN PATCH
+
+This part is correct:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+🧩 STEP 5 — OPTIONAL DEBUG (VERY HELPFUL)
+
+Add temporary label:
+
+Concat(
+    colSupplierComments,
+    SupplierID & ":" & SupplierComment,
+    " | "
+)
+
+
+---
+
+🎯 EXPECTED RESULT
+
+If you type:
+
+Supplier	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+Debug label should show:
+
+1:Test | 2:Only
+
+If it shows:
+
+1:Only
+
+then txt_Comment is still inside wrong gallery level.
+
+
+---
+
+🎯 FINAL RESULT
+
+SharePoint saves:
+
+Supplier	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+✅ Correct per supplier
+✅ Comments optional
+✅ Radio validation works
+✅ Multiple suppliers supported
+
+
+---
+
+🚨 MOST IMPORTANT CHECK
+
+Please verify in Tree View:
+
+Gallery_Suppliers_New
+ └── Container4
+      ├── Gallery_Question_H_New
+      └── txt_Comment   ✅ SAME LEVEL
+
+NOT:
+
+Gallery_Question_H_New
+ └── txt_Comment ❌
+
+That distinction is critical.
+
+
+***
+
 I found the exact issue now 👍
 
 The problem is THIS block:
