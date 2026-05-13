@@ -1,3 +1,175 @@
+Perfect — this means your colSupplierComments is already working correctly ✅
+
+3:Test | 5:Only
+
+So the REAL issue is now in:
+
+btn_Submit → Patch()
+
+Specifically this part:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+Inside ForAll(colAnswers, ...), ThisRecord.SupplierID is not resolving correctly and is reusing the first lookup result.
+
+
+---
+
+🎯 FINAL FIX
+
+Use an alias in ForAll.
+
+
+---
+
+🧩 UPDATE THIS CONTROL
+
+Control:
+
+btn_Submit
+
+Property:
+
+OnSelect
+
+
+---
+
+❌ FIND THIS
+
+ForAll(
+    colAnswers,
+
+
+---
+
+✅ REPLACE WITH THIS
+
+ForAll(
+    colAnswers As A,
+
+
+---
+
+❌ THEN FIND THIS
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+✅ REPLACE WITH THIS
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = A.SupplierID
+).SupplierComment
+
+
+---
+
+🎯 FINAL PATCH SHOULD LOOK LIKE THIS
+
+ForAll(
+    colAnswers As A,
+
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Sections: {
+                Id: Dropdown_Section.Selected.ID,
+                Value: Dropdown_Section.Selected.Title
+            },
+
+            Suppliers: {
+                Id: A.SupplierID,
+                Value: A.SupplierName
+            },
+
+            Questions: {
+                Id: A.QuestionID,
+                Value: A.QuestionTitle
+            },
+
+            Score: {
+                Value: A.Score
+            },
+
+            'Evaluation Year': Year(Today()),
+
+            Comment:
+            LookUp(
+                colSupplierComments,
+                SupplierID = A.SupplierID
+            ).SupplierComment
+        }
+    )
+)
+
+
+---
+
+🧠 WHY THIS FINALLY FIXES IT
+
+Without alias:
+
+ThisRecord
+
+inside nested formulas can become ambiguous.
+
+Using:
+
+As A
+
+forces Power Apps to use the correct row from colAnswers.
+
+
+---
+
+🎉 EXPECTED RESULT
+
+Supplier	Comment
+
+Kuroda	Test
+Threebond	Only
+
+
+
+---
+
+✅ SharePoint Output
+
+Supplier	Question	Comment
+
+Kuroda	M1R	Test
+Kuroda	M5R	Test
+Threebond	M1R	Only
+Threebond	M5R	Only
+
+
+✅ FINALLY correct.
+
+
+---
+
+🚀 YOU CAN NOW REMOVE DEBUG LABEL
+
+The collection is confirmed working already 👍
+
+
+
+****
+
 
 please find attached the stored procedure script currently used in the previous update for your reference.
 
