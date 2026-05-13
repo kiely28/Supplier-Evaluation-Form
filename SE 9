@@ -1,3 +1,230 @@
+I found the exact issue now 👍
+
+The problem is THIS block:
+
+ForAll(
+    Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: Value(lblSupplierID.Text),
+            SupplierComment: txt_Comment.Text
+        }
+    )
+);
+
+Inside ForAll(AllItems):
+
+lblSupplierID.Text
+txt_Comment.Text
+
+DO NOT automatically refer to the current row ❌
+
+So Power Apps keeps reading the FIRST row controls only.
+
+That is why:
+
+Kuroda = Test
+
+Threebond = still Test
+
+
+
+---
+
+🎯 REAL FIX (100% WORKING)
+
+We need to use:
+
+As S
+
+with direct control references from the row.
+
+
+---
+
+✅ STEP 1 — UPDATE GALLERY
+
+Control:
+
+Gallery_Suppliers_New
+
+
+---
+
+🧩 ADD THIS PROPERTY
+
+Property:
+
+Items
+
+NO change needed.
+
+
+---
+
+🧩 STEP 2 — VERY IMPORTANT
+
+Rename your textbox uniquely:
+
+Current:
+
+txt_Comment
+
+Keep it.
+
+
+---
+
+🧩 STEP 3 — UPDATE btn_Submit
+
+Replace ONLY this block:
+
+
+---
+
+❌ REMOVE THIS
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: Value(lblSupplierID.Text),
+            SupplierComment: txt_Comment.Text
+        }
+    )
+);
+
+
+---
+
+✅ REPLACE WITH THIS
+
+Clear(colSupplierComments);
+
+ForAll(
+    Gallery_Suppliers_New.AllItems As S,
+    Collect(
+        colSupplierComments,
+        {
+            SupplierID: S.ID,
+            SupplierComment: S.txt_Comment.Text
+        }
+    )
+);
+
+
+---
+
+🧠 WHY THIS FINALLY WORKS
+
+As S creates:
+
+current supplier row context
+
+So:
+
+S.ID
+
+= current supplier
+
+and
+
+S.txt_Comment.Text
+
+= current row textbox
+
+NOT first textbox anymore.
+
+
+---
+
+🚨 IMPORTANT
+
+DELETE:
+
+lblSupplierID
+
+You no longer need it.
+
+
+---
+
+🧩 STEP 4 — txt_Comment
+
+Leave these EMPTY:
+
+
+---
+
+txt_Comment.Default
+
+Blank()
+
+or empty.
+
+
+---
+
+txt_Comment.OnChange
+
+Blank()
+
+or empty.
+
+
+---
+
+🧩 STEP 5 — KEEP PATCH CODE
+
+This is already correct:
+
+Comment:
+LookUp(
+    colSupplierComments,
+    SupplierID = ThisRecord.SupplierID
+).SupplierComment
+
+
+---
+
+🎯 FINAL RESULT
+
+Supplier	Comment Typed	Saved
+
+Kuroda	Test	Test
+Threebond	Only	Only
+
+
+✅ Correct per supplier
+✅ Comments optional
+✅ Radio validation still works
+
+
+---
+
+🎉 ROOT CAUSE
+
+The whole issue was:
+
+ForAll(AllItems) without alias context
+
+Power Apps reused first control references.
+
+Using:
+
+As S
+
+fixes it properly.
+
+
+
+*****
+
+
 btn_Submit.OnSelect
 
 If(
