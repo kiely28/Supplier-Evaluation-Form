@@ -1,3 +1,280 @@
+You can create tabs in Power Apps by using:
+
+Buttons or Labels
++
+Variable
++
+Containers
+
+This is the easiest and cleanest approach for beginners 👍
+
+
+---
+
+🎯 GOAL
+
+Example:
+
+[ Evaluation ] [ Summary ] [ Reports ]
+
+When clicking:
+
+Evaluation → show evaluation matrix
+
+Summary → show another container/table
+
+Reports → show report container
+
+
+
+---
+
+🎯 BEST STRUCTURE
+
+Screen1
+├── TabContainer
+│    ├── btn_Tab_Evaluation
+│    ├── btn_Tab_Summary
+│    └── btn_Tab_Report
+│
+├── con_Evaluation
+├── con_Summary
+└── con_Report
+
+
+---
+
+🧩 STEP 1 — CREATE TAB BUTTONS
+
+Insert:
+
+Horizontal Container
+
+Rename:
+
+TabContainer
+
+Inside add 3 buttons:
+
+btn_Tab_Evaluation
+btn_Tab_Summary
+btn_Tab_Report
+
+
+---
+
+🧩 STEP 2 — CREATE TAB VARIABLE
+
+Update:
+
+Screen1.OnVisible
+
+Add:
+
+Set(varTab, "Evaluation")
+
+
+---
+
+🧩 STEP 3 — BUTTON OnSelect
+
+
+---
+
+btn_Tab_Evaluation.OnSelect
+
+Set(varTab, "Evaluation")
+
+
+---
+
+btn_Tab_Summary.OnSelect
+
+Set(varTab, "Summary")
+
+
+---
+
+btn_Tab_Report.OnSelect
+
+Set(varTab, "Report")
+
+
+---
+
+🧩 STEP 4 — CREATE CONTAINERS
+
+Insert 3 containers:
+
+con_Evaluation
+con_Summary
+con_Report
+
+
+---
+
+🧩 STEP 5 — CONTROL VISIBILITY
+
+
+---
+
+con_Evaluation.Visible
+
+varTab = "Evaluation"
+
+
+---
+
+con_Summary.Visible
+
+varTab = "Summary"
+
+
+---
+
+con_Report.Visible
+
+varTab = "Report"
+
+
+---
+
+🎯 RESULT
+
+Clicking tabs now changes visible container.
+
+
+---
+
+🧩 STEP 6 — MOVE YOUR CURRENT TABLE
+
+Move your existing:
+
+ScrollContainer
+Gallery_Suppliers_New
+HeaderContainer
+
+inside:
+
+con_Evaluation
+
+
+---
+
+🧩 STEP 7 — ADD NEW TABLE/GALLERY
+
+Inside:
+
+con_Summary
+
+you can add:
+
+another gallery
+
+charts
+
+summary table
+
+total scores
+
+
+
+---
+
+🎯 EXAMPLE
+
+
+---
+
+Evaluation Tab
+
+Supplier evaluation matrix
+
+
+---
+
+Summary Tab
+
+Supplier | Total Score | Ranking
+
+
+---
+
+Report Tab
+
+Charts / Export / Reports
+
+
+---
+
+🧩 OPTIONAL — ACTIVE TAB COLOR
+
+
+---
+
+btn_Tab_Evaluation.Fill
+
+If(
+    varTab = "Evaluation",
+    Color.DarkBlue,
+    Color.LightGray
+)
+
+
+---
+
+btn_Tab_Summary.Fill
+
+If(
+    varTab = "Summary",
+    Color.DarkBlue,
+    Color.LightGray
+)
+
+
+---
+
+🎉 FINAL RESULT
+
+✔ Multiple screens inside one page
+✔ Cleaner UI
+✔ Easy navigation
+✔ Easy to add new tables/galleries
+✔ Professional look
+
+
+---
+
+🚀 RECOMMENDED NEXT TAB
+
+I recommend adding:
+
+Summary Tab
+
+Example:
+
+Supplier	Avg Score	Total
+
+AOI	3.5	14
+
+
+using:
+
+Gallery
+
+GroupBy
+
+Sum
+
+Average
+
+
+Very useful for supplier ranking 👍
+
+
+****
+
+
 
 Perfect 👍
 You can reset the radio buttons the same way as the comment textbox using a reset variable.
