@@ -1,3 +1,191 @@
+
+Perfect 👍
+You can reset the radio buttons the same way as the comment textbox using a reset variable.
+
+
+---
+
+🎯 GOAL
+
+After successful submit:
+
+✔ Clear comments
+✔ Clear radio buttons
+✔ Reset form to blank
+
+
+---
+
+🧩 STEP 1 — CREATE RESET VARIABLE
+
+You already have:
+
+varResetComments
+
+We will also use:
+
+varResetRadios
+
+
+---
+
+🧩 STEP 2 — UPDATE RADIO CONTROL
+
+Control:
+
+Radio_Score_New
+
+Property:
+
+Reset
+
+Set:
+
+varResetRadios
+
+
+---
+
+🧩 STEP 3 — UPDATE COMMENT TEXTBOX
+
+Control:
+
+txt_Comment
+
+Property:
+
+Reset
+
+Set:
+
+varResetComments
+
+
+---
+
+🧩 STEP 4 — UPDATE btn_Submit
+
+At the END of:
+
+btn_Submit.OnSelect
+
+
+---
+
+❌ CURRENT
+
+Notify(
+    "Evaluation submitted successfully.",
+    NotificationType.Success
+);
+
+Clear(colAnswers);
+Clear(colSupplierComments)
+
+
+---
+
+✅ REPLACE WITH THIS
+
+Notify(
+    "Evaluation submitted successfully.",
+    NotificationType.Success
+);
+
+Clear(colAnswers);
+Clear(colSupplierComments);
+
+Set(varResetRadios, true);
+Set(varResetComments, true);
+
+Set(varResetRadios, false);
+Set(varResetComments, false)
+
+
+---
+
+🎯 RESULT
+
+After submit:
+
+Control	Reset
+
+Radio buttons	✅
+Comments	✅
+Collections	✅
+
+
+
+---
+
+🎉 FINAL USER EXPERIENCE
+
+After clicking Submit:
+
+✔ All radio buttons become blank
+✔ All comments cleared
+✔ Ready for next evaluation
+
+
+---
+
+🚀 OPTIONAL IMPROVEMENT
+
+You can also reset:
+
+
+---
+
+Dropdown_Section
+
+Add:
+
+Reset(Dropdown_Section)
+
+
+---
+
+🧩 FINAL CLEANUP VERSION
+
+Notify(
+    "Evaluation submitted successfully.",
+    NotificationType.Success
+);
+
+Clear(colAnswers);
+Clear(colSupplierComments);
+
+Set(varResetRadios, true);
+Set(varResetComments, true);
+
+Set(varResetRadios, false);
+Set(varResetComments, false);
+
+Reset(Dropdown_Section)
+
+
+---
+
+🧠 IMPORTANT NOTE
+
+If radio buttons still do not visually clear:
+
+Check:
+
+Radio_Score_New.Default
+
+It should NOT be hardcoded.
+
+Recommended:
+
+Blank()
+
+or leave default behavior.
+
+
+****
+
+
 That means your collection:
 
 colSupplierComments
