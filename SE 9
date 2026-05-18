@@ -1,3 +1,23 @@
+
+Title: 
+Before: Fixed email recipients in WinActor if the user is resign, then update the winactor scenario
+After: dynamic adding of email recipients using macro excel
+Effectiveness: 
+
+
+Title: 
+Before: manually update the code to change server settings.
+After: Users can now update the server through a specific cell in Excel.
+Effectiveness: Simplified server configuration updates and reduced the need for backend macro code modification.
+
+
+
+
+
+****
+
+
+
 Title	Before	After	Effectiveness
 
 Support Reference: Guidelines on How to Change the User and Password in the Old Version of the SAP Login Macro	No support reference was available.	Created a detailed support reference document for updating the user ID and password in the old SAP Login macro.	Improved user self-support and reduced dependency on manual assistance for SAP login configuration issues.
