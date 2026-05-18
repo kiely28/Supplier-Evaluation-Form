@@ -1,3 +1,27 @@
+1. Support Reference: Guidelines on How to change the User and Password in the old version of the SAP Login macro
+Before: No support reference was available. 
+After:
+
+2. Support Reference: Update Google Chrome Web Driver in WinActor
+Before: No support reference was available. 
+After
+
+3. 
+Before: Fix email recipients in winactor
+After: Dynamic adding of email recipients for resigned members in winactor
+
+4. 
+Before: 
+After: Updated coefficient macro file to now use the calendar year for template checking instead of the fiscal year.
+
+5. 
+Before: Update backend code(macro) to change server.
+After: User now can update through specific cell in excel
+
+*****
+
+
+
 Dear Team,
 
 Please see below details regarding the scheduled maintenance for the e-Pro PRODUCTION system.
