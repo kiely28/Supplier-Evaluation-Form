@@ -1,3 +1,17 @@
+Title	Before	After	Effectiveness
+
+Support Reference: Guidelines on How to Change the User and Password in the Old Version of the SAP Login Macro	No support reference was available.	Created a detailed support reference document for updating the user ID and password in the old SAP Login macro.	Improved user self-support and reduced dependency on manual assistance for SAP login configuration issues.
+Support Reference: Update Google Chrome Web Driver in WinActor	No support reference was available.	Created a support reference document for updating the Google Chrome Web Driver used in WinActor.	Reduced troubleshooting time and helped ensure compatibility between WinActor and updated Chrome browser versions.
+Enhancement of Email Recipient Handling in WinActor	Fixed email recipients in WinActor.	Implemented dynamic adding of email recipients for resigned members in WinActor.	Improved email recipient management accuracy and minimized manual updates for resigned members.
+Coefficient Macro File Enhancement for Template Checking	Template checking used the fiscal year.	Updated the coefficient macro file to use the calendar year for template checking instead of the fiscal year.	Improved accuracy and alignment of template validation with the required calendar year process.
+Backend Macro Server Update Improvement	Updated backend code (macro) manually to change server settings.	Users can now update the server through a specific cell in Excel.	Simplified server configuration updates and reduced the need for backend macro code modification.
+
+
+
+****
+
+
+
 1. Support Reference: Guidelines on How to change the User and Password in the old version of the SAP Login macro
 Before: No support reference was available. 
 After:
