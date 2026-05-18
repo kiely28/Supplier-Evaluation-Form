@@ -1,3 +1,12 @@
+Title	Before	After	Effectiveness
+
+Enhancement of Email Recipient Management in WinActor	Fixed email recipients in WinActor whenever a user resigned by manually updating the WinActor scenario.	Implemented dynamic adding and management of email recipients using a macro-enabled Excel file.	Reduced manual maintenance of WinActor scenarios and improved accuracy and efficiency in managing email recipients.
+Server Configuration Update Improvement	Server settings were updated by manually modifying the backend macro code.	Users can now update the server settings through a designated cell in Excel.	Simplified server configuration updates and minimized the need for backend macro code modifications.
+
+
+
+***
+
 
 Title: 
 Before: Fixed email recipients in WinActor if the user is resign, then update the winactor scenario
