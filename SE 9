@@ -1,3 +1,29 @@
+Here are several professional forwarding email samples you can reuse depending on the situation.
+
+Dear Team,
+
+Please see below the details regarding the scheduled system maintenance.
+
+Kindly be guided accordingly.
+
+Thank you.Dear Team,
+
+Please be informed that a rollback activity will be performed due to an issue encountered in the released module.
+
+Please see below details for your reference.
+
+Thank you.Dear Team,
+
+For your information and guidance, please see the advisory details below.
+
+Should you have any concerns or encounter issues, please let us know.
+
+Thank you.
+
+
+
+****
+
 Title	Before	After	Effectiveness
 
 Enhancement of Email Recipient Management in WinActor	Fixed email recipients in WinActor whenever a user resigned by manually updating the WinActor scenario.	Implemented dynamic adding and management of email recipients using a macro-enabled Excel file.	Reduced manual maintenance of WinActor scenarios and improved accuracy and efficiency in managing email recipients.
@@ -5,8 +31,21 @@ Server Configuration Update Improvement	Server settings were updated by manually
 
 
 
-***
+****
 
+You can forward it in a clear and professional format like this:
+
+Dear Team,
+
+Please be informed that an issue has occurred in the released module. As a result, a rollback activity will be performed.
+
+<Rollback Date>  
+PH May 19, 2026Please see below details for your reference.
+
+Thank you.
+
+
+***
 
 Title: 
 Before: Fixed email recipients in WinActor if the user is resign, then update the winactor scenario
