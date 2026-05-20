@@ -1,3 +1,326 @@
+Yes — using mostly Single line of text columns in your Microsoft Power Apps + Microsoft SharePoint Supplier Evaluation app is actually a very common and practical approach, especially for avoiding delegation and simplifying Microsoft Power BI reporting.
+
+But there are advantages and disadvantages.
+
+Recommended Approach
+
+Do NOT make everything Single line of text.
+
+Instead:
+
+Data Type	Recommended SharePoint Column
+
+Supplier Name	Single line text
+Section Name	Single line text
+Question	Multiple line text
+Evaluation Result	Choice
+Score	Number
+Date Evaluated	Date/Time
+Evaluator	Person or Single line text
+Status	Choice
+Comments	Multiple line text
+
+
+
+---
+
+Why Many Developers Prefer Single Line Text
+
+Advantages
+
+1. Fewer Delegation Problems
+
+Text columns are easiest for:
+
+Filter
+
+StartsWith
+
+sorting
+
+searching
+
+
+Example:
+
+Filter(
+   'SE Evaluation',
+   SupplierName = Dropdown1.Selected.Value
+)
+
+Usually delegable.
+
+
+---
+
+2. Easier Power BI Reporting
+
+Microsoft Power BI works very smoothly with:
+
+text
+
+number
+
+date
+
+
+compared to:
+
+Lookup
+
+Person
+
+Managed metadata
+
+
+Power BI often expands lookup/person columns into nested tables which becomes messy.
+
+
+---
+
+3. Faster App Development
+
+No need to constantly use:
+
+LookupColumn.Value
+ChoiceColumn.Value
+Person.DisplayName
+
+You can directly use:
+
+SupplierName
+SectionName
+Status
+
+Much simpler.
+
+
+---
+
+BUT There Are Important Disadvantages
+
+Problem 1 — No Relationship Integrity
+
+Example:
+
+You store:
+
+AOI
+
+as plain text.
+
+If supplier name changes to:
+
+AOI Corporation
+
+old records remain:
+
+AOI
+
+This creates inconsistent reports.
+
+Lookup columns prevent this issue.
+
+
+---
+
+Problem 2 — Duplicate Values
+
+Text fields allow:
+
+AOI
+
+aoi
+
+AOI Inc
+
+AOI INC.
+
+
+This becomes messy in Power BI charts.
+
+
+---
+
+Problem 3 — Harder Maintenance Long-Term
+
+For large enterprise systems:
+
+normalized data
+
+lookup relationships
+
+proper tables
+
+
+are better.
+
+
+---
+
+Recommended Hybrid Approach (Best for Your Case)
+
+Since your app is:
+
+Supplier Evaluation
+
+Power Apps
+
+SharePoint
+
+Power BI reporting
+
+
+This is usually the BEST structure:
+
+
+---
+
+Master Lists
+
+Supplier Master List
+
+Column	Type
+
+SupplierID	Number
+SupplierName	Single line text
+
+
+
+---
+
+Section Master List
+
+Column	Type
+
+SectionID	Number
+SectionName	Single line text
+
+
+
+---
+
+Transaction/Evaluation List
+
+Instead of lookup columns, store snapshots:
+
+Column	Type
+
+SupplierID	Number
+SupplierName	Single line text
+SectionID	Number
+SectionName	Single line text
+Question	Multiple line text
+Score	Number
+Remarks	Multiple line text
+EvaluatedBy	Single line text
+EvaluationDate	Date
+
+
+
+---
+
+Why This Hybrid Method is Excellent
+
+You get:
+
+fewer delegation issues
+
+simpler Power Apps formulas
+
+cleaner Power BI reports
+
+faster app performance
+
+easier filtering/searching
+
+
+while still keeping:
+
+IDs for consistency
+
+
+
+---
+
+My Recommendation for Your Supplier Evaluation App
+
+GOOD to use Single Line Text for:
+
+Supplier Name
+
+Section Name
+
+Evaluator Name
+
+Status
+
+Category
+
+
+BETTER to use:
+
+Number for scores
+
+Date for evaluation dates
+
+Multiple line text for remarks/comments
+
+
+Avoid Too Many:
+
+Lookup columns
+
+Person columns
+
+Managed metadata
+
+
+especially if:
+
+app grows large
+
+many filters
+
+Power BI integration
+
+
+
+---
+
+Practical Real-World Tip
+
+Many experienced Microsoft Power Apps developers using SharePoint intentionally:
+
+denormalize data
+
+duplicate text values
+
+avoid lookup columns
+
+
+because SharePoint delegation limitations are frustrating.
+
+Especially for:
+
+dashboards
+
+reports
+
+evaluation systems
+
+audit forms
+
+inspections
+
+
+This is very common practice.
+
+
+****
+
+
+
 Dear Team,
 
 Please be informed that the rollback process has been completed.
