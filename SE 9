@@ -1,3 +1,238 @@
+In Power Apps, a Vertical Gallery automatically gets a vertical scrollbar when:
+
+Content height > Gallery height
+
+So you only need proper gallery settings 👍
+
+
+---
+
+🎯 STEP 1 — SELECT Gallery_Method
+
+Control:
+
+Gallery_Method
+
+
+---
+
+🧩 STEP 2 — SET GALLERY HEIGHT
+
+Make sure the gallery height is FIXED.
+
+Example:
+
+Parent.Height - 40
+
+OR
+
+600
+
+❌ Do NOT make:
+
+Gallery_Method.Height = CountRows(...) * ...
+
+because it removes scrolling.
+
+
+---
+
+🧩 STEP 3 — ENABLE SCROLLING
+
+Vertical Gallery already scrolls automatically.
+
+So usually NO setting needed.
+
+But check:
+
+
+---
+
+ShowScrollbar
+
+Property:
+
+ShowScrollbar
+
+Set:
+
+true
+
+
+---
+
+🧩 STEP 4 — USE FLEXIBLE HEIGHT GALLERY (RECOMMENDED)
+
+Since:
+
+Evaluation Method
+
+Comments
+
+Description
+
+
+can become long,
+
+I strongly recommend:
+
+Flexible Height Gallery
+
+instead of normal vertical gallery.
+
+
+---
+
+🎯 WHY FLEXIBLE HEIGHT IS BETTER
+
+Normal gallery:
+
+❌ cuts text
+❌ fixed row height
+
+Flexible height:
+
+✅ auto expands text
+✅ better for long comments
+✅ professional table layout
+
+
+---
+
+🧩 HOW TO CHANGE
+
+Delete current gallery OR insert new:
+
+Insert → Gallery → Flexible height
+
+Rename:
+
+Gallery_Method
+
+
+---
+
+🧩 STEP 5 — TEXT WRAP
+
+For labels like:
+
+Evaluation Method
+Sample Comment
+
+set:
+
+
+---
+
+AutoHeight
+
+true
+
+
+---
+
+Wrap
+
+true
+
+
+---
+
+🧩 STEP 6 — TEMPLATE SIZE
+
+For flexible height gallery:
+
+Set:
+
+TemplateSize = 120
+
+or higher.
+
+
+---
+
+🎯 RESULT
+
+If many questions exist:
+
+M1R
+M5R
+M6R
+D3R
+Q1R
+Q2R
+Q3R
+...
+
+gallery automatically scrolls vertically ✅
+
+
+---
+
+🚀 OPTIONAL — BETTER LAYOUT
+
+Recommended structure:
+
+MainContainer2
+ ├── HeaderContainer
+ └── Gallery_Method
+
+Where:
+
+header stays fixed
+
+only gallery scrolls
+
+
+Like Excel table 👍
+
+
+---
+
+🎯 RECOMMENDED SETTINGS
+
+
+---
+
+Gallery_Method
+
+Property	Value
+
+Layout	Vertical
+Flexible Height	Yes
+ShowScrollbar	true
+Width	Parent.Width
+Height	Parent.Height - Header.Height
+
+
+
+---
+
+🚀 IMPORTANT
+
+If scrollbar still not appearing:
+
+Most common reason:
+
+Gallery height too large
+
+Example:
+
+Gallery.Height = Parent.Height
+
+while inside scrollable container.
+
+Try:
+
+Gallery.Height = 500
+
+to test scrolling quickly.
+
+
+
+******
+
+
 That is a very good design 👍
 You are now separating:
 
