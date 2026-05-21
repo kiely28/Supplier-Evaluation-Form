@@ -1,3 +1,423 @@
+Yes — your previous approach is correct 👍
+
+The BEST practice is:
+
+ScreenContainer2
+├── HeaderContainer
+└── MainContainer2
+    └── Gallery_Method
+
+OR even better:
+
+ScreenContainer2
+├── HeaderContainer
+├── TableHeaderContainer
+└── Gallery_Method
+
+This creates:
+
+fixed/sticky headers
+
+scrolling body only
+
+Excel-like table UI
+
+professional enterprise layout
+
+
+
+---
+
+🎯 YOUR GOAL
+
+You want this:
+
+Question No	Evaluation Contents	Section In Charge	Evaluation Method	Sample Comment
+
+
+
+while ONLY the gallery scrolls.
+
+
+---
+
+✅ BEST METHOD = SEPARATE HEADER CONTAINER
+
+DO NOT place headers inside gallery.
+
+Instead:
+
+Screen2_EvaluationMethod
+├── Header
+├── TableHeaderContainer
+└── Gallery_Method
+
+
+---
+
+🚀 STEP-BY-STEP
+
+STEP 1 — INSERT HEADER CONTAINER
+
+Select: MainContainer2
+
+Insert:
+
+Insert → Horizontal Container
+
+Rename:
+
+Container_MethodHeader
+
+Move it ABOVE: Gallery_Method
+
+
+---
+
+RESULT STRUCTURE
+
+MainContainer2
+├── Container_MethodHeader
+└── Gallery_Method
+
+
+---
+
+STEP 2 — SET HEADER CONTAINER HEIGHT
+
+Select: Container_MethodHeader
+
+Set:
+
+Height
+
+45
+
+
+---
+
+STEP 3 — SET HEADER COLOR
+
+Fill
+
+RGBA(56,96,178,1)
+
+Professional blue header.
+
+
+---
+
+STEP 4 — MAKE HEADER WIDTH FULL
+
+Width
+
+Parent.Width
+
+
+---
+
+STEP 5 — ADD HEADER LABELS
+
+Inside: Container_MethodHeader
+
+Insert 5 labels:
+
+Label Name	Text
+
+lbl_QNo_H	Question No
+lbl_Eval_H	Evaluation Contents
+lbl_Section_H	Section In Charge
+lbl_Method_H	Evaluation Method
+lbl_Comment_H	Sample Comment
+
+
+
+---
+
+STEP 6 — SET HEADER LABEL STYLE
+
+For ALL header labels:
+
+
+---
+
+Color
+
+White
+
+
+---
+
+FontWeight
+
+FontWeight.Bold
+
+
+---
+
+Align
+
+Align.Center
+
+
+---
+
+STEP 7 — SET COLUMN WIDTHS
+
+This is VERY important.
+
+Your header widths MUST MATCH gallery widths.
+
+
+---
+
+EXAMPLE LAYOUT
+
+Column	Width
+
+Question No	10%
+Evaluation Contents	20%
+Section	20%
+Method	25%
+Comment	25%
+
+
+
+---
+
+HEADER WIDTHS
+
+lbl_QNo_H.Width
+
+Parent.Width * 0.1
+
+
+---
+
+lbl_Eval_H.Width
+
+Parent.Width * 0.2
+
+
+---
+
+lbl_Section_H.Width
+
+Parent.Width * 0.2
+
+
+---
+
+lbl_Method_H.Width
+
+Parent.Width * 0.25
+
+
+---
+
+lbl_Comment_H.Width
+
+Parent.Width * 0.25
+
+
+---
+
+STEP 8 — POSITION LABELS
+
+
+---
+
+lbl_QNo_H.X
+
+0
+
+
+---
+
+lbl_Eval_H.X
+
+lbl_QNo_H.X + lbl_QNo_H.Width
+
+
+---
+
+lbl_Section_H.X
+
+lbl_Eval_H.X + lbl_Eval_H.Width
+
+
+---
+
+lbl_Method_H.X
+
+lbl_Section_H.X + lbl_Section_H.Width
+
+
+---
+
+lbl_Comment_H.X
+
+lbl_Method_H.X + lbl_Method_H.Width
+
+
+---
+
+STEP 9 — MATCH GALLERY COLUMN WIDTHS
+
+Inside: Gallery_Method
+
+Your labels MUST use SAME widths.
+
+Example:
+
+
+---
+
+lblQuestionNo.Width
+
+Parent.TemplateWidth * 0.1
+
+
+---
+
+lblEvaluationContents.Width
+
+Parent.TemplateWidth * 0.2
+
+
+---
+
+lblSection.Width
+
+Parent.TemplateWidth * 0.2
+
+
+---
+
+lblMethod.Width
+
+Parent.TemplateWidth * 0.25
+
+
+---
+
+lblComment.Width
+
+Parent.TemplateWidth * 0.25
+
+
+---
+
+STEP 10 — ENABLE SCROLLING
+
+Select: Gallery_Method
+
+
+---
+
+Height
+
+IMPORTANT:
+
+Parent.Height - Container_MethodHeader.Height
+
+OR test with:
+
+500
+
+
+---
+
+ShowScrollbar
+
+true
+
+
+---
+
+🎯 FINAL RESULT
+
+You now get:
+
+✅ Fixed table headers
+✅ Scrollable rows only
+✅ Excel-like UI
+✅ Responsive layout
+✅ Professional design
+✅ Enterprise-style table
+
+
+---
+
+🚀 BONUS — ADD ROW BORDER
+
+Inside gallery insert: Rectangle_RowDivider
+
+Set:
+
+Height
+
+1
+
+Width
+
+Parent.TemplateWidth
+
+Y
+
+Parent.TemplateHeight - 1
+
+Fill
+
+RGBA(220,220,220,1)
+
+This creates professional row separation.
+
+
+---
+
+🚀 BONUS — ALTERNATING ROW COLORS
+
+Select: Gallery_Method
+
+TemplateFill
+
+If(
+    Mod(ThisItem.ID,2)=0,
+    RGBA(248,248,248,1),
+    White
+)
+
+Professional zebra-striping effect.
+
+
+---
+
+🚀 MOST IMPORTANT TIP
+
+NEVER put:
+
+gallery inside another scrolling gallery
+
+gallery inside scrollable screen
+
+
+because:
+
+scrollbars break
+
+lag happens
+
+sticky headers fail
+
+
+Your current structure is already close to the correct enterprise design 👍
+
+
+
+***
+
+
 In Power Apps, a Vertical Gallery automatically gets a vertical scrollbar when:
 
 Content height > Gallery height
