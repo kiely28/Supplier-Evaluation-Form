@@ -1,3 +1,513 @@
+
+Yes — this is one of the most important UI techniques in Power Apps for professional apps.
+
+The correct solution is to use a:
+
+✅ Flexible Height Gallery
+
+Because a normal gallery uses:
+
+TemplateSize
+
+which is FIXED for every row.
+
+That causes:
+
+text cutoff
+
+overlapping controls
+
+ugly scrolling
+
+inconsistent UI
+
+
+
+---
+
+✅ BEST PRACTICE SOLUTION
+
+Use:
+
+Flexible Height Gallery
+
+This allows each row to grow dynamically based on content length.
+
+
+---
+
+🎯 WHAT YOU WANT TO ACHIEVE
+
+You want:
+
+✅ Long text wraps automatically
+✅ Row height expands automatically
+✅ No overlapping controls
+✅ Clean professional table layout
+✅ Scroll still works properly
+
+
+---
+
+🚀 STEP-BY-STEP SOLUTION
+
+STEP 1 — USE FLEXIBLE HEIGHT GALLERY
+
+
+---
+
+Insert Gallery
+
+Go to:
+
+Insert → Gallery → Flexible height vertical
+
+Rename:
+
+Gallery_Method
+
+
+---
+
+🚀 IMPORTANT
+
+A normal vertical gallery CANNOT fully auto-resize rows properly.
+
+You MUST use:
+
+Flexible Height Gallery
+
+
+---
+
+STEP 2 — SET GALLERY ITEMS
+
+Example:
+
+Gallery_Method.Items
+
+Filter(
+    'SE Question List',
+    SectionName = varSelectedSection.Title
+)
+
+(Recommended delegation-safe version)
+
+
+---
+
+STEP 3 — ENABLE TEXT WRAPPING
+
+Select your long text label.
+
+Example:
+
+lblEvaluationMethod
+
+
+---
+
+Wrap
+
+true
+
+
+---
+
+AutoHeight
+
+true
+
+This is VERY important.
+
+Without AutoHeight:
+
+label height stays fixed
+
+text still gets cut
+
+
+
+---
+
+STEP 4 — SET LABEL WIDTH
+
+Example:
+
+lblEvaluationMethod.Width
+
+Parent.TemplateWidth * 0.25
+
+OR fixed width:
+
+300
+
+A smaller width forces wrapping.
+
+
+---
+
+STEP 5 — DYNAMIC CONTROL POSITIONING
+
+This is the MOST IMPORTANT part.
+
+Controls MUST stack dynamically.
+
+Otherwise:
+
+overlapping happens
+
+controls float on top of each other
+
+
+
+---
+
+❌ WRONG WAY
+
+lblComment.Y = 40
+
+Fixed Y positions cause overlap.
+
+
+---
+
+✅ CORRECT WAY
+
+Position controls based on previous control height.
+
+
+---
+
+EXAMPLE LAYOUT
+
+Inside gallery:
+
+lblQuestionNo
+lblEvaluationContents
+lblMethod
+lblComment
+
+
+---
+
+lblEvaluationContents.Y
+
+lblQuestionNo.Y + lblQuestionNo.Height + 5
+
+
+---
+
+lblMethod.Y
+
+lblEvaluationContents.Y + lblEvaluationContents.Height + 5
+
+
+---
+
+lblComment.Y
+
+lblMethod.Y + lblMethod.Height + 5
+
+
+---
+
+🎯 RESULT
+
+Now if:
+
+Evaluation Contents becomes longer
+
+Method becomes 10 lines
+
+Comment becomes large
+
+
+Everything automatically pushes downward properly.
+
+No overlap.
+
+
+---
+
+STEP 6 — SET TEMPLATE SIZE
+
+Flexible height galleries STILL need a base minimum size.
+
+
+---
+
+Gallery_Method.TemplateSize
+
+Use:
+
+120
+
+OR:
+
+200
+
+depending on your layout.
+
+
+---
+
+🚀 IMPORTANT UNDERSTANDING
+
+In flexible galleries:
+
+TemplateSize
+
+is NOT the final height.
+
+It is only:
+
+minimum row height
+
+The row expands automatically beyond it.
+
+
+---
+
+STEP 7 — PREVENT OVERLAP USING CONTAINERS (BEST PRACTICE)
+
+Enterprise-level approach:
+
+Inside gallery:
+
+Insert:
+
+Vertical Container
+
+Then place ALL labels inside it.
+
+
+---
+
+WHY THIS IS BETTER
+
+Container automatically stacks controls vertically.
+
+You avoid manually calculating:
+
+Y positions
+
+spacing
+
+overlap logic
+
+
+
+---
+
+RECOMMENDED STRUCTURE
+
+Gallery_Method
+└── Container_Row
+    ├── lblQuestionNo
+    ├── lblEvaluationContents
+    ├── lblMethod
+    └── lblComment
+
+
+---
+
+CONTAINER SETTINGS
+
+Direction
+
+Vertical
+
+
+---
+
+Gap
+
+5
+
+
+---
+
+Padding
+
+10
+
+
+---
+
+🎯 THIS IS THE MODERN POWER APPS METHOD
+
+Instead of:
+
+manually positioning everything
+
+manually calculating heights
+
+
+Containers manage layout automatically.
+
+Much cleaner.
+
+
+---
+
+STEP 8 — MAKE ROW HEIGHT FULLY DYNAMIC
+
+Select:
+
+Container_Row
+
+Set:
+
+Height
+
+lblComment.Y + lblComment.Height + 10
+
+OR if using containers:
+
+Parent.TemplateHeight
+
+Usually automatic with vertical containers.
+
+
+---
+
+🚀 PROFESSIONAL EXAMPLE
+
+STRUCTURE
+
+Gallery_Method
+└── VerticalContainer_Row
+    ├── lblQuestionNo
+    ├── lblEvaluationContents
+    ├── lblSection
+    ├── lblMethod
+    └── lblComment
+
+
+---
+
+LABEL SETTINGS
+
+For ALL long-text labels:
+
+AutoHeight
+
+true
+
+
+---
+
+Wrap
+
+true
+
+
+---
+
+CONTAINER SETTINGS
+
+Height
+
+Automatic
+
+
+---
+
+GALLERY SETTINGS
+
+Flexible Height
+
+Enabled
+
+
+---
+
+🎯 FINAL RESULT
+
+You now get:
+
+✅ Dynamic row height
+✅ Long text support
+✅ Proper wrapping
+✅ No overlap
+✅ Smooth scrolling
+✅ Enterprise UI behavior
+✅ Better mobile responsiveness
+
+
+---
+
+🚀 COMMON MISTAKES
+
+❌ Using Normal Vertical Gallery
+
+Causes:
+
+fixed row height
+
+text clipping
+
+
+
+---
+
+❌ Fixed Label Heights
+
+Example:
+
+Height = 40
+
+This cuts long text.
+
+Use:
+
+AutoHeight = true
+
+
+---
+
+❌ Fixed Y Positions
+
+Example:
+
+Y = 100
+
+Causes overlap.
+
+Use dynamic formulas or containers.
+
+
+---
+
+🚀 BEST ENTERPRISE APPROACH
+
+For modern Power Apps apps:
+
+✅ Flexible height gallery
+✅ Containers inside gallery
+✅ AutoHeight labels
+✅ Dynamic widths
+✅ No manual positioning when possible
+
+This is the same design approach used in:
+
+ticketing systems
+
+ERP apps
+
+approval systems
+
+audit systems
+
+supplier management systems
+
+
+
+****
+
+
+
 In Power Apps, how can I make a gallery’s template row height automatically adjust based on the content length of the data, especially for fields with long text (e.g., descriptions)?
 The current issue is that text overflows or gets cut off because the gallery uses a fixed TemplateSize.
 Please provide a solution that ensures:
