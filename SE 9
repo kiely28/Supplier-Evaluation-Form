@@ -1,3 +1,15 @@
+In Power Apps, how can I make a gallery’s template row height automatically adjust based on the content length of the data, especially for fields with long text (e.g., descriptions)?
+The current issue is that text overflows or gets cut off because the gallery uses a fixed TemplateSize.
+Please provide a solution that ensures:
+
+Text wraps properly
+Row height expands dynamically based on content
+Controls inside the gallery do not overlap
+
+
+
+*****
+
 Yes — your previous approach is correct 👍
 
 The BEST practice is:
