@@ -1,3 +1,442 @@
+🎯 STEP 7 — PREVENT OVERLAP USING CONTAINERS (DETAILED EXPLANATION)
+
+This is one of the BEST modern Power Apps techniques.
+
+Instead of manually positioning every label using:
+
+Label2.Y = Label1.Y + Label1.Height + 5
+
+you let a:
+
+Vertical Container
+
+automatically arrange controls vertically.
+
+This makes your app:
+
+cleaner
+
+easier to maintain
+
+responsive
+
+professional
+
+less buggy
+
+
+
+---
+
+🚀 THE PROBLEM WITHOUT CONTAINERS
+
+Example:
+
+Inside your gallery you have:
+
+Question No
+Evaluation Contents
+Evaluation Method
+Sample Comment
+
+Now imagine:
+
+Evaluation Method becomes very long
+
+Sample Comment becomes 5 lines
+
+
+Without containers:
+
+controls overlap
+
+text gets messy
+
+rows break
+
+
+Because every control has fixed:
+
+X
+Y
+Height
+
+
+---
+
+✅ SOLUTION = VERTICAL CONTAINER
+
+A Vertical Container automatically stacks controls like this:
+
+Control 1
+↓
+Control 2
+↓
+Control 3
+↓
+Control 4
+
+And if one control grows taller:
+
+everything below automatically moves down
+
+
+No overlap.
+
+
+---
+
+🎯 WHAT YOU WILL BUILD
+
+Inside:
+
+Gallery_Method
+
+you will create:
+
+Gallery_Method
+└── Container_Row
+    ├── lblQuestionNo
+    ├── lblEvaluationContents
+    ├── lblSection
+    ├── lblMethod
+    └── lblComment
+
+
+---
+
+🚀 STEP-BY-STEP
+
+STEP 7.1 — SELECT Gallery_Method
+
+Click:
+
+Gallery_Method
+
+
+---
+
+STEP 7.2 — INSERT VERTICAL CONTAINER
+
+Go to:
+
+Insert → Layout → Vertical container
+
+Insert it INSIDE the gallery template.
+
+Rename:
+
+Container_Row
+
+
+---
+
+🎯 RESULT
+
+Inside gallery:
+
+Gallery_Method
+└── Container_Row
+
+
+---
+
+STEP 7.3 — RESIZE CONTAINER
+
+Select:
+
+Container_Row
+
+Set:
+
+
+---
+
+Width
+
+Parent.TemplateWidth
+
+
+---
+
+X
+
+0
+
+
+---
+
+Y
+
+0
+
+
+---
+
+STEP 7.4 — ADD PADDING
+
+Still select:
+
+Container_Row
+
+
+---
+
+PaddingTop
+
+10
+
+
+---
+
+PaddingBottom
+
+10
+
+
+---
+
+PaddingLeft
+
+10
+
+
+---
+
+PaddingRight
+
+10
+
+
+---
+
+STEP 7.5 — ADD GAP/SPACING
+
+Gap
+
+5
+
+This automatically adds spacing between labels.
+
+No need to manually compute Y positions.
+
+
+---
+
+STEP 7.6 — MOVE LABELS INSIDE CONTAINER
+
+Drag these controls INTO:
+
+Container_Row
+
+Example:
+
+lblQuestionNo
+lblEvaluationContents
+lblSection
+lblMethod
+lblComment
+
+
+---
+
+🎯 IMPORTANT
+
+Once controls are inside the container:
+
+DO NOT manually control Y positions anymore
+
+
+The container manages vertical stacking automatically.
+
+
+---
+
+STEP 7.7 — ENABLE AUTO HEIGHT
+
+Select:
+
+lblMethod
+
+Set:
+
+
+---
+
+AutoHeight
+
+true
+
+
+---
+
+Wrap
+
+true
+
+
+---
+
+Do the same for:
+
+lblEvaluationContents
+
+lblComment
+
+
+especially for long text fields.
+
+
+---
+
+🚀 HOW IT WORKS NOW
+
+Suppose:
+
+Short Text
+
+Monthly checking
+
+Row stays small.
+
+
+---
+
+Long Text
+
+Supplier changes prices every month depending on market demand and delivery conditions...
+
+Label height automatically expands.
+
+Then:
+
+container height expands
+
+gallery row expands
+
+controls below move downward automatically
+
+
+NO overlap.
+
+
+---
+
+🎯 WHY CONTAINERS ARE AMAZING
+
+Without containers:
+
+You must manually calculate:
+
+Label2.Y = Label1.Y + Label1.Height + 5
+
+for EVERY control.
+
+Very hard to maintain.
+
+
+---
+
+With containers:
+
+Power Apps automatically handles:
+
+stacking
+
+spacing
+
+alignment
+
+responsiveness
+
+
+
+---
+
+🚀 FINAL STRUCTURE
+
+Your final gallery becomes:
+
+Gallery_Method
+└── Container_Row
+    ├── lblQuestionNo
+    ├── lblEvaluationContents
+    ├── lblSection
+    ├── lblMethod
+    └── lblComment
+
+
+---
+
+🚀 OPTIONAL — ADD SEPARATE COLUMNS
+
+If you want a professional table layout:
+
+Inside:
+
+Container_Row
+
+add:
+
+Horizontal Container
+
+Then inside it:
+
+QuestionNo Label
+Evaluation Label
+Section Label
+Method Label
+Comment Label
+
+This creates:
+
+responsive table columns
+
+Excel-like layout
+
+auto-resizing rows
+
+
+
+---
+
+🎯 ENTERPRISE-LEVEL RECOMMENDATION
+
+BEST modern approach:
+
+Flexible Height Gallery
+└── Vertical Container
+    └── Horizontal Containers
+        └── Labels
+
+This is the architecture commonly used in:
+
+ERP systems
+
+ticketing systems
+
+approval systems
+
+audit systems
+
+supplier evaluation systems
+
+
+because it is:
+
+scalable
+
+responsive
+
+easy to maintain
+
+less error-prone
+
+mobile-friendly
+
+****
+
+
 
 Yes — this is one of the most important UI techniques in Power Apps for professional apps.
 
