@@ -1,3 +1,18 @@
+Issue
+
+Name isn't valid. 'TemplateWidth' isn't recognized.
+
+This error appears most commonly when a
+formula refers to something that no longer exists
+(for example, a control that you've deleted).
+
+Location
+Ibl_Comment
+.Width
+****
+
+
+
 🎯 STEP 7 — PREVENT OVERLAP USING CONTAINERS (DETAILED EXPLANATION)
 
 This is one of the BEST modern Power Apps techniques.
