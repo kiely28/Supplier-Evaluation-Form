@@ -1,3 +1,20 @@
+Issue
+
+Select of a control that doesn't have an OnSelect
+property
+
+Location
+Ibl_EvalMethod
+.OnSelect
+
+**
+code in other labels in OnSelect:
+Select(Parent)
+
+*****
+
+
+
 That error is happening because:
 
 Parent.TemplateWidth
