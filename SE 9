@@ -7,6 +7,30 @@ formula refers to something that no longer exists
 (for example, a control that you've deleted).
 
 Location
+lbl_Comment
+.Width
+
+How to fix
+
+Remove or correct the reference to the name that
+isn't valid.
+
+Article: Formula reference for Power Apps
+
+
+
+*****
+
+
+Issue
+
+Name isn't valid. 'TemplateWidth' isn't recognized.
+
+This error appears most commonly when a
+formula refers to something that no longer exists
+(for example, a control that you've deleted).
+
+Location
 Ibl_Comment
 .Width
 ****
