@@ -1,0 +1,587 @@
+In Power Apps, how can I make a gallery’s template row height automatically adjust based on the content length of the data, especially for fields with long text (e.g., descriptions)?
+
+
+****
+
+
+In Power Apps, a gallery does not truly auto-expand its template height dynamically per row like HTML/CSS.
+However, you can achieve a “dynamic row height” effect using these techniques:
+
+
+---
+
+Recommended Approach (Best Practice)
+
+Use:
+
+Flexible Height Gallery instead of a standard Vertical Gallery
+
+Labels with:
+
+AutoHeight = true
+
+Dynamic Height
+
+
+
+This is the correct solution for long descriptions/comments.
+
+
+---
+
+Step-by-Step Solution
+
+1. Insert a Flexible Height Gallery
+
+Instead of:
+
+Vertical Gallery
+
+
+Use:
+
+Flexible height gallery
+
+
+Path:
+
+Insert → Gallery → Flexible height
+
+Why?
+
+A normal gallery uses one fixed template height for all rows.
+
+A flexible height gallery allows each row to expand depending on content.
+
+
+---
+
+2. Add Your Long Text Label
+
+Example:
+
+lbl_Description
+
+Set:
+
+Text = ThisItem.Description
+
+
+---
+
+3. Enable Auto Height
+
+Set:
+
+AutoHeight = true
+
+This allows the label itself to grow vertically.
+
+
+---
+
+4. Important: Remove Fixed Height
+
+Do NOT use a hardcoded height like:
+
+Height = 40
+
+Instead use:
+
+Height = Self.TextHeight
+
+OR simply leave it because AutoHeight manages it.
+
+
+---
+
+5. Set Width Properly
+
+This is VERY important.
+
+Example:
+
+Width = Parent.TemplateWidth - 20
+
+If TemplateWidth causes error:
+
+Use:
+
+Width = Parent.Width - 20
+
+because in some controls:
+
+TemplateWidth is not recognized
+
+Parent.Width is safer
+
+
+This matches the error you encountered previously.
+
+
+---
+
+6. Position Controls Dynamically
+
+If you have another control below the description:
+
+Example:
+
+lbl_Status
+
+Set:
+
+Y = lbl_Description.Y + lbl_Description.Height + 5
+
+This makes controls move downward automatically when the description becomes longer.
+
+
+---
+
+7. Set Gallery Template Size
+
+For Flexible Height Gallery:
+
+Do NOT rely heavily on fixed TemplateSize.
+
+Set something small like:
+
+TemplateSize = 80
+
+The gallery will expand automatically per row.
+
+
+---
+
+Example Layout
+
+Inside gallery:
+
+Description Label
+
+Text = ThisItem.Description
+AutoHeight = true
+Width = Parent.Width - 20
+
+Status Label Below
+
+Text = ThisItem.Status
+Y = lbl_Description.Y + lbl_Description.Height + 5
+
+
+---
+
+Common Problem
+
+Problem:
+
+Text overlaps other controls
+
+Cause:
+
+Controls below are using fixed Y positions.
+
+Fix:
+
+Use dynamic Y formulas based on previous control height.
+
+Example:
+
+Y = PreviousControl.Y + PreviousControl.Height + 5
+
+
+---
+
+Recommended Structure
+
+Flexible Height Gallery
+ ├── Title Label
+ ├── Description Label (AutoHeight=true)
+ ├── Status Label
+ └── Date Label
+
+Each lower control references the previous control’s height.
+
+
+---
+
+If You Already Use a Normal Vertical Gallery
+
+You have 2 options:
+
+Option 1 (Recommended)
+
+Replace it with:
+
+Flexible Height Gallery
+
+
+Option 2
+
+Manually calculate row height using formulas, but this is harder and less reliable.
+
+
+---
+
+Performance Tip
+
+If descriptions are VERY long and many rows exist:
+
+Avoid too many AutoHeight controls
+
+Use pagination/filtering
+
+Keep gallery optimized
+
+
+Because flexible galleries can become slower with huge datasets.
+
+
+---
+
+Best Practice for SharePoint + Power Apps
+
+For comments/descriptions:
+
+Use:
+
+Multiple lines of text in SharePoint
+
+Flexible Height Gallery in Power Apps
+
+
+This combination works best.
+
+*****
+Please give a sample output
+
+*****
+
+Here’s a simple sample of how the output behaves in a Flexible Height Gallery in Microsoft Power Apps.
+
+
+---
+
+Sample Data
+
+Suppose your SharePoint list contains:
+
+Title	Description
+
+Supplier A	Good quality
+Supplier B	Supplier delivered late several times during the last quarter and requires improvement in delivery monitoring and response time.
+Supplier C	Excellent support and communication with consistent product quality and fast response to issues raised by the QA team.
+
+
+
+---
+
+Sample Visual Output
+
+Row 1 (Short Text)
+
+Supplier A
+Good quality
+
+Height stays small.
+
+
+---
+
+Row 2 (Long Text)
+
+Supplier B
+Supplier delivered late several times during the
+last quarter and requires improvement in delivery
+monitoring and response time.
+
+Row automatically becomes taller.
+
+
+---
+
+Row 3 (Medium Text)
+
+Supplier C
+Excellent support and communication with
+consistent product quality and fast response
+to issues raised by the QA team.
+
+Row height adjusts automatically.
+
+
+---
+
+Sample Gallery Structure
+
+Flexible Height Gallery
+
+Inside the gallery:
+
+
+---
+
+1. lbl_Title
+
+Properties
+
+Text = ThisItem.Title
+FontWeight = FontWeight.Bold
+Width = Parent.Width - 20
+X = 10
+Y = 10
+
+
+---
+
+2. lbl_Description
+
+Properties
+
+Text = ThisItem.Description
+AutoHeight = true
+Width = Parent.Width - 20
+X = 10
+Y = lbl_Title.Y + lbl_Title.Height + 5
+
+This label expands automatically depending on text length.
+
+
+---
+
+3. lbl_Status (Example Control Below)
+
+Properties
+
+Text = "Completed"
+X = 10
+Y = lbl_Description.Y + lbl_Description.Height + 5
+
+This automatically moves downward if the description becomes taller.
+
+
+---
+
+Actual Behavior
+
+Short Text
+
+[Supplier A]
+Good quality
+Completed
+
+Small row height.
+
+
+---
+
+Long Text
+
+[Supplier B]
+Supplier delivered late several times during
+the last quarter and requires improvement
+in delivery monitoring and response time.
+
+Completed
+
+Taller row height automatically.
+
+
+---
+
+Important Setting
+
+Your gallery must be:
+
+Flexible Height Gallery
+
+NOT:
+
+Vertical Gallery
+
+because standard galleries cannot dynamically resize each row properly.
+
+
+---
+
+Common Mistake
+
+If you use:
+
+Height = 40
+
+the text gets cut off.
+
+Instead use:
+
+AutoHeight = true
+
+and allow the label to expand naturally.
+
+
+---
+
+Recommended UI Design
+
+For your Supplier Evaluation app, this works very well for:
+
+Evaluation comments
+
+Findings
+
+Remarks
+
+Corrective actions
+
+Long supplier descriptions
+
+
+Especially when using SharePoint Multiple Line Text columns.
+
+
+****
+
+
+Sample in a table like output
+
+
+
+*****
+
+Here’s a sample of a table-like output using a Flexible Height Gallery in Microsoft Power Apps.
+
+The row height automatically expands depending on the Description content.
+
+
+---
+
+Sample Output
+
++------------+------------------------------------------------------+
+| Supplier   | Description                                          |
++------------+------------------------------------------------------+
+| AOI        | Good quality                                         |
++------------+------------------------------------------------------+
+
++------------+------------------------------------------------------+
+| Threebond  | Supplier delivered late several times during the     |
+|            | last quarter and requires improvement in delivery    |
+|            | monitoring and response time.                        |
++------------+------------------------------------------------------+
+
++------------+------------------------------------------------------+
+| Resonac    | Excellent support and communication with consistent  |
+|            | product quality and fast response to QA concerns.    |
++------------+------------------------------------------------------+
+
+Notice:
+
+Row 1 is short
+
+Row 2 becomes taller automatically
+
+Row 3 adjusts dynamically
+
+
+
+---
+
+How to Build This Layout
+
+Inside your Flexible Height Gallery:
+
+
+---
+
+Column 1 — Supplier Name
+
+lbl_Supplier
+
+Text = ThisItem.SupplierName
+Width = 150
+X = 0
+Y = 10
+
+
+---
+
+Column 2 — Description
+
+lbl_Description
+
+Text = ThisItem.Description
+AutoHeight = true
+Width = Parent.Width - 170
+X = 160
+Y = 10
+
+This is the important part:
+
+AutoHeight = true
+
+because it allows the row to grow.
+
+
+---
+
+Optional Divider Line
+
+Rectangle or Separator
+
+Y = lbl_Description.Y + lbl_Description.Height + 10
+Height = 1
+Width = Parent.Width
+
+This creates a table-row appearance.
+
+
+---
+
+Visual Structure Inside Gallery
+
+---------------------------------------------------
+| Supplier Name | Long Description Text Here...     |
+|               | More lines if text is long...     |
+---------------------------------------------------
+
+
+---
+
+Recommended Gallery Settings
+
+Gallery Type
+
+Flexible Height Gallery
+
+
+---
+
+TemplateSize
+
+Example:
+
+TemplateSize = 80
+
+Flexible gallery will still expand beyond this when needed.
+
+
+---
+
+Better Table Design Idea
+
+For your Supplier Evaluation app, you can make columns like:
+
++------+----------------------+----------+-----------+
+| No   | Evaluation Content   | Rating   | Remarks   |
++------+----------------------+----------+-----------+
+
+Where only:
+
+Evaluation Content
+
+Remarks
+
+
+use AutoHeight=true.
+
+This creates a professional expandable table layout.
