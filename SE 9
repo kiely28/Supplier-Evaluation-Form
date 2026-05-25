@@ -1,3 +1,214 @@
+That error is happening because:
+
+Parent.TemplateWidth
+
+does NOT exist in some controls/layouts.
+
+In Power Apps galleries, the valid property is usually:
+
+Parent.Width
+
+NOT:
+
+Parent.TemplateWidth
+
+
+---
+
+✅ FIX
+
+Select:
+
+lbl_Comment
+
+Change:
+
+Width
+
+FROM:
+
+Parent.TemplateWidth * 0.25
+
+TO:
+
+Parent.Width * 0.25
+
+
+---
+
+🎯 WHY THIS HAPPENS
+
+Inside a gallery template:
+
+Parent
+
+usually refers to:
+
+the gallery template container
+
+NOT the gallery itself
+
+
+And:
+
+TemplateWidth
+
+is not available there.
+
+
+---
+
+✅ CORRECT FORMULAS
+
+Use:
+
+Property	Formula
+
+Width	Parent.Width * 0.25
+Height	Self.AutoHeight or automatic
+X	dynamic or container-managed
+
+
+
+---
+
+🚀 BETTER APPROACH (RECOMMENDED)
+
+Since you're now using:
+
+Containers
+
+you actually SHOULD NOT manually compute widths too much.
+
+Instead:
+
+Inside:
+
+Horizontal Container
+
+set:
+
+Fill Portions
+
+Example:
+
+Control	Fill Portions
+
+Question No	1
+Evaluation Contents	2
+Section	2
+Method	3
+Comment	3
+
+
+Power Apps automatically handles widths responsively.
+
+
+---
+
+🎯 MODERN ENTERPRISE APPROACH
+
+Instead of:
+
+Width = Parent.Width * 0.25
+
+modern responsive apps use:
+
+Containers + Fill Portions
+
+because it:
+
+auto-resizes
+
+responsive
+
+easier maintenance
+
+cleaner formulas
+
+mobile-friendly
+
+
+
+---
+
+🚀 EXAMPLE STRUCTURE
+
+Gallery_Method
+└── Vertical Container
+    └── Horizontal Container
+        ├── lblQuestionNo
+        ├── lblEvaluationContents
+        ├── lblSection
+        ├── lblMethod
+        └── lblComment
+
+Then:
+
+Horizontal Container
+
+Set:
+
+Justify = Start
+
+
+---
+
+EACH LABEL
+
+Example:
+
+lblQuestionNo.FillPortions
+
+1
+
+lblEvaluationContents.FillPortions
+
+2
+
+lblMethod.FillPortions
+
+3
+
+etc.
+
+
+---
+
+🎯 RESULT
+
+Now:
+
+widths auto-adjust
+
+no TemplateWidth needed
+
+responsive layout
+
+cleaner app
+
+professional UI
+
+
+
+---
+
+🚀 QUICK FIX FOR NOW
+
+Just replace ALL:
+
+Parent.TemplateWidth
+
+with:
+
+Parent.Width
+
+and the error disappears.
+
+
+****
+
+
 Issue
 
 Name isn't valid. 'TemplateWidth' isn't recognized.
