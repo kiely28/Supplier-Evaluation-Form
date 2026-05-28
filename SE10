@@ -1,3 +1,169 @@
+You can create a simple Back button in Power Apps using either:
+
+Back() OR
+
+Navigate()
+
+
+For your app, I recommend using:
+
+Back()
+
+because it automatically returns to the previous screen.
+
+
+---
+
+✅ STEP-BY-STEP — CREATE BACK BUTTON
+
+STEP 1 — INSERT BUTTON
+
+Go to:
+
+Insert → Button
+
+Place it on:
+
+Screen2_EvaluationMethod
+
+Rename:
+
+btn_Back
+
+
+---
+
+STEP 2 — SET BUTTON TEXT
+
+Text
+
+"Back"
+
+OR professional style:
+
+"← Back"
+
+
+---
+
+STEP 3 — SET OnSelect
+
+Select:
+
+btn_Back
+
+Set:
+
+OnSelect
+
+Back()
+
+
+---
+
+🎯 RESULT
+
+When user clicks:
+
+← Back
+
+Power Apps automatically returns to:
+
+Screen1
+
+
+---
+
+🚀 OPTIONAL — USE ICON INSTEAD OF BUTTON
+
+Professional apps usually use:
+
+Back Arrow Icon
+
+instead of a big button.
+
+
+---
+
+STEP 1 — INSERT ICON
+
+Go to:
+
+Insert → Icons → Back Arrow
+
+Rename:
+
+ico_Back
+
+
+---
+
+STEP 2 — SET OnSelect
+
+OnSelect
+
+Back()
+
+
+---
+
+STEP 3 — OPTIONAL STYLING
+
+Color
+
+RGBA(56,96,178,1)
+
+
+---
+
+HoverFill
+
+RGBA(230,240,255,1)
+
+
+---
+
+🚀 ALTERNATIVE METHOD — Navigate()
+
+You can also use:
+
+Navigate(
+    Screen1,
+    ScreenTransition.Fade
+)
+
+
+---
+
+🎯 DIFFERENCE
+
+Method	Purpose
+
+Back()	Go to previous screen automatically
+Navigate()	Go to a specific screen
+
+
+
+---
+
+✅ RECOMMENDATION FOR YOUR APP
+
+Use:
+
+Back()
+
+because your flow is:
+
+Screen1
+→ Screen2_EvaluationMethod
+→ Back to Screen1
+
+Simple and clean 👍
+
+
+****
+
+
 In Power Apps, how can I make a gallery’s template row height automatically adjust based on the content length of the data, especially for fields with long text (e.g., descriptions)?
 
 
