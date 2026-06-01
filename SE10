@@ -1,3 +1,119 @@
+That's a normal Power Apps gallery behavior.
+
+A gallery always has a Selected record, and when the screen loads, Power Apps automatically selects the first row.
+
+If you want no row highlighted until the user clicks one, don't use ThisItem.IsSelected directly. Instead, use a variable.
+
+
+---
+
+Step 1 - Create a Variable for the Selected Supplier
+
+On your screen's OnVisible property:
+
+Set(varSelectedSupplier, Blank())
+
+This means no supplier is selected when the screen opens.
+
+
+---
+
+Step 2 - Store the Clicked Row
+
+Inside Gallery_Suppliers_New, select the control that users click (Supplier Name label, a button, icon, or transparent rectangle).
+
+Set its OnSelect:
+
+Set(
+    varSelectedSupplier,
+    ThisItem.ID
+)
+
+If your list doesn't have a reliable ID, you can use:
+
+Set(
+    varSelectedSupplier,
+    ThisItem.SupplierCode
+)
+
+or another unique field.
+
+
+---
+
+Step 3 - Change TemplateFill
+
+Instead of:
+
+If(
+    ThisItem.IsSelected,
+    RGBA(220,235,255,1),
+    Color.White
+)
+
+Use:
+
+If(
+    ThisItem.ID = varSelectedSupplier,
+    RGBA(220,235,255,1),
+    Color.White
+)
+
+
+---
+
+Step 4 - Update the Left Selection Bar
+
+If you created rect_Selected, change its Visible property to:
+
+ThisItem.ID = varSelectedSupplier
+
+instead of:
+
+ThisItem.IsSelected
+
+
+---
+
+Result
+
+When Screen1 opens:
+
+AOI
+Threebond
+Resonac
+
+No row is highlighted.
+
+After clicking AOI:
+
+[Blue] AOI
+       Threebond
+       Resonac
+
+After clicking Resonac:
+
+AOI
+       Threebond
+[Blue] Resonac
+
+Only the clicked row is highlighted.
+
+
+---
+
+Bonus: Clear Selection
+
+If you have a Reset or Clear button, you can remove the highlight by setting:
+
+Set(varSelectedSupplier, Blank())
+
+This returns the gallery to a state where no row is highlighted. This approach is commonly used in enterprise Power Apps because it gives you full control over selection behavior rather than relying on the gallery's built-in Selected record.
+
+
+
+****
+
 This is a common and useful feature in Power Apps. You can highlight the selected row by using the gallery's TemplateFill property.
 
 ✅ Option 1: Highlight the Selected Row (Recommended)
