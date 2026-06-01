@@ -1,3 +1,190 @@
+This is a common and useful feature in Power Apps. You can highlight the selected row by using the gallery's TemplateFill property.
+
+✅ Option 1: Highlight the Selected Row (Recommended)
+
+Select:
+
+Gallery_Suppliers_New
+
+Set its:
+
+TemplateFill
+
+If(
+    ThisItem.IsSelected,
+    RGBA(220, 235, 255, 1),
+    Color.White
+)
+
+Result
+
+Selected row = light blue
+
+Other rows = white
+
+
+When the user clicks anywhere in the row, Power Apps automatically marks that row as selected.
+
+
+---
+
+✅ Option 2: Alternate Row Colors + Selected Highlight
+
+For a more professional table appearance:
+
+TemplateFill
+
+If(
+    ThisItem.IsSelected,
+    RGBA(220,235,255,1),
+    If(
+        Mod(ThisItem.ID,2)=0,
+        RGBA(248,248,248,1),
+        Color.White
+    )
+)
+
+Result
+
+Row State	Color
+
+Selected	Light Blue
+Even Rows	Light Gray
+Odd Rows	White
+
+
+This gives an Excel-like appearance.
+
+
+---
+
+✅ Option 3: Stronger Highlight with Left Border
+
+Many enterprise apps use a colored bar on the left.
+
+Inside the gallery template:
+
+1. Insert a Rectangle
+
+
+2. Rename it:
+
+
+
+rect_Selected
+
+Set:
+
+Width
+
+5
+
+Height
+
+Parent.TemplateHeight
+
+X
+
+0
+
+Visible
+
+ThisItem.IsSelected
+
+Fill
+
+RGBA(56,96,178,1)
+
+Result
+
+│ AOI
+│ Threebond
+│ Resonac
+
+The selected row shows a blue bar on the left.
+
+
+---
+
+✅ Option 4: Make the Entire Row Clickable
+
+If your gallery contains labels, textboxes, or radio buttons, clicking them may not always select the gallery row.
+
+A common approach is to add a transparent button:
+
+Inside the gallery template:
+
+btn_SelectRow
+
+Properties
+
+Text
+
+""
+
+Fill
+
+RGBA(0,0,0,0)
+
+Width
+
+Parent.TemplateWidth
+
+Height
+
+Parent.TemplateHeight
+
+OnSelect
+
+Select(Parent)
+
+This ensures the row becomes selected when clicked.
+
+
+---
+
+🎯 Recommended for Your Supplier Evaluation App
+
+Use both:
+
+Gallery_Suppliers_New.TemplateFill
+
+If(
+    ThisItem.IsSelected,
+    RGBA(220,235,255,1),
+    If(
+        Mod(ThisItem.ID,2)=0,
+        RGBA(248,248,248,1),
+        Color.White
+    )
+)
+
+and add:
+
+rect_Selected
+
+with:
+
+Visible = ThisItem.IsSelected
+
+This gives a clean enterprise-style table with:
+
+Zebra striping
+
+Blue selected row
+
+Left selection indicator
+
+Easy-to-see active supplier
+
+
+This is especially useful if later you want Screen2 or a dashboard to show details for the currently selected supplier.
+
+
+
+*****
+
+
 You can create a simple Back button in Power Apps using either:
 
 Back() OR
