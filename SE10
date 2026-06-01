@@ -1,3 +1,116 @@
+
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before submitting.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections.Value = Dropdown_Section.Selected.Title &&
+            'Created By'.Email = User().Email &&
+            //'Evaluation Year' = Year(Today())
+            'Evaluation Year' = If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+            
+        )
+    ) > 0,
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+    colAnswers As A,
+
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Sections: {
+                Id: Dropdown_Section.Selected.ID,
+                Value: Dropdown_Section.Selected.Title
+            },
+
+            Suppliers: {
+                Id: A.SupplierID,
+                Value: A.SupplierName
+            },
+
+            Questions: {
+                Id: A.QuestionID,
+                Value: A.QuestionTitle
+            },
+
+            Score: {
+                Value: A.Score
+            },
+
+            //'Evaluation Year': Year(Today()),
+      
+            'Evaluation Year': If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            Comment:
+            LookUp(
+                colSupplierComments,
+                SupplierID = A.SupplierID
+            ).SupplierComment
+        }
+    )
+);
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers);
+    Clear(colSupplierComments);
+
+    Set(varResetRadios, true);
+    Set(varResetComments, true);
+
+    Set(varResetRadios, false);
+    Set(varResetComments, false);
+
+    //Reset(Dropdown_Section)
+
+)
+
+
+****
+
+
 That's a normal Power Apps gallery behavior.
 
 A gallery always has a Selected record, and when the screen loads, Power Apps automatically selects the first row.
