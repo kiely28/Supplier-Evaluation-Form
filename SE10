@@ -1,3 +1,238 @@
+Certainly. Let's focus only on Step 3 and where each formula belongs.
+
+
+---
+
+🎯 Goal of Step 3
+
+When the user moves from Screen1 to Screen2, we want to create a temporary collection that stores:
+
+Question No	Evaluation Method Comment
+
+M1R	(blank initially)
+M5R	(blank initially)
+
+
+The user will then type comments in Screen2, and those comments will be stored in the collection before being saved to SharePoint.
+
+
+---
+
+📍 WHERE TO PUT THE CODE
+
+You currently navigate from Screen1 to Screen2 using something like:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+Navigate(
+    Screen2_EvaluationMethod,
+    ScreenTransition.Fade
+)
+
+This is probably on:
+
+Screen1
+└── btn_EvaluationMethod
+
+or
+
+Screen1
+└── btn_Next
+
+
+---
+
+STEP 3.1 - FIND YOUR BUTTON
+
+Find the button that opens Screen2.
+
+Example:
+
+Screen1
+└── btn_Next
+
+or
+
+Screen1
+└── btn_EvaluationMethod
+
+
+---
+
+STEP 3.2 - UPDATE THE BUTTON'S OnSelect
+
+Replace:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+Navigate(
+    Screen2_EvaluationMethod,
+    ScreenTransition.Fade
+)
+
+with:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+ClearCollect(
+    colMethodComments,
+    AddColumns(
+        colQuestions,
+        MethodComment,
+        Blank()
+    )
+);
+
+Navigate(
+    Screen2_EvaluationMethod,
+    ScreenTransition.Fade
+)
+
+
+---
+
+🎯 WHAT THIS DOES
+
+Suppose:
+
+colQuestions
+
+contains:
+
+Title
+
+M1R
+M5R
+M6R
+
+
+After:
+
+ClearCollect(...)
+
+you get:
+
+Title	MethodComment
+
+M1R	Blank
+M5R	Blank
+M6R	Blank
+
+
+This collection exists only while the app is running.
+
+
+---
+
+STEP 3.3 - VERIFY COLLECTION
+
+Optional test:
+
+Insert a Data Table on Screen2.
+
+Set:
+
+Items = colMethodComments
+
+You should see:
+
+Title	MethodComment
+
+M1R	
+M5R	
+M6R	
+
+
+You can delete the Data Table afterward.
+
+
+---
+
+🚨 IMPORTANT QUESTION
+
+In your current app:
+
+What is the formula of:
+
+Gallery_Method.Items
+
+Is it:
+
+Filter(
+    'SE Question List',
+    'Section In-charge'.Value = varSelectedSection.Title
+)
+
+?
+
+If YES, then I recommend a better version where:
+
+Gallery_Method.Items
+
+becomes:
+
+colMethodComments
+
+This makes saving comments much easier because the gallery is directly connected to the collection.
+
+
+---
+
+Recommended Structure
+
+Screen1
+└── btn_Next
+    └── OnSelect
+        ├ Set(varSelectedSection,...)
+        ├ ClearCollect(colMethodComments,...)
+        └ Navigate(...)
+
+Screen2
+└── Gallery_Method
+    └ Items = colMethodComments
+
+
+---
+
+Before Going to Step 4
+
+Can you show me the controls currently inside:
+
+Gallery_Method
+
+For example:
+
+Gallery_Method
+├ lblQuestionNo
+├ lblEvaluationContents
+├ lblSection
+├ lblEvaluationMethod
+└ txt_MethodComment
+
+or your actual Tree View?
+
+Once I see that, I can give the exact formulas for:
+
+Gallery_Method.Items
+
+txt_MethodComment.Default
+
+txt_MethodComment.OnChange
+
+the final Submit button code.
+
+
+****
+
 
 This is actually a good architecture change.
 
