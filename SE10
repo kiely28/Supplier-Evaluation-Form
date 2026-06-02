@@ -1,3 +1,31 @@
+
+Gallery_Method.Items -
+Filter(
+    'SE Question List',
+    'Section In-charge'.Value = varSelectedSection.Title
+)
+
+> Screen2
+  > ScreenContainer1
+    > HeaderContainer1
+    > Container1
+    > MainContainer1
+      > Container_MethodHeader_1
+      > Gallery_Method
+        > lbl_QNo
+        > lbl_EvalC
+        > lbl_Section_1
+        > lbl_EvalM
+        > txt_Comment_1
+        > rect_Selected
+        > div_Separator
+
+
+
+*****
+
+
+
 Certainly. Let's focus only on Step 3 and where each formula belongs.
 
 
