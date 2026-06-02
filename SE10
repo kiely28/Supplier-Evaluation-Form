@@ -1,3 +1,311 @@
+
+This is actually a good architecture change.
+
+Instead of:
+
+Screen1
+├ Evaluation Matrix
+└ Submit Button
+
+you will have:
+
+Screen1
+├ Evaluation Matrix
+└ Next Button
+
+Screen2
+├ Evaluation Method Reference
+├ Evaluation Method Comments
+└ Submit Button
+
+This way the user:
+
+1. Completes supplier evaluation on Screen1
+
+
+2. Clicks Next
+
+
+3. Reviews evaluation methods on Screen2
+
+
+4. Enters method-related comments
+
+
+5. Clicks Submit
+
+
+
+
+---
+
+Step 1 - Create New SharePoint List
+
+Example:
+
+SE Evaluation Method Comments
+
+Columns:
+
+Column	Type
+
+Title	Single line text
+SectionName	Single line text
+QuestionNo	Single line text
+FiscalYear	Number
+Comment	Multiple lines
+EvaluatedBy	Person or Single line text
+
+
+
+---
+
+Step 2 - Add Comment Box in Screen2 Gallery
+
+Inside:
+
+Gallery_Method
+
+Add:
+
+txt_MethodComment
+
+This allows users to enter comments for each question.
+
+
+---
+
+Step 3 - Create Collection for Method Comments
+
+When navigating from Screen1 to Screen2:
+
+ClearCollect(
+    colMethodComments,
+    AddColumns(
+        colQuestions,
+        MethodComment,
+        Blank()
+    )
+);
+
+Navigate(
+    Screen2_EvaluationMethod,
+    ScreenTransition.Fade
+)
+
+
+---
+
+Step 4 - Save Comment Changes
+
+Inside:
+
+txt_MethodComment
+
+OnChange
+
+Patch(
+    colMethodComments,
+    LookUp(
+        colMethodComments,
+        ID = ThisItem.ID
+    ),
+    {
+        MethodComment: Self.Text
+    }
+)
+
+
+---
+
+Step 5 - Move Submit Button to Screen2
+
+Place:
+
+btn_Submit
+
+on:
+
+Screen2_EvaluationMethod
+
+
+---
+
+Step 6 - Submit Evaluation Results
+
+Keep your existing code that saves:
+
+SE Evaluation List
+
+This part remains almost unchanged.
+
+
+---
+
+Step 7 - Also Save Method Comments
+
+Immediately after:
+
+ForAll(
+    colAnswers As A,
+    Patch(...)
+)
+
+add:
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(MethodComment)
+    ) As M,
+
+    Patch(
+        'SE Evaluation Method Comments',
+        Defaults('SE Evaluation Method Comments'),
+        {
+            Title: M.Title,
+            SectionName: Dropdown_Section.Selected.Title,
+            QuestionNo: M.Title,
+
+            FiscalYear:
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            Comment: M.MethodComment,
+
+            EvaluatedBy: User().FullName
+        }
+    )
+)
+
+
+---
+
+Better Approach (Prevent Duplicate Comments)
+
+Instead of always creating new rows:
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(MethodComment)
+    ) As M,
+
+    Patch(
+        'SE Evaluation Method Comments',
+
+        Coalesce(
+            LookUp(
+                'SE Evaluation Method Comments',
+
+                SectionName = Dropdown_Section.Selected.Title &&
+                QuestionNo = M.Title &&
+                FiscalYear =
+                If(
+                    Month(Today()) >= 4,
+                    Year(Today()),
+                    Year(Today()) - 1
+                ) &&
+                EvaluatedBy = User().FullName
+            ),
+            Defaults('SE Evaluation Method Comments')
+        ),
+
+        {
+            Title: M.Title,
+            SectionName: Dropdown_Section.Selected.Title,
+            QuestionNo: M.Title,
+
+            FiscalYear:
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            Comment: M.MethodComment,
+
+            EvaluatedBy: User().FullName
+        }
+    )
+)
+
+This means:
+
+Same user
+
+Same section
+
+Same fiscal year
+
+Same question
+
+
+→ Update existing record instead of creating duplicates.
+
+
+---
+
+Recommended Final Flow
+
+Screen1
+├ Supplier Evaluation Matrix
+├ Supplier Comments
+└ Next
+
+Screen2
+├ Evaluation Method Reference
+├ Method Comments
+└ Submit
+
+Submit:
+├ Save colAnswers
+│   → SE Evaluation List
+│
+└ Save colMethodComments
+    → SE Evaluation Method Comments
+
+This gives you two clean datasets:
+
+SE Evaluation List
+
+Stores:
+
+Supplier
+
+Question
+
+Score
+
+Supplier Comment
+
+Fiscal Year
+
+
+SE Evaluation Method Comments
+
+Stores:
+
+Section
+
+Question No
+
+Method Comment
+
+Fiscal Year
+
+User
+
+
+This structure is much easier to report on later in Power BI and keeps evaluation scores separate from methodology comments.
+
+
+****
+
+
 That's a good approach. Instead of saving the entire reference table, save only the information needed for audit/history.
 
 Recommended New SharePoint List
