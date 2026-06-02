@@ -1,4 +1,224 @@
+That's a good approach. Instead of saving the entire reference table, save only the information needed for audit/history.
 
+Recommended New SharePoint List
+
+Create a new list:
+
+SE Evaluation Method History
+
+Columns:
+
+Column	Type
+
+Title	Single line text
+SectionName	Single line text
+QuestionNo	Single line text
+Comment	Multiple lines text
+FiscalYear	Number
+EvaluatedBy	Person or Single line text
+EvaluationDate	Date/Time
+
+
+
+---
+
+What will be saved?
+
+Example:
+
+SectionName	QuestionNo	Comment	FiscalYear	EvaluatedBy
+
+PR INK Proc	M1R	Supplier changes price monthly	2026	John Doe
+PR INK Proc	M5R	Delayed delivery observed	2026	John Doe
+
+
+
+---
+
+Step 1 - Create a Collection from Screen1
+
+When Screen1 loads questions, create a collection that contains the comments.
+
+Example:
+
+ClearCollect(
+    colMethodComments,
+    AddColumns(
+        Filter(
+            'SE Question List',
+            'Section In-charge'.Value = Dropdown_Section.Selected.Title
+        ),
+        UserComment,
+        Blank()
+    )
+)
+
+Then bind your comment textbox to:
+
+ThisItem.UserComment
+
+
+---
+
+Step 2 - Update Collection When Comment Changes
+
+Assume your comment textbox name is:
+
+txt_MethodComment
+
+Inside Gallery_Method:
+
+txt_MethodComment.OnChange
+
+Patch(
+    colMethodComments,
+    ThisItem,
+    {
+        UserComment: Self.Text
+    }
+)
+
+
+---
+
+Step 3 - Save Button
+
+Add:
+
+btn_SaveMethodComments
+
+OnSelect
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(UserComment)
+    ),
+    Patch(
+        'SE Evaluation Method History',
+        Defaults('SE Evaluation Method History'),
+        {
+            Title: QuestionNo,
+            SectionName: varSelectedSection.Title,
+            QuestionNo: QuestionNo,
+            Comment: UserComment,
+            FiscalYear: Value(txtFiscalYear.Text),
+            EvaluatedBy: User().FullName,
+            EvaluationDate: Now()
+        }
+    )
+);
+
+Notify(
+    "Evaluation Method comments saved successfully.",
+    NotificationType.Success
+)
+
+
+---
+
+If Fiscal Year Comes from a Variable
+
+Instead of:
+
+Value(txtFiscalYear.Text)
+
+use:
+
+varFiscalYear
+
+Example:
+
+FiscalYear: varFiscalYear
+
+
+---
+
+Prevent Duplicate Saves
+
+Before patching, check if a record already exists for:
+
+Section
+
+User
+
+Fiscal Year
+
+Question No
+
+
+Example:
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(UserComment)
+    ),
+    Patch(
+        'SE Evaluation Method History',
+        Coalesce(
+            LookUp(
+                'SE Evaluation Method History',
+                SectionName = varSelectedSection.Title &&
+                QuestionNo = ThisRecord.QuestionNo &&
+                FiscalYear = varFiscalYear &&
+                EvaluatedBy = User().FullName
+            ),
+            Defaults('SE Evaluation Method History')
+        ),
+        {
+            Title: ThisRecord.QuestionNo,
+            SectionName: varSelectedSection.Title,
+            QuestionNo: ThisRecord.QuestionNo,
+            Comment: ThisRecord.UserComment,
+            FiscalYear: varFiscalYear,
+            EvaluatedBy: User().FullName,
+            EvaluationDate: Now()
+        }
+    )
+)
+
+This will:
+
+Create if not existing
+
+Update if already saved
+
+
+
+---
+
+Enterprise Recommendation
+
+Use these key fields as your unique combination:
+
+SectionName
+FiscalYear
+EvaluatedBy
+QuestionNo
+
+This allows:
+
+One comment per question per year per user per section
+
+Audit history
+
+Power BI reporting
+
+Future dashboarding
+
+
+For your Supplier Evaluation System, I would actually save an additional column:
+
+Column
+
+SupplierName
+
+
+so later you can analyze comments by supplier as well. This becomes very valuable for Power BI reports and supplier performance history.
+
+
+******
 
 If(
     IsBlank(Dropdown_Section.Selected),
