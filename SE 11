@@ -1,0 +1,36 @@
+Gallery_Method.Items -
+Filter(
+    'SE Question List',
+    'SectionInCharge'.Value = varSelectedSection.Title
+)
+
+-> Screen2
+  -> ScreenContainer1
+    -> HeaderContainer1
+    -> Container1
+      -> btn_Submit_1
+    -> MainContainer1
+      -> Container_MethodHeader_1
+      -> Gallery_Method
+        -> lbl_QNo
+        -> lbl_EvalC
+        -> lbl_Section_1
+        -> lbl_EvalM
+        -> txt_Comment_1
+        -> rect_Selected
+        -> div_Separator
+
+
+SE Question List(SharePoint list)
+QuestionNo - Single line of text
+EvaluationContents - Single line of text
+SectionInCharge - Single line of text
+EvaluationMethod - Single line of text
+
+save to:
+SE Evaluation Method List(SharePoint list)
+SectionInCharge - Single line of text (default "ISD" temporary data)
+QuestionNo - Single line of text
+Comment - Multiple line of text
+
+
