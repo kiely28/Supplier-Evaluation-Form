@@ -1,3 +1,23 @@
+
+in my
+SE Evaluation Method List(SharePoint list)
+i add
+FiscalYear - Single line of text
+and show the columns
+Created
+Created By
+
+how add fiscal year after save in btn_Submit_1
+like this code:
+Fiscal Year = If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+
+
+*****
+
 Since your Gallery_Method is displaying records from SE Question List, and each row has a comment textbox (txt_Comment_1), the easiest approach is to loop through all gallery rows and save them into SE Evaluation Method List when the user clicks btn_Submit_1.
 
 btn_Submit_1.OnSelect
