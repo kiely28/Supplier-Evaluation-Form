@@ -1,3 +1,204 @@
+This error is likely not from SharePoint. It's probably coming from the collection colMethodComments.
+
+Let's troubleshoot.
+
+First Check
+
+What is your current code in:
+
+txt_Comment_1.OnChange
+
+Is it exactly:
+
+Patch(
+    colMethodComments,
+
+    LookUp(
+        colMethodComments,
+        QuestionNo = ThisItem.Title
+    ),
+
+    {
+        QuestionNo: ThisItem.Title,
+        Comment: Self.Text
+    }
+)
+
+?
+
+
+---
+
+Why the Error Happens
+
+The error:
+
+The specified column 'Comment' does not exist.
+
+usually means Power Apps cannot find a column named:
+
+Comment
+
+inside:
+
+colMethodComments
+
+This can happen if the collection was never created correctly.
+
+
+---
+
+Verify the Collection Structure
+
+Go to:
+
+View → Collections
+
+Look at:
+
+colMethodComments
+
+Do you see columns like:
+
+QuestionNo	Comment
+
+
+
+or something different?
+
+
+---
+
+Most Likely Cause
+
+In my earlier example I used:
+
+AddColumns(
+    Filter(
+        'SE Question List',
+        'Section In-charge'.Value = Dropdown_Section.Selected.Title
+    ),
+    QuestionNo,
+    Title,
+    Comment,
+    Blank()
+)
+
+Depending on your Power Apps version, AddColumns() may not create the column as expected.
+
+
+---
+
+Safer Version
+
+On the Screen1 button that navigates to Screen2, use:
+
+ClearCollect(
+    colMethodComments,
+    AddColumns(
+        Filter(
+            'SE Question List',
+            'Section In-charge'.Value =
+            Dropdown_Section.Selected.Title
+        ),
+        MethodComment,
+        ""
+    )
+);
+
+Notice I changed:
+
+Comment
+
+to:
+
+MethodComment
+
+This avoids conflicts with SharePoint's built-in Comment fields.
+
+
+---
+
+Then Update txt_Comment_1
+
+Default
+
+ThisItem.MethodComment
+
+OnChange
+
+Patch(
+    colMethodComments,
+    ThisItem,
+    {
+        MethodComment: Self.Text
+    }
+)
+
+This is much simpler because:
+
+ThisItem already refers to the current row
+
+no LookUp required
+
+fewer errors
+
+
+
+---
+
+One More Important Question
+
+What is your current formula for:
+
+Gallery_Method.Items
+
+Is it still:
+
+Filter(
+    'SE Question List',
+    'Section In-charge'.Value = varSelectedSection.Title
+)
+
+or did you change it to:
+
+colMethodComments
+
+?
+
+The answer changes the correct solution.
+
+If Gallery_Method.Items is still:
+
+Filter(...)
+
+then the collection patch approach won't work correctly.
+
+If Gallery_Method.Items is:
+
+colMethodComments
+
+then the Patch(colMethodComments, ThisItem, ...) approach is the recommended one.
+
+Can you show me the current formulas for:
+
+1. Gallery_Method.Items
+
+
+2. txt_Comment_1.Default
+
+
+3. txt_Comment_1.OnChange
+
+
+
+and I'll give the exact corrected formulas.
+
+
+
+*****
+
+
 Issue
 
 The specified column 'Comment' does not exist.
