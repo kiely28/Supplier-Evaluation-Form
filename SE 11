@@ -1,3 +1,124 @@
+Since your Gallery_Method is displaying records from SE Question List, and each row has a comment textbox (txt_Comment_1), the easiest approach is to loop through all gallery rows and save them into SE Evaluation Method List when the user clicks btn_Submit_1.
+
+btn_Submit_1.OnSelect
+
+ForAll(
+    Gallery_Method.AllItems,
+    Patch(
+        'SE Evaluation Method List',
+        Defaults('SE Evaluation Method List'),
+        {
+            SectionInCharge: "ISD",
+            QuestionNo: ThisRecord.QuestionNo,
+            Comment: txt_Comment_1.Text
+        }
+    )
+);
+
+Notify(
+    "Evaluation Method saved successfully.",
+    NotificationType.Success
+);
+
+
+---
+
+Explanation
+
+For each row in Gallery_Method:
+
+Source Control	Destination Column
+
+"ISD"	SectionInCharge
+ThisRecord.QuestionNo	QuestionNo
+txt_Comment_1.Text	Comment
+
+
+Example:
+
+Gallery Data
+
+QuestionNo	Comment
+
+Q001	Need calibration certificate
+Q002	Supplier submitted documents
+Q003	Follow-up required
+
+
+Saved to SE Evaluation Method List
+
+SectionInCharge	QuestionNo	Comment
+
+ISD	Q001	Need calibration certificate
+ISD	Q002	Supplier submitted documents
+ISD	Q003	Follow-up required
+
+
+
+---
+
+Better Version (Use Selected Section)
+
+Instead of hardcoding "ISD", you can save the selected section:
+
+ForAll(
+    Gallery_Method.AllItems,
+    Patch(
+        'SE Evaluation Method List',
+        Defaults('SE Evaluation Method List'),
+        {
+            SectionInCharge: varSelectedSection.Title,
+            QuestionNo: ThisRecord.QuestionNo,
+            Comment: txt_Comment_1.Text
+        }
+    )
+);
+
+Notify(
+    "Evaluation Method saved successfully.",
+    NotificationType.Success
+);
+
+
+---
+
+Recommended Improvement
+
+If users may reopen and edit evaluations later, add another column such as:
+
+EvaluationID
+
+Supplier
+
+CreatedBy
+
+DateEvaluated
+
+
+Otherwise every click of Submit will create duplicate records.
+
+For a Supplier Evaluation System, I would recommend:
+
+SE Evaluation Method List
+
+Column	Type
+
+EvaluationID	Single line of text
+Supplier	Single line of text
+SectionInCharge	Single line of text
+QuestionNo	Single line of text
+Comment	Multiple lines of text
+EvaluatedBy	Person or Single line
+EvaluationDate	Date/Time
+
+
+This will make reporting in Power BI much easier later.
+
+
+****
+
+
+
 Gallery_Method.Items -
 Filter(
     'SE Question List',
