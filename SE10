@@ -1,3 +1,320 @@
+Perfect. Thanks for providing the actual tree view.
+
+Since your Gallery_Method already displays the questions, we can use it directly and collect the comments entered in txt_Comment_1.
+
+
+---
+
+🎯 What We Want to Save
+
+For each row in Gallery_Method, save:
+
+Field	Source
+
+SectionName	varSelectedSection.Title
+QuestionNo	lbl_QNo / ThisItem.Title
+Comment	txt_Comment_1.Text
+FiscalYear	Current Fiscal Year
+User	Current User
+
+
+Example:
+
+SectionName	QuestionNo	Comment	FiscalYear
+
+PR INK Proc	M1R	Monthly price changes observed	2026
+PR INK Proc	M5R	Delayed delivery incidents	2026
+
+
+
+---
+
+STEP 1 - Create New SharePoint List
+
+Example:
+
+SE Evaluation Method Comments
+
+Columns:
+
+Column	Type
+
+Title	Single line text
+SectionName	Single line text
+QuestionNo	Single line text
+Comment	Multiple lines text
+FiscalYear	Number
+EvaluatedBy	Single line text
+
+
+
+---
+
+STEP 2 - Save Comments into a Collection
+
+Since textboxes inside galleries don't automatically become part of a collection, we'll create one.
+
+
+---
+
+Select:
+
+txt_Comment_1
+
+inside:
+
+Gallery_Method
+
+
+---
+
+Property:
+
+OnChange
+
+Patch(
+    colMethodComments,
+
+    LookUp(
+        colMethodComments,
+        QuestionNo = ThisItem.Title
+    ),
+
+    {
+        QuestionNo: ThisItem.Title,
+        Comment: Self.Text
+    }
+)
+
+
+---
+
+STEP 3 - Initialize Collection
+
+When opening Screen2, create the collection.
+
+
+---
+
+Control
+
+The button in Screen1 that opens Screen2.
+
+Currently you likely have:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+Navigate(
+    Screen2_EvaluationMethod,
+    ScreenTransition.Fade
+)
+
+Replace with:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+ClearCollect(
+    colMethodComments,
+
+    AddColumns(
+        Filter(
+            'SE Question List',
+            'Section In-charge'.Value =
+            Dropdown_Section.Selected.Title
+        ),
+
+        QuestionNo,
+        Title,
+
+        Comment,
+        Blank()
+    )
+);
+
+Navigate(
+    Screen2_EvaluationMethod,
+    ScreenTransition.Fade
+)
+
+
+---
+
+STEP 4 - Bind Textbox to Collection
+
+Select:
+
+txt_Comment_1
+
+
+---
+
+Default
+
+LookUp(
+    colMethodComments,
+    QuestionNo = ThisItem.Title
+).Comment
+
+This keeps the comment visible if the user edits it.
+
+
+---
+
+STEP 5 - Submit Button on Screen2
+
+Move your current submit button to Screen2.
+
+Keep your existing code that saves:
+
+SE Evaluation List
+
+Then AFTER that block, add:
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(Comment)
+    ) As M,
+
+    Patch(
+        'SE Evaluation Method Comments',
+        Defaults('SE Evaluation Method Comments'),
+
+        {
+            Title: M.QuestionNo,
+
+            SectionName:
+            varSelectedSection.Title,
+
+            QuestionNo:
+            M.QuestionNo,
+
+            Comment:
+            M.Comment,
+
+            FiscalYear:
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            EvaluatedBy:
+            User().FullName
+        }
+    )
+)
+
+
+---
+
+🚀 Better Duplicate Prevention
+
+Instead of always creating new records:
+
+Patch(
+    'SE Evaluation Method Comments',
+
+    Coalesce(
+        LookUp(
+            'SE Evaluation Method Comments',
+
+            SectionName =
+            varSelectedSection.Title &&
+
+            QuestionNo =
+            M.QuestionNo &&
+
+            FiscalYear =
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ) &&
+
+            EvaluatedBy =
+            User().FullName
+        ),
+
+        Defaults(
+            'SE Evaluation Method Comments'
+        )
+    ),
+
+    {
+        Title: M.QuestionNo,
+        SectionName: varSelectedSection.Title,
+        QuestionNo: M.QuestionNo,
+        Comment: M.Comment,
+
+        FiscalYear:
+        If(
+            Month(Today()) >= 4,
+            Year(Today()),
+            Year(Today()) - 1
+        ),
+
+        EvaluatedBy:
+        User().FullName
+    }
+)
+
+This updates existing records rather than creating duplicates.
+
+
+---
+
+Your Final Flow
+
+Screen1
+├ Dropdown_Section
+├ Gallery_Suppliers_New
+└ Next Button
+
+Next Button
+├ Set(varSelectedSection)
+├ Create colMethodComments
+└ Navigate(Screen2)
+
+Screen2
+├ Gallery_Method
+│ ├ lbl_QNo
+│ ├ lbl_EvalC
+│ ├ lbl_Section_1
+│ ├ lbl_EvalM
+│ └ txt_Comment_1
+│
+└ Submit Button
+   ├ Save colAnswers
+   │ → SE Evaluation List
+   │
+   └ Save colMethodComments
+      → SE Evaluation Method Comments
+
+One small question before you implement it: what is the actual Question No field in your SharePoint list?
+
+Is:
+
+ThisItem.Title
+
+showing values like:
+
+M1R
+M5R
+M6R
+
+or do you have a separate column called Question No? This affects whether we should use ThisItem.Title or another field in the formulas.
+
+
+
+****
+
 
 Gallery_Method.Items -
 Filter(
