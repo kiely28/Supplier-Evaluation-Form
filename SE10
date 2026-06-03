@@ -1,3 +1,17 @@
+Issue
+
+The specified column 'Comment' does not exist.
+
+Location
+txt_Comment_1
+.OnChange
+
+
+
+*****
+
+
+
 Perfect. Thanks for providing the actual tree view.
 
 Since your Gallery_Method already displays the questions, we can use it directly and collect the comments entered in txt_Comment_1.
