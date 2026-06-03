@@ -1,3 +1,239 @@
+The button in Screen1 that opens Screen2:(btn_Next_1)
+Issue
+
+A column named 'QuestionNo' already exists.
+
+Location
+btn_Next_1
+.OnSelect
+
+Code:
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+ClearCollect(
+    colMethodComments,
+
+    AddColumns(
+        Filter(
+            'SE Question List',
+            'Section In-charge'.Value =
+            Dropdown_Section.Selected.Title
+        ),
+
+        QuestionNo,
+        Title,
+
+        Comment,
+        Blank()
+    )
+);
+
+Navigate(
+    Screen3,
+    ScreenTransition.Fade
+)
+
+
+***
+
+txt_Comment_1
+Issue
+
+The type of this argument 'Comment' does not
+match the expected type "Blank'. Found type
+"Text".
+
+Location
+txt_Comment_1
+.OnChange
+
+Code:
+Patch(
+    colMethodComments,
+
+    LookUp(
+        colMethodComments,
+        QuestionNo = ThisItem.Title
+    ),
+
+    {
+        QuestionNo: ThisItem.Title,
+        Comment: Self.Text
+    }
+)
+
+***
+
+btn_Submit_1
+Issue
+
+Delegation warning. The highlighted part of this
+formula might not work correctly on large data
+sets. The "CountRows" operation is not supported
+by this connector.
+
+The data source might not be able to process the
+formula and might return an incomplete data set.
+Your application might not return correct results
+or behave correctly if the data set is incomplete.
+
+Location
+btn_Submit_1
+.OnSelect
+
+Code:
+//false
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before submitting.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections.Value = Dropdown_Section.Selected.Title &&
+            'Created By'.Email = User().Email &&
+            //'Evaluation Year' = Year(Today())
+            'Evaluation Year' = If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+            
+        )
+    ) > 0,
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+    colAnswers As A,
+
+    Patch(
+        'SE Evaluation List',
+        Defaults('SE Evaluation List'),
+        {
+            Sections: {
+                Id: Dropdown_Section.Selected.ID,
+                Value: Dropdown_Section.Selected.Title
+            },
+
+            Suppliers: {
+                Id: A.SupplierID,
+                Value: A.SupplierName
+            },
+
+            Questions: {
+                Id: A.QuestionID,
+                Value: A.QuestionTitle
+            },
+
+            Score: {
+                Value: A.Score
+            },
+
+            //'Evaluation Year': Year(Today()),
+      
+            'Evaluation Year': If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            Comment:
+            LookUp(
+                colSupplierComments,
+                SupplierID = A.SupplierID
+            ).SupplierComment
+        }
+    )
+);
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers);
+    Clear(colSupplierComments);
+
+    Set(varResetRadios, true);
+    Set(varResetComments, true);
+
+    Set(varResetRadios, false);
+    Set(varResetComments, false);
+
+    //Reset(Dropdown_Section)
+
+)
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(Comment)
+    ) As M,
+
+    Patch(
+        'SE Evaluation Method Comments',
+        Defaults('SE Evaluation Method Comments'),
+
+        {
+            Title: M.QuestionNo,
+
+            SectionName:
+            varSelectedSection.Title,
+
+            QuestionNo:
+            M.QuestionNo,
+
+            Comment:
+            M.Comment,
+
+            FiscalYear:
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            EvaluatedBy:
+            User().FullName
+        }
+    )
+)
+
+
+***********************
+
+
+
 This error is likely not from SharePoint. It's probably coming from the collection colMethodComments.
 
 Let's troubleshoot.
