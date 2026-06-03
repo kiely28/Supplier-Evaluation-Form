@@ -1,3 +1,297 @@
+Great, these are real Power Apps errors, and they're actually telling us something useful about your data structure.
+
+
+---
+
+1️⃣ btn_Next_1 Error
+
+> A column named 'QuestionNo' already exists.
+
+
+
+This means your SE Question List already contains a column called:
+
+QuestionNo
+
+or Power Apps already sees that field in the records returned by the Filter.
+
+Therefore this part is causing a duplicate:
+
+AddColumns(
+    Filter(...),
+    QuestionNo,
+    Title,
+    Comment,
+    Blank()
+)
+
+because you're trying to create a new column named QuestionNo that already exists.
+
+Fix
+
+Use a unique temporary column name.
+
+Replace with:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+ClearCollect(
+    colMethodComments,
+
+    AddColumns(
+        Filter(
+            'SE Question List',
+            'Section In-charge'.Value =
+            Dropdown_Section.Selected.Title
+        ),
+
+        MethodUserComment,
+        Blank()
+    )
+);
+
+Navigate(
+    Screen3,
+    ScreenTransition.Fade
+)
+
+Notice:
+
+MethodUserComment
+
+instead of:
+
+Comment
+
+
+---
+
+2️⃣ txt_Comment_1 Error
+
+> The type of this argument 'Comment' does not match the expected type "Blank".
+
+
+
+This is happening because your collection already contains a SharePoint field named:
+
+Comment
+
+and Power Apps is confused between:
+
+SharePoint Comment field
+
+Your temporary comment field
+
+
+
+---
+
+Fix
+
+Use the new column:
+
+MethodUserComment
+
+instead.
+
+txt_Comment_1.OnChange
+
+Replace with:
+
+Patch(
+    colMethodComments,
+
+    LookUp(
+        colMethodComments,
+        ID = ThisItem.ID
+    ),
+
+    {
+        MethodUserComment: Self.Text
+    }
+)
+
+Notice:
+
+MethodUserComment
+
+not:
+
+Comment
+
+
+---
+
+3️⃣ txt_Comment_1.Default
+
+Set:
+
+LookUp(
+    colMethodComments,
+    ID = ThisItem.ID
+).MethodUserComment
+
+This keeps the typed text visible.
+
+
+---
+
+4️⃣ Submit Button - Method Comment Save
+
+Since we renamed the field:
+
+Replace:
+
+Filter(
+    colMethodComments,
+    !IsBlank(Comment)
+)
+
+with:
+
+Filter(
+    colMethodComments,
+    !IsBlank(MethodUserComment)
+)
+
+
+---
+
+Replace:
+
+Comment:
+M.Comment
+
+with:
+
+Comment:
+M.MethodUserComment
+
+
+---
+
+Full corrected block:
+
+ForAll(
+    Filter(
+        colMethodComments,
+        !IsBlank(MethodUserComment)
+    ) As M,
+
+    Patch(
+        'SE Evaluation Method Comments',
+        Defaults('SE Evaluation Method Comments'),
+
+        {
+            Title: M.QuestionNo,
+
+            SectionName:
+            varSelectedSection.Title,
+
+            QuestionNo:
+            M.QuestionNo,
+
+            Comment:
+            M.MethodUserComment,
+
+            FiscalYear:
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            ),
+
+            EvaluatedBy:
+            User().FullName
+        }
+    )
+)
+
+
+---
+
+5️⃣ Delegation Warning on CountRows()
+
+This warning is from:
+
+CountRows(
+    Filter(
+        'SE Evaluation List',
+        ...
+    )
+)
+
+This is normal with SharePoint.
+
+Instead use:
+
+!IsBlank(
+    LookUp(
+        'SE Evaluation List',
+        Sections.Value = Dropdown_Section.Selected.Title &&
+        'Created By'.Email = User().Email &&
+        'Evaluation Year' =
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+    )
+)
+
+Then replace this section:
+
+CountRows(
+    Filter(...)
+) > 0
+
+with:
+
+!IsBlank(
+    LookUp(...)
+)
+
+Benefits:
+
+✅ Delegation-safe
+✅ Faster
+✅ Stops at first match
+✅ Better for large datasets
+
+
+---
+
+One More Thing I Need To Confirm
+
+In your SharePoint SE Question List, what is the actual column that contains:
+
+M1R
+M5R
+M6R
+
+Is it:
+
+Title
+
+or
+
+QuestionNo
+
+If it's QuestionNo, then we should replace all:
+
+ThisItem.Title
+
+with:
+
+ThisItem.QuestionNo
+
+throughout the formulas. That will make the save logic much more reliable.
+
+*****
+
 The button in Screen1 that opens Screen2:(btn_Next_1)
 Issue
 
