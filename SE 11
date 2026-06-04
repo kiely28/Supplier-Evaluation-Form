@@ -1,3 +1,137 @@
+Here's the complete updated btn_Submit.OnSelect code based on your new SharePoint structure:
+
+Sections = Single line of text
+
+Suppliers = Single line of text
+
+Questions = Single line of text
+
+Score = Single line of text
+
+FiscalYear = Single line of text
+
+Comment = Multiple lines of text
+
+
+Set(
+    varFiscalYear,
+    Text(
+        If(
+            Month(Today()) >= 4,
+            Year(Today()),
+            Year(Today()) - 1
+        )
+    )
+);
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before submitting.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections = Dropdown_Section.Selected.Title &&
+            'Created By'.Email = User().Email &&
+            FiscalYear = varFiscalYear
+        )
+    ) > 0,
+
+    Notify(
+        "You already submitted this evaluation for this fiscal year.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+        colAnswers As A,
+
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                Sections: Dropdown_Section.Selected.Title,
+
+                Suppliers: A.SupplierName,
+
+                Questions: A.QuestionTitle,
+
+                Score: Text(A.Score),
+
+                FiscalYear: varFiscalYear,
+
+                Comment:
+                    LookUp(
+                        colSupplierComments,
+                        SupplierID = A.SupplierID
+                    ).SupplierComment
+            }
+        )
+    );
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers);
+    Clear(colSupplierComments);
+
+    Set(varResetRadios, true);
+    Set(varResetComments, true);
+
+    Set(varResetRadios, false);
+    Set(varResetComments, false)
+
+    // Reset(Dropdown_Section)
+)
+
+Optional Improvement (Recommended)
+
+If your SharePoint list will grow beyond 500 records, replace:
+
+CountRows(
+    Filter(...)
+) > 0
+
+with:
+
+!IsBlank(
+    LookUp(
+        'SE Evaluation List',
+        Sections = Dropdown_Section.Selected.Title &&
+        'Created By'.Email = User().Email &&
+        FiscalYear = varFiscalYear
+    )
+)
+
+This is generally more efficient and avoids pulling multiple records when you only need to know whether one already exists.
+
+
+*******
+
+
 Since you are changing the SharePoint columns from Lookup/Choice/Number to mostly Single line of text, your Patch() becomes much simpler.
 
 New SharePoint Structure
