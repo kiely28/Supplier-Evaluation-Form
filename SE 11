@@ -1,3 +1,160 @@
+Since you are changing the SharePoint columns from Lookup/Choice/Number to mostly Single line of text, your Patch() becomes much simpler.
+
+New SharePoint Structure
+
+Column	Type
+
+Sections	Single line of text
+Suppliers	Single line of text
+Questions	Single line of text
+Score	Single line of text
+FiscalYear	Single line of text
+Comment	Multiple lines of text
+
+
+Update your Patch()
+
+Replace this part:
+
+Patch(
+    'SE Evaluation List',
+    Defaults('SE Evaluation List'),
+    {
+        Sections: {
+            Id: Dropdown_Section.Selected.ID,
+            Value: Dropdown_Section.Selected.Title
+        },
+
+        Suppliers: {
+            Id: A.SupplierID,
+            Value: A.SupplierName
+        },
+
+        Questions: {
+            Id: A.QuestionID,
+            Value: A.QuestionTitle
+        },
+
+        Score: {
+            Value: A.Score
+        },
+
+        'Evaluation Year': If(
+            Month(Today()) >= 4,
+            Year(Today()),
+            Year(Today()) - 1
+        ),
+
+        Comment:
+        LookUp(
+            colSupplierComments,
+            SupplierID = A.SupplierID
+        ).SupplierComment
+    }
+)
+
+With:
+
+Patch(
+    'SE Evaluation List',
+    Defaults('SE Evaluation List'),
+    {
+        Sections: Dropdown_Section.Selected.Title,
+
+        Suppliers: A.SupplierName,
+
+        Questions: A.QuestionTitle,
+
+        Score: Text(A.Score),
+
+        FiscalYear: Text(
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+        ),
+
+        Comment:
+            LookUp(
+                colSupplierComments,
+                SupplierID = A.SupplierID
+            ).SupplierComment
+    }
+)
+
+
+---
+
+Update Duplicate Checking
+
+Replace:
+
+CountRows(
+    Filter(
+        'SE Evaluation List',
+        Sections.Value = Dropdown_Section.Selected.Title &&
+        'Created By'.Email = User().Email &&
+        'Evaluation Year' = If(
+            Month(Today()) >= 4,
+            Year(Today()),
+            Year(Today()) - 1
+        )
+    )
+) > 0
+
+With:
+
+CountRows(
+    Filter(
+        'SE Evaluation List',
+        Sections = Dropdown_Section.Selected.Title &&
+        'Created By'.Email = User().Email &&
+        FiscalYear = Text(
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+        )
+    )
+) > 0
+
+
+---
+
+Recommended: Create a Fiscal Year Variable
+
+To avoid repeating the formula, place this at the beginning of your Submit button:
+
+Set(
+    varFiscalYear,
+    Text(
+        If(
+            Month(Today()) >= 4,
+            Year(Today()),
+            Year(Today()) - 1
+        )
+    )
+);
+
+Then use:
+
+FiscalYear: varFiscalYear
+
+and
+
+FiscalYear = varFiscalYear
+
+This makes the code cleaner and easier to maintain.
+
+One more thing: since you're planning to use this data in Power BI and your app mainly stores text-based evaluation data, changing the Lookup and Choice columns to Single line of text will significantly reduce delegation issues and simplify your Power Apps formulas.
+
+
+
+******
+
+
 SE Evaluation List(SharePoint List)
 Sections - Lookup
 Suppliers - Lookup
