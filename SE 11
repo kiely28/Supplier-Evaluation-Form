@@ -1,3 +1,28 @@
+1. Incompatible types for comparison. These types can't be compared: Record, Text.
+Sections = Dropdown_Section.Selected.Title &&
+
+    CountRows(
+        Filter(
+            'SE Evaluation List',
+            Sections = Dropdown_Section.Selected.Title &&
+            'Created By'.Email = User().Email &&
+            FiscalYear = varFiscalYear
+        )
+    ) > 0,
+
+2. The function 'Patch' has some invalid arguments.
+Patch(
+
+3. The type of this argument 'Section' does not match the expected type 'Record'. Found type 'Text'.
+4. Delegation warning. The highlighted part of this formula might not work correctly on large data sets. The "CountRows" operation is not supported by this connector.
+CountRows(
+
+
+5. Incompatible types for comparison. These types can't be compared: Text, Number.
+FiscalYear = varFiscalYear
+******
+
+
 Here's the complete updated btn_Submit.OnSelect code based on your new SharePoint structure:
 
 Sections = Single line of text
