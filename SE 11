@@ -1,3 +1,6 @@
+The release to the Prod Environment scheduled for June 9 has been postponed due to various circumstances.
+****
+
 colMethodComments is a Power Apps Collection, not a SharePoint list. It only exists if you created it somewhere in your app.
 
 To find it:
