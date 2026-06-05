@@ -1,3 +1,100 @@
+colMethodComments is a Power Apps Collection, not a SharePoint list. It only exists if you created it somewhere in your app.
+
+To find it:
+
+Method 1: Search the App
+
+1. Open your Power App in Edit mode.
+
+
+2. Press Ctrl + Shift + F (or use the Search box in the left panel).
+
+
+3. Search for:
+
+
+
+colMethodComments
+
+You should find code such as:
+
+ClearCollect(colMethodComments, ...)
+
+or
+
+Collect(colMethodComments, ...)
+
+or
+
+UpdateIf(colMethodComments, ...)
+
+
+---
+
+Method 2: Check Collections While Running
+
+1. Preview the app (▶).
+
+
+2. Open View → Collections.
+
+
+3. Look for colMethodComments.
+
+
+
+If it exists, you'll see its columns and sample data.
+
+
+---
+
+Method 3: Check Screen3 Controls
+
+Since your formula is:
+
+LookUp(
+    colMethodComments,
+    ID = ThisItem.ID
+).MethodUserComment
+
+I'm guessing you previously followed a pattern similar to colSupplierComments and intended to create a collection for storing method comments.
+
+Search for:
+
+MethodUserComment
+
+as well. This will usually lead you directly to the collection definition.
+
+
+---
+
+Important
+
+If searching the entire app finds no reference to colMethodComments, then the collection was never created. In that case, the formula in txt_Comment_1.Default should not reference it.
+
+For example, if you're simply entering new comments and not editing existing ones, you could use:
+
+""
+
+or
+
+Blank()
+
+for the Default property.
+
+Can you show the code from:
+
+Gallery_Method.Items
+
+txt_Comment_1.OnChange (if any)
+
+Any ClearCollect() related to Screen3
+
+
+and I can determine whether colMethodComments should exist or if the Default formula should be changed.
+
+******
+
 The error means that one side of the comparison is a Number and the other side is an Error/invalid field.
 
 Your formula:
