@@ -1,3 +1,27 @@
+Screen3 -> txt_Comment_1.Default
+
+LookUp(
+    colMethodComments,
+    ID = ThisItem.ID
+).MethodUserComment
+
+Issue
+
+Incompatible types for comparison. These types
+can't be compared: Error, Number.
+
+We can't evaluate your formula because the
+values being compared in the formula aren't the
+same type.
+
+Location
+txt_Comment_1
+.Default
+
+
+****
+
+
 Since Screen1 and Screen3 are collecting different data into different SharePoint lists, the best approach is:
 
 1. Remove the Submit button from Screen1.
