@@ -1,3 +1,148 @@
+screen1 -> btn_Submit.OnSelect
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before submitting.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    !IsEmpty(
+        Filter(
+            'SE Evaluation List',
+            SectionInCharge = Dropdown_Section.Selected.Title &&
+            'Created By'.Email = User().Email &&
+            FiscalYear = Text(varFiscalYear)
+        )
+    ),
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+        colAnswers As A,
+
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                //Section: Dropdown_Section.Selected.Title,
+                SectionInCharge: Dropdown_Section.Selected.Title,
+
+                Supplier: A.SupplierName,
+
+                SupplierCode: A.SupplierCode,
+
+                Question: A.QuestionTitle,
+
+                Score: Text(A.Score),
+
+                FiscalYear: varFiscalYear,
+
+                Comment:
+                Coalesce(
+                    LookUp(
+                        colSupplierComments,
+                        SupplierID = A.SupplierID
+                    ).SupplierComment,
+                    "-"
+                )   
+            }
+        )
+    );
+
+    Notify(
+        "Evaluation submitted successfully.",
+        NotificationType.Success
+    );
+
+    Clear(colAnswers);
+    Clear(colSupplierComments);
+
+    Set(varResetRadios, true);
+    Set(varResetComments, true);
+
+    Set(varResetRadios, false);
+    Set(varResetComments, false)
+
+    // Reset(Dropdown_Section)
+)
+
+
+Screen3 -> btn_Submit_1.OnSelect
+If(
+    !IsEmpty(
+        Filter(
+            'SE Evaluation Method List',
+            'Created By'.Email = User().Email &&
+            SectionInCharge = varSelectedSection.Title &&
+            FiscalYear = Text(varFiscalYear)
+        )
+    ),
+
+    Notify(
+        "You have already submitted for this Section.",
+        NotificationType.Error
+    ),
+
+    ForAll(
+        Gallery_Method.AllItems,
+        Patch(
+            'SE Evaluation Method List',
+            Defaults('SE Evaluation Method List'),
+            {
+                SectionInCharge: varSelectedSection.Title,
+                QuestionNo: ThisRecord.QuestionNo,
+                Comment: If(
+                    IsBlank(ThisRecord.txt_Comment_1.Text) || 
+                    Trim(ThisRecord.txt_Comment_1.Text) = "",
+                    "-",
+                    ThisRecord.txt_Comment_1.Text
+                ),
+                FiscalYear: Text(varFiscalYear)
+            }
+        )
+    );
+
+    Navigate(Screen4, ScreenTransition.Fade, {msg: "Your form has been submitted successfully."})
+
+    //Navigate(Screen4, ScreenTransition.Fade)
+
+    /*Notify(
+        "Evaluation Method saved successfully.",
+        NotificationType.Success
+    )*/
+)
+
+
+
+
+
+
+
+******
+
+
 1. Incompatible types for comparison. These types can't be compared: Record, Text.
 Sections = Dropdown_Section.Selected.Title &&
 
