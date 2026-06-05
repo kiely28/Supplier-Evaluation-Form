@@ -1,3 +1,84 @@
+The error means that one side of the comparison is a Number and the other side is an Error/invalid field.
+
+Your formula:
+
+LookUp(
+    colMethodComments,
+    ID = ThisItem.ID
+).MethodUserComment
+
+The most likely cause is that ID does not exist in colMethodComments, or it is being interpreted differently than the SharePoint ID in ThisItem.ID.
+
+Check the structure of colMethodComments
+
+Add a label and set:
+
+First(colMethodComments)
+
+or inspect the collection in Collections view. Verify whether it contains:
+
+ID
+MethodUserComment
+
+Common Fix #1: Use the correct key field
+
+If your collection was built from SE Question List, it may contain QuestionNo instead of ID.
+
+For example:
+
+LookUp(
+    colMethodComments,
+    QuestionNo = ThisItem.QuestionNo
+).MethodUserComment
+
+Common Fix #2: Explicit numeric conversion
+
+If the collection stores ID as text:
+
+LookUp(
+    colMethodComments,
+    Value(ID) = ThisItem.ID
+).MethodUserComment
+
+or
+
+LookUp(
+    colMethodComments,
+    ID = Value(ThisItem.ID)
+).MethodUserComment
+
+depending on which side is text.
+
+Common Fix #3: The collection doesn't have an ID column
+
+If you created colMethodComments using AddColumns() or ClearCollect(), the original SharePoint ID may not have been included.
+
+For example, if your collection looks like:
+
+ClearCollect(
+    colMethodComments,
+    AddColumns(
+        Filter(...),
+        MethodUserComment,
+        ""
+    )
+)
+
+then use whatever unique field exists, such as:
+
+LookUp(
+    colMethodComments,
+    QuestionNo = ThisItem.QuestionNo
+).MethodUserComment
+
+To identify the exact issue
+
+Show me the code where you create colMethodComments (the ClearCollect() or Collect() statement), and I can tell you exactly which field should be used in the LookUp().
+
+
+******
+
+
 Screen3 -> txt_Comment_1.Default
 
 LookUp(
