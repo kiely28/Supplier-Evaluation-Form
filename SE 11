@@ -1,3 +1,190 @@
+Since Screen1 and Screen3 are collecting different data into different SharePoint lists, the best approach is:
+
+1. Remove the Submit button from Screen1.
+
+
+2. Keep btn_Next to navigate to Screen3.
+
+
+3. Put all save logic into btn_SubmitAll on Screen3.
+
+
+4. When btn_SubmitAll is clicked, it will:
+
+Save colAnswers to SE Evaluation List
+
+Save method comments to SE Evaluation Method List
+
+Show success message and navigate to Screen4
+
+
+
+
+
+---
+
+Option 1: Save Everything at the End (Recommended)
+
+Screen1
+
+Replace btn_Submit with:
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before proceeding.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    Set(varSelectedSection, Dropdown_Section.Selected);
+
+    Navigate(
+        Screen3,
+        ScreenTransition.Fade
+    )
+)
+
+
+---
+
+Screen3 → btn_SubmitAll
+
+If(
+
+    // Check Evaluation List
+    !IsEmpty(
+        Filter(
+            'SE Evaluation List',
+            SectionInCharge = varSelectedSection.Title &&
+            'Created By'.Email = User().Email &&
+            FiscalYear = Text(varFiscalYear)
+        )
+    ),
+
+    Notify(
+        "You already submitted this evaluation for this year.",
+        NotificationType.Error
+    ),
+
+    // Check Method List
+    !IsEmpty(
+        Filter(
+            'SE Evaluation Method List',
+            SectionInCharge = varSelectedSection.Title &&
+            'Created By'.Email = User().Email &&
+            FiscalYear = Text(varFiscalYear)
+        )
+    ),
+
+    Notify(
+        "You already submitted the evaluation method for this year.",
+        NotificationType.Error
+    ),
+
+    //----------------------------------------
+    // Save Evaluation List
+    //----------------------------------------
+    ForAll(
+        colAnswers As A,
+
+        Patch(
+            'SE Evaluation List',
+            Defaults('SE Evaluation List'),
+            {
+                SectionInCharge: varSelectedSection.Title,
+                Supplier: A.SupplierName,
+                SupplierCode: A.SupplierCode,
+                Question: A.QuestionTitle,
+                Score: Text(A.Score),
+                FiscalYear: Text(varFiscalYear),
+                Comment:
+                    Coalesce(
+                        LookUp(
+                            colSupplierComments,
+                            SupplierID = A.SupplierID
+                        ).SupplierComment,
+                        "-"
+                    )
+            }
+        )
+    );
+
+    //----------------------------------------
+    // Save Method List
+    //----------------------------------------
+    ForAll(
+        Gallery_Method.AllItems,
+
+        Patch(
+            'SE Evaluation Method List',
+            Defaults('SE Evaluation Method List'),
+            {
+                SectionInCharge: varSelectedSection.Title,
+                QuestionNo: ThisRecord.QuestionNo,
+                Comment:
+                    If(
+                        IsBlank(ThisRecord.txt_Comment_1.Text) ||
+                        Trim(ThisRecord.txt_Comment_1.Text) = "",
+                        "-",
+                        ThisRecord.txt_Comment_1.Text
+                    ),
+                FiscalYear: Text(varFiscalYear)
+            }
+        )
+    );
+
+    //----------------------------------------
+    // Reset
+    //----------------------------------------
+    Clear(colAnswers);
+    Clear(colSupplierComments);
+
+    Navigate(
+        Screen4,
+        ScreenTransition.Fade,
+        {
+            msg: "Your form has been submitted successfully."
+        }
+    )
+)
+
+
+---
+
+Option 2: Save Screen1 Data Immediately
+
+Another approach is:
+
+Screen1 → Save SE Evaluation List
+
+Screen3 → Save only SE Evaluation Method List
+
+
+This is useful if users might close the app before reaching Screen3.
+
+However, based on your current flow, Option 1 is cleaner because both SharePoint lists are submitted together as one complete evaluation. This avoids having partial data saved when a user finishes Screen1 but never completes Screen3.
+
+*****
+
 screen1 -> btn_Submit.OnSelect
 If(
     IsBlank(Dropdown_Section.Selected),
