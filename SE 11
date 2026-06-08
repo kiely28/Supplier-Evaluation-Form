@@ -1,3 +1,107 @@
+If you use Option 2 and bind the gallery directly to colAssignment, the gallery only contains the fields from colAssignment. That's why you can display Supplier but not SupplierCode if SupplierCode exists only in SE Supplier List.
+
+Solution 1: Add SupplierCode when creating colAssignment (Recommended)
+
+When you load colAssignment, add the SupplierCode from SE Supplier List:
+
+ClearCollect(
+    colAssignment,
+    AddColumns(
+        Filter(
+            'Assignment List',
+            User.Email = User().Email
+        ),
+        SupplierCode,
+        LookUp(
+            'SE Supplier List',
+            Title = Supplier,
+            SupplierCode
+        )
+    )
+)
+
+Then in the gallery:
+
+ThisItem.Supplier
+
+and
+
+ThisItem.SupplierCode
+
+
+---
+
+Solution 2: Lookup SupplierCode in the Gallery
+
+Keep the gallery Items as:
+
+Filter(
+    colAssignment,
+    SectionInCharge = varSelectedSection.Title &&
+    User.Email = User().Email
+)
+
+Then for the Supplier Code label:
+
+LookUp(
+    'SE Supplier List',
+    Title = ThisItem.Supplier,
+    SupplierCode
+)
+
+This works but performs a lookup for every row, which can be slower with many records.
+
+
+---
+
+Solution 3: Create a Combined Collection (Best Performance)
+
+Create a collection that already contains both Supplier and SupplierCode:
+
+ClearCollect(
+    colAssignedSuppliers,
+    AddColumns(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        SupplierCode,
+        LookUp(
+            'SE Supplier List',
+            Title = Supplier,
+            SupplierCode
+        )
+    )
+);
+
+Gallery:
+
+Gallery_Suppliers_New.Items = colAssignedSuppliers
+
+Labels:
+
+ThisItem.Supplier
+
+ThisItem.SupplierCode
+
+This is usually the best balance of performance and simplicity.
+
+Can you show the structure of colAssignment? Specifically:
+
+Supplier (Single line text?)
+
+SectionInCharge (Single line text?)
+
+Does it contain the Supplier List item ID?
+
+
+If it contains the Supplier List ID, we can avoid matching by supplier name and use a much more reliable lookup.
+
+
+*****
+
+
 The delegation warning is caused by this part:
 
 Title in
