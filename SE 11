@@ -1,3 +1,134 @@
+I think I found the problem.
+
+Your Supplier field in colAssignment is a Single line of text, but you're comparing it with:
+
+Value(lblSupplierID.Text)
+
+which is a Number.
+
+Your current formula:
+
+If(
+    Value(lblSupplierID.Text) in
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    ),
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+is effectively doing:
+
+123 in ["ABC Corp","XYZ Inc"]
+
+which will never be true.
+
+First, determine what lblSupplierID.Text contains
+
+Add a temporary label and set:
+
+lblSupplierID.Text
+
+If it shows:
+
+1
+2
+3
+
+then it's the SharePoint ID.
+
+But your Supplier column contains supplier names such as:
+
+ABC Corp
+XYZ Inc
+
+so the comparison fails and the radio stays disabled.
+
+
+---
+
+Option 1: Compare Supplier Names
+
+If the gallery row has the supplier name in ThisItem.Title, use:
+
+If(
+    ThisItem.Title in
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    ),
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+
+---
+
+Option 2: Temporarily test
+
+Set:
+
+DisplayMode.Edit
+
+for Radio_Score_New.DisplayMode.
+
+If the radio becomes selectable, then the issue is definitely your If() condition.
+
+
+---
+
+Debugging step
+
+Add a label in the same gallery row:
+
+ThisItem.Title
+
+and another:
+
+Concat(
+    Filter(
+        colAssignment,
+        SectionInCharge = varSelectedSection.Title &&
+        User.Email = User().Email
+    ),
+    Supplier,
+    ", "
+)
+
+This will show:
+
+ABC Corp, XYZ Inc, DEF Ltd
+
+Compare that output with ThisItem.Title.
+
+
+---
+
+Can you tell me:
+
+1. What is the formula of lblSupplierID.Text?
+
+
+2. Which column in SE Supplier List contains the supplier name (Title, SupplierName, etc.)?
+
+
+
+Once I know those two, I can give you the exact DisplayMode formula.
+
+
+
+****
+
+
 Radio_Score_New.DisplayMode
 If(
     Value(lblSupplierID.Text) in
