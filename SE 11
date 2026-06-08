@@ -1,3 +1,106 @@
+
+error in radio_score_new
+
+Issue
+
+Incompatible types for comparison. These types
+can't be compared: Error, Text.
+
+We can't evaluate your formula because the
+values being compared in the formula aren't the
+same type.
+
+Location
+Radio_Score_New
+.DisplayMode
+
+Radio_Score_New.Items: 
+Sequence(ThisItem.'Max Score')
+
+Radio_Score_New.OnChange: 
+With(
+    {
+        supplierId: Gallery_Suppliers_New.Selected.ID,
+        supplierName: Gallery_Suppliers_New.Selected.Title,
+        supplierCode: Gallery_Suppliers_New.Selected.'Supplier Code',
+        questionId: ThisItem.ID,
+        questionTitle: ThisItem.Title
+    },
+
+    // Remove existing answer (avoid duplicates)
+    RemoveIf(
+        colAnswers,
+        SupplierID = supplierId &&
+        QuestionID = questionId
+    );
+
+    // Add new answer
+    Collect(
+        colAnswers,
+        {
+            SupplierID: supplierId,
+            SupplierName: supplierName,
+            SupplierCode: supplierCode,
+            QuestionID: questionId,
+            QuestionTitle: questionTitle,
+            Score: Self.Selected.Value,
+            Comment: txt_Comment.Text
+        }
+    )
+)
+
+SE Question List
+SectionInCharge - Single line of text
+QuestionNo - Single line of text
+EvaluationMethod - Single line of text
+EvaluationContents - Single line of text
+Max Score - Number
+
+
+
+
+
+
+******
+
+Filter(
+    'SE Supplier List',
+    //Section.Id = varSelectedSection.ID &&
+    SectionInCharge = varSelectedSection.Title &&
+    ID in
+    ForAll(
+        Filter(
+            colAssignment,
+            //Section.Value = varSelectedSection.Title &&
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    )
+)
+
+
+
+
+
+
+*****
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Here are a few simple reply samples:
 
 Dear [Sender Name],
