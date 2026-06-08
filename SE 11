@@ -1,3 +1,40 @@
+Issue
+
+Delegation warning. The highlighted part of this
+formula might not work correctly on large data
+sets.
+
+The right side of the "in" operator should be a
+column name from the correct data source. The
+data source might not be able to process the
+formula and might return an incomplete data set.
+Your application might not return correct results
+or behave correctly if the data set is incomplete.
+
+Location
+Gallery_Suppliers_New
+.Items
+
+Gallery_Suppliers_New.Items
+Filter(
+    'SE Supplier List',
+    //Section.Id = varSelectedSection.ID &&
+    SectionInCharge = varSelectedSection.Title &&
+    Title in
+    ForAll(
+        Filter(
+            colAssignment,
+            //Section.Value = varSelectedSection.Title &&
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    )
+)
+
+*****
+
+
 Thanks. The issue is now clear.
 
 You have:
