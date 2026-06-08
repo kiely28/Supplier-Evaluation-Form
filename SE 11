@@ -1,3 +1,13 @@
+1. lblSupplierID.Text - ThisItem.ID
+2. Supplier - Single line of text
+
+
+
+
+****
+
+
+
 I think I found the problem.
 
 Your Supplier field in colAssignment is a Single line of text, but you're comparing it with:
