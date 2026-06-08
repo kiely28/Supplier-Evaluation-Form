@@ -1,3 +1,22 @@
+SE Assignment List
+SectionInCharge -> Single line of text
+Supplier -> Single line of text
+User -> Person or Group 
+
+Gallery_Suppliers_New.Items
+1. The function 'ForAll' has some invalid arguments.
+	ForAll(
+2. Incompatible type. We can't evaluate your formula because of a type error.
+	),
+3. The '.' operator cannot be used on Text values.
+	Supplier.Id
+4. Delegation warning. The "Filter" part of this formula might not work correctly on large data sets.
+	&&
+5. Delegation warning. The highlighted part of this formula might not work correctly on large data sets.
+	in
+
+****
+
 Error Radio_Score_New.DisplayMode
 
 1. The function 'ForAll' has some invalid arguments.
