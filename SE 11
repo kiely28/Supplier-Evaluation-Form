@@ -1,3 +1,155 @@
+
+The root cause is now clear:
+
+SE Assignment List
+Supplier -> Single line of text
+
+Since Supplier is a text column, this part is invalid:
+
+Supplier.Id
+
+because text values do not have an .Id property.
+
+
+---
+
+Question
+
+What is the data type of the Supplier column in:
+
+SE Supplier List
+
+Is it:
+
+1. Title (Supplier Name stored in Title column)
+
+
+2. SupplierName (custom text column)
+
+
+3. Something else?
+
+
+
+
+---
+
+If Supplier in SE Assignment List contains the Supplier Name
+
+For example:
+
+SE Assignment List
+
+Supplier
+
+ABC Corp
+XYZ Inc
+
+
+SE Supplier List
+
+ID	Title
+
+1	ABC Corp
+2	XYZ Inc
+
+
+Then your gallery should be:
+
+Filter(
+    'SE Supplier List',
+    SectionInCharge = varSelectedSection.Title &&
+    Title in
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    )
+)
+
+Notice:
+
+Supplier
+
+instead of:
+
+Supplier.Id
+
+
+---
+
+Better approach (recommended)
+
+Create a collection of supplier names first:
+
+ClearCollect(
+    colSupplierNames,
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    )
+);
+
+Then:
+
+Filter(
+    'SE Supplier List',
+    SectionInCharge = varSelectedSection.Title &&
+    Title in colSupplierNames.Value
+)
+
+
+---
+
+About the Delegation Warnings
+
+These warnings come from:
+
+in
+
+and
+
+Filter(...)
+
+against SharePoint.
+
+For small lists (< 500–2000 records depending on app settings), it will work.
+
+For larger lists, a better design is:
+
+Make Supplier in SE Assignment List a Lookup column to SE Supplier List.
+
+Store Supplier ID instead of Supplier Name.
+
+Then use direct comparisons on IDs, which are delegable.
+
+
+
+---
+
+Could you tell me the columns in SE Supplier List?
+
+Example:
+
+Title
+SupplierCode
+SectionInCharge
+ID
+
+and which column contains the supplier name? Then I can give the exact formula for Gallery_Suppliers_New.Items.
+
+
+*****
+
+
+
 SE Assignment List
 SectionInCharge -> Single line of text
 Supplier -> Single line of text
