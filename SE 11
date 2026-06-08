@@ -1,3 +1,113 @@
+Thanks. The issue is now clear.
+
+You have:
+
+lblSupplierID.Text = ThisItem.ID
+
+which returns a numeric ID from SE Supplier List.
+
+But in SE Assignment List:
+
+Supplier = Single line of text
+
+which stores supplier names, not IDs.
+
+So your formula is comparing:
+
+1 in ["ABC Corp", "XYZ Inc"]
+
+or
+
+25 in ["Supplier A", "Supplier B"]
+
+This is always false, causing:
+
+DisplayMode.Disabled
+
+and making the radio button appear disabled.
+
+
+---
+
+Fix
+
+You need to compare the supplier name from the current gallery row against the Supplier text stored in colAssignment.
+
+If the supplier name is stored in the Title column of SE Supplier List, use:
+
+If(
+    ThisItem.Title in
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    ),
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+
+---
+
+Even Better
+
+Instead of ForAll, use a direct lookup:
+
+If(
+    CountRows(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email &&
+            Supplier = ThisItem.Title
+        )
+    ) > 0,
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+This is easier to read and debug.
+
+
+---
+
+Verify the Supplier Name Column
+
+In SE Supplier List, check which column contains the supplier name:
+
+Column	Example
+
+Title	ABC Corp
+SupplierName	ABC Corp
+Supplier Code	SUP001
+
+
+If it's not Title, replace ThisItem.Title with the correct column:
+
+Supplier = ThisItem.SupplierName
+
+or
+
+Supplier = ThisItem.'Supplier Name'
+
+
+---
+
+One more question: In your Gallery_Suppliers_New, what is the supplier name field called? Is it:
+
+Title
+
+or
+
+SupplierName
+
+or something else? That will let me give you the exact final formula.
+
+****
+
 1. lblSupplierID.Text - ThisItem.ID
 2. Supplier - Single line of text
 
