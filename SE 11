@@ -1,3 +1,26 @@
+Error Radio_Score_New.DisplayMode
+
+1. The function 'ForAll' has some invalid arguments.
+	ForAll(
+2. Incompatible type. We can't evaluate your formula because of a type error.
+	Section.Value = varSelectedSection.Title &&
+3. Name isn't valid. 'Section' isn't recognized.
+	Section.Value = varSelectedSection.Title &&
+4. The '.' operator cannot be used on Error values.
+	Section.Value = varSelectedSection.Title &&
+5. Incompatible types for comparison. These types can't be compared: Error, Text.
+	Section.Value = varSelectedSection.Title &&
+6. The '.' operator cannot be used on Text values.
+	Supplier.Id
+
+
+
+
+****
+
+
+
+
 The most likely issue is a data type mismatch in this part:
 
 ID in
