@@ -1,3 +1,118 @@
+The delegation warning is caused by this part:
+
+Title in
+ForAll(
+    Filter(
+        colAssignment,
+        SectionInCharge = varSelectedSection.Title &&
+        User.Email = User().Email
+    ),
+    Supplier
+)
+
+Why it happens
+
+Power Apps cannot delegate the in operator when the right side is a collection (ForAll(...)) rather than a column from the data source itself.
+
+Your formula works for small datasets, but when SE Supplier List exceeds the delegation limit (500 or 2000 records), Power Apps may only check the first records and return incomplete results.
+
+
+---
+
+Option 1 (Recommended) - Filter using a local collection
+
+If colAssignment contains only the current user's assignments, first create a collection of supplier names:
+
+ClearCollect(
+    colUserSuppliers,
+    ShowColumns(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    )
+);
+
+Then use:
+
+Filter(
+    'SE Supplier List',
+    SectionInCharge = varSelectedSection.Title &&
+    Title in colUserSuppliers.Supplier
+)
+
+This may still show a delegation warning on SharePoint because in is generally non-delegable.
+
+
+---
+
+Option 2 (Best for large SharePoint lists)
+
+Instead of filtering the supplier list with in, filter the assignment list first and display that list directly.
+
+For example:
+
+Filter(
+    colAssignment,
+    SectionInCharge = varSelectedSection.Title &&
+    User.Email = User().Email
+)
+
+Then in the gallery show:
+
+ThisItem.Supplier
+
+This avoids the in operation entirely.
+
+
+---
+
+Option 3 (Most scalable)
+
+If:
+
+SE Supplier List.Title = Supplier Name
+
+colAssignment.Supplier = Supplier Name
+
+
+Then create a lookup column in SharePoint (Supplier ID) and compare IDs instead of text.
+
+Example:
+
+Filter(
+    'SE Supplier List',
+    SectionInCharge = varSelectedSection.Title &&
+    ID in Filter(
+        colAssignment,
+        User.Email = User().Email
+    ).SupplierID
+)
+
+This is more reliable than matching text names.
+
+
+---
+
+Could you tell me:
+
+1. Is colAssignment loaded from a SharePoint list or created locally?
+
+
+2. Approximately how many records are in SE Supplier List (100, 1000, 5000+)?
+
+
+3. Is Supplier in colAssignment exactly the same value as Title in SE Supplier List?
+
+
+
+With those details, I can suggest the most delegation-safe formula.
+
+*****
+
+
 Issue
 
 Delegation warning. The highlighted part of this
