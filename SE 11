@@ -1,4 +1,26 @@
+Radio_Score_New.DisplayMode
+If(
+    Value(lblSupplierID.Text) in
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier
+    ),
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
 
+Radio_Score_New.Default
+""
+
+Radio_Score_New.Items
+Sequence(ThisItem.'Max Score')
+
+
+*****
 If your Radio_Score_New looks disabled (grayed out and cannot be selected), check these common causes:
 
 1. DisplayMode is set to View or Disabled
