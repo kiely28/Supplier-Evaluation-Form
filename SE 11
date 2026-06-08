@@ -1,4 +1,131 @@
 
+If your Radio_Score_New looks disabled (grayed out and cannot be selected), check these common causes:
+
+1. DisplayMode is set to View or Disabled
+
+Select Radio_Score_New and check its DisplayMode property.
+
+It should be:
+
+DisplayMode.Edit
+
+If you see something like:
+
+If(
+    SomeCondition,
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+then the condition may be evaluating to false.
+
+
+---
+
+2. Parent Container or Gallery is Disabled
+
+If the radio control is inside a Gallery, Form, or Container, check whether the parent control's DisplayMode is:
+
+DisplayMode.Disabled
+
+or whether the parent container's:
+
+Visible = false
+
+or:
+
+DisplayMode = DisplayMode.View
+
+
+---
+
+3. Radio Control is Inside a Form in View Mode
+
+If the radio button is inside an Edit Form, check:
+
+FormName.Mode
+
+If the form is in:
+
+FormMode.View
+
+all controls inside will appear read-only.
+
+To edit:
+
+EditForm(FormName)
+
+
+---
+
+4. The Items Property Has an Error
+
+Check the Items property of the radio control.
+
+Example:
+
+["1","2","3","4","5"]
+
+If the formula contains an error, the control may appear disabled.
+
+
+---
+
+5. Variable-Based Locking
+
+Look for formulas like:
+
+DisplayMode =
+If(
+    varSubmitted,
+    DisplayMode.Disabled,
+    DisplayMode.Edit
+)
+
+If varSubmitted is true, the control will be disabled.
+
+
+---
+
+6. The Gallery Item is Not Selected
+
+Sometimes developers use:
+
+If(
+    ThisItem.IsSelected,
+    DisplayMode.Edit,
+    DisplayMode.Disabled
+)
+
+Inside galleries this can make only the selected row editable.
+
+
+---
+
+Quick Test
+
+Temporarily set:
+
+Radio_Score_New.DisplayMode = DisplayMode.Edit
+
+If the radio button becomes active, the issue is somewhere in your DisplayMode logic.
+
+Could you show the formulas for:
+
+Radio_Score_New.DisplayMode
+
+Radio_Score_New.Default
+
+Radio_Score_New.Items
+
+
+and tell me whether the radio button is inside a Gallery or an Edit Form? That will help pinpoint the exact cause.
+
+
+
+*****
+
+
 The root cause is now clear:
 
 SE Assignment List
