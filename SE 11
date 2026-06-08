@@ -1,3 +1,124 @@
+The most likely issue is a data type mismatch in this part:
+
+ID in
+ForAll(
+    Filter(
+        colAssignment,
+        SectionInCharge = varSelectedSection.Title &&
+        User.Email = User().Email
+    ),
+    Supplier.Id
+)
+
+Check 1: What is Supplier in colAssignment?
+
+If Supplier is a SharePoint Lookup column, then:
+
+Supplier.Id
+
+returns a number, which should match the ID column in 'SE Supplier List'.
+
+You can verify by temporarily adding a label:
+
+First(colAssignment).Supplier.Id
+
+If Power Apps shows an error, then Supplier may not be a lookup record.
+
+
+---
+
+Check 2: Use ShowColumns instead of ForAll
+
+A cleaner version is:
+
+Filter(
+    'SE Supplier List',
+    SectionInCharge = varSelectedSection.Title &&
+    ID in
+    ShowColumns(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    )
+)
+
+However, Power Apps sometimes does not like nested field names in ShowColumns.
+
+
+---
+
+Check 3: Create a Supplier ID collection first
+
+This is usually the most reliable approach:
+
+ClearCollect(
+    colSupplierIDs,
+    ForAll(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        ),
+        Supplier.Id
+    )
+);
+
+Then:
+
+Filter(
+    'SE Supplier List',
+    SectionInCharge = varSelectedSection.Title &&
+    ID in colSupplierIDs.Value
+)
+
+
+---
+
+Check 4: Verify column names
+
+From your previous formulas, I noticed several naming variations:
+
+Section
+Section.Value
+Section.Title
+SectionInCharge
+
+Make sure:
+
+SectionInCharge = varSelectedSection.Title
+
+is comparing the same data types.
+
+If SectionInCharge is a Choice column, use:
+
+SectionInCharge.Value = varSelectedSection.Title
+
+If it's a text column, keep:
+
+SectionInCharge = varSelectedSection.Title
+
+
+---
+
+To identify the exact error
+
+Please tell me the exact red error message shown on Gallery_Suppliers_New.Items (for example, "Incompatible types for comparison: Record, Text" or "Expected Table value"), and also tell me the data type of these fields:
+
+SectionInCharge in SE Supplier List
+
+SectionInCharge in colAssignment
+
+Supplier in colAssignment (Lookup, Text, or Record)
+
+
+With those details I can give you the exact corrected formula.
+
+
+*****
+
 
 error in radio_score_new
 
