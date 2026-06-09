@@ -1,3 +1,42 @@
+
+btn_Next_1.OnSelect
+
+If(
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before proceeding.",
+        NotificationType.Error
+    ),
+
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    Set(varSelectedSection, Dropdown_Section.Selected);
+
+    Navigate(
+        Screen3,
+        ScreenTransition.Fade
+    )
+)
+
+
 Dropdown_Section.OnChange
 Set(
     varSelectedSection,
