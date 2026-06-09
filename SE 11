@@ -1,3 +1,51 @@
+Dropdown_Section.OnChange
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+// Load questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        SectionInCharge = varSelectedSection.Title
+    )
+);
+
+// Check access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+Clear(colAnswers)
+
+lblError.Visible
+!varHasAccess
+
+Screen1.Onvisible
+Set(
+        varHasAccess,
+        CountRows(
+            Filter(
+                colAccess,
+                Section.Value = varSelectedSection.Title &&
+                User.Claims = "i:0#.f|membership|" & User().Email
+            )
+        ) > 0
+    );
+
+*****
+
+
+
 Instead of showing lblError, you can automatically redirect the user to Screen5 when they select a section they are not authorized for.
 
 Assuming you already have a collection like colAssignment that contains the user's authorized sections, place this code in the Dropdown_Section.OnChange property:
