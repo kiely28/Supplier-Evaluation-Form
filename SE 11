@@ -1,3 +1,129 @@
+Your current logic already sets varHasAccess in Dropdown_Section.OnChange, so the simplest solution is to navigate to Screen5 when access is denied.
+
+Option 1: Redirect immediately after selecting a section
+
+Replace your Dropdown_Section.OnChange with:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+// Load questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        SectionInCharge = varSelectedSection.Title
+    )
+);
+
+// Check access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+Clear(colAnswers);
+
+// Redirect if unauthorized
+If(
+    !varHasAccess,
+    Navigate(
+        Screen5,
+        ScreenTransition.Fade
+    )
+)
+
+Then you can remove:
+
+lblError.Visible = !varHasAccess
+
+if you no longer need the label.
+
+
+---
+
+Option 2: Redirect only when Next is clicked (Recommended)
+
+Many users find it less surprising if they can select a section but are checked when proceeding.
+
+Add this check near the top of btn_Next_1.OnSelect:
+
+If(
+    !varHasAccess,
+    Navigate(
+        Screen5,
+        ScreenTransition.Fade
+    ),
+
+    IsBlank(Dropdown_Section.Selected),
+
+    Notify(
+        "Please select a section first.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) = 0,
+
+    Notify(
+        "Please answer the evaluation before proceeding.",
+        NotificationType.Error
+    ),
+
+    CountRows(colAnswers) <>
+    (
+        CountRows(Gallery_Suppliers_New.AllItems) *
+        CountRows(colQuestions)
+    ),
+
+    Notify(
+        "Please answer all evaluation questions.",
+        NotificationType.Error
+    ),
+
+    Set(varSelectedSection, Dropdown_Section.Selected);
+
+    Navigate(
+        Screen3,
+        ScreenTransition.Fade
+    )
+)
+
+
+---
+
+One thing I noticed
+
+In Screen1.OnVisible you have:
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+When Screen1 first opens, varSelectedSection may be blank, which can cause unexpected results. I would either remove this code from OnVisible or initialize:
+
+Set(varHasAccess, true);
+
+and let Dropdown_Section.OnChange determine the actual access.
+
+If colAccess contains a Person column named User, I can also help verify whether User.Claims is the correct field to compare, since many SharePoint lists use User.Email instead.
+
+****
+
 
 btn_Next_1.OnSelect
 
