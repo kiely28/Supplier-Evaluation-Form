@@ -1,3 +1,67 @@
+Instead of showing lblError, you can automatically redirect the user to Screen5 when they select a section they are not authorized for.
+
+Assuming you already have a collection like colAssignment that contains the user's authorized sections, place this code in the Dropdown_Section.OnChange property:
+
+If(
+    CountRows(
+        Filter(
+            colAssignment,
+            SectionInCharge = Dropdown_Section.Selected.Title &&
+            User.Email = User().Email
+        )
+    ) = 0,
+    Navigate(Screen5, ScreenTransition.Fade)
+)
+
+Alternative (Recommended)
+
+If you are already setting varSelectedSection:
+
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+If(
+    CountRows(
+        Filter(
+            colAssignment,
+            SectionInCharge = varSelectedSection.Title &&
+            User.Email = User().Email
+        )
+    ) = 0,
+    Navigate(Screen5, ScreenTransition.Fade)
+)
+
+If you have a Next button
+
+A better user experience is often to validate when the user clicks Next rather than immediately after changing the dropdown:
+
+If(
+    CountRows(
+        Filter(
+            colAssignment,
+            SectionInCharge = Dropdown_Section.Selected.Title &&
+            User.Email = User().Email
+        )
+    ) > 0,
+    Navigate(Screen2, ScreenTransition.Fade),
+    Navigate(Screen5, ScreenTransition.Fade)
+)
+
+This way:
+
+Authorized user → goes to Screen2.
+
+Unauthorized user → goes to Screen5 ("You are not authorized for this section").
+
+
+If you share your current Dropdown_Section.OnChange and btn_Next_1.OnSelect formulas, I can modify them directly to fit your Supplier Evaluation app.
+
+
+*****
+
+
 If you use Option 2 and bind the gallery directly to colAssignment, the gallery only contains the fields from colAssignment. That's why you can display Supplier but not SupplierCode if SupplierCode exists only in SE Supplier List.
 
 Solution 1: Add SupplierCode when creating colAssignment (Recommended)
