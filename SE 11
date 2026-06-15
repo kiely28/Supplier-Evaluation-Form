@@ -1,3 +1,7 @@
+https://apps.powerapps.com/play/e/default-3ce358ea-700e-4f0f-bb37-fd0b7c21366c/a/e8f4d1b7-0c79-486d-8a11-62bd89894bf4?tenantId=3ce358ea-700e-4f0f-bb37-fd0b7c21366c&hint=9e515acd-5680-45b6-a5e8-c46b900048ee&sourcetime=1780967811197&section=PR%20Proc
+
+****
+
 Your current logic already sets varHasAccess in Dropdown_Section.OnChange, so the simplest solution is to navigate to Screen5 when access is denied.
 
 Option 1: Redirect immediately after selecting a section
