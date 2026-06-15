@@ -1,3 +1,64 @@
+Screen1.OnVisible:
+If(
+    IsBlank(varScreen1Loaded),
+
+    Set(varScreen1Loaded, true);
+
+    Set(
+        varTotalWidth,
+        150 + 120 + (CountRows(colQuestions) * 350)
+    );
+
+    ClearCollect(colAccess, 'SE Access List');
+
+    Set(varSectionName, Param("section"));
+
+    Set(
+        varSelectedSection,
+        LookUp('SE Section List', Title = varSectionName)
+    );
+
+    ClearCollect(
+        colQuestions,
+        Filter(
+            'SE Question List',
+            //'Section In-charge'.Value = varSelectedSection.Title
+            SectionInCharge = varSelectedSection.Title
+        )
+    );
+
+    Set(
+        varHasAccess,
+        CountRows(
+            Filter(
+                colAccess,
+                Section.Value = varSelectedSection.Title &&
+                User.Claims = "i:0#.f|membership|" & User().Email
+            )
+        ) > 0
+    );
+
+    ClearCollect(colAssignment, 'SE Assignment List');
+
+    Clear(colAnswers);
+    Clear(colSupplierComments);
+
+    Set(
+        varFiscalYear,
+            If(
+                Month(Today()) >= 4,
+                Year(Today()),
+                Year(Today()) - 1
+            )
+        )
+    );
+
+
+Dropdown_Section.Default:
+varSelectedSection.Title
+
+****
+
 The reason is that your access-check code is only running in Dropdown_Section.OnChange.
 
 When a user opens the app using a URL parameter like:
