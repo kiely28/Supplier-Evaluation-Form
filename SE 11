@@ -1,3 +1,123 @@
+The reason is that your access-check code is only running in Dropdown_Section.OnChange.
+
+When a user opens the app using a URL parameter like:
+
+...?section=PR Proc
+
+Power Apps typically:
+
+1. Reads the URL parameter.
+
+
+2. Sets the dropdown value automatically (or via code in App.OnStart / Screen.OnVisible).
+
+
+3. Does not trigger OnChange in all scenarios.
+
+
+
+Therefore, your access validation never runs, so the user stays on Screen1.
+
+Recommended Solution
+
+Move the access-check logic to Screen1.OnVisible (or create a reusable function pattern).
+
+Example:
+
+If(
+    !IsBlank(Param("section")),
+
+    Set(
+        varSelectedSection,
+        LookUp(
+            ChoicesList,
+            Title = Param("section")
+        )
+    );
+
+    ClearCollect(
+        colQuestions,
+        Filter(
+            'SE Question List',
+            SectionInCharge = varSelectedSection.Title
+        )
+    );
+
+    Set(
+        varHasAccess,
+        CountRows(
+            Filter(
+                colAccess,
+                Section.Value = varSelectedSection.Title &&
+                User.Claims = "i:0#.f|membership|" & User().Email
+            )
+        ) > 0
+    );
+
+    If(
+        !varHasAccess,
+        Navigate(
+            Screen5,
+            ScreenTransition.Fade
+        )
+    )
+)
+
+Better Approach
+
+Create a hidden button (e.g., btnCheckAccess) containing all your access logic:
+
+// btnCheckAccess.OnSelect
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+If(
+    !varHasAccess,
+    Navigate(Screen5)
+)
+
+Then call it from:
+
+Dropdown_Section.OnChange
+
+Screen1.OnVisible
+
+Anywhere you set varSelectedSection from URL parameters
+
+
+using:
+
+Select(btnCheckAccess)
+
+Debug Check
+
+Add a label temporarily:
+
+"Section=" & varSelectedSection.Title &
+" | Access=" & Text(varHasAccess)
+
+When opening the URL, verify:
+
+varSelectedSection.Title = PR Proc
+
+varHasAccess = false
+
+
+If varSelectedSection.Title is blank, then the URL parameter is being read but not properly mapped to the dropdown/section record. In that case, show me your Screen1.OnVisible and Dropdown_Section.DefaultSelectedItems formulas, and I can help adjust them.
+
+
+
+*****
+
+
 Set(
     varSelectedSection,
     Dropdown_Section.Selected
