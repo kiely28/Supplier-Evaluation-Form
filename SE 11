@@ -1,3 +1,42 @@
+Set(
+    varSelectedSection,
+    Dropdown_Section.Selected
+);
+
+// Load questions
+ClearCollect(
+    colQuestions,
+    Filter(
+        'SE Question List',
+        SectionInCharge = varSelectedSection.Title
+    )
+);
+
+// Check access
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & User().Email
+        )
+    ) > 0
+);
+
+Clear(colAnswers);
+
+// Redirect if unauthorized
+If(
+    !varHasAccess,
+    Navigate(
+        Screen5,
+        ScreenTransition.Fade
+    )
+)
+
+****
+
 https://apps.powerapps.com/play/e/default-3ce358ea-700e-4f0f-bb37-fd0b7c21366c/a/e8f4d1b7-0c79-486d-8a11-62bd89894bf4?tenantId=3ce358ea-700e-4f0f-bb37-fd0b7c21366c&hint=9e515acd-5680-45b6-a5e8-c46b900048ee&sourcetime=1780967811197&section=PR%20Proc
 
 ****
