@@ -1,3 +1,20 @@
+in power apps how to combine this to code:
+If(
+    !IsBlank(Param("section")) &&
+    !varHasAccess,
+    Navigate(Screen5)
+)
+
+else 
+
+Navigate(
+    Screen1,
+    ScreenTransition.Fade
+)
+
+*****
+
+
 If StartScreen = Screen2 and Screen5.OnVisible is blank, then Screen1 itself is probably not the only cause.
 
 Let's find the actual redirect source.
