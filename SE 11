@@ -1,3 +1,109 @@
+That's the main problem.
+
+Everything required for your access check is currently inside Screen1.OnVisible:
+
+Set(varSectionName, Param("section"));
+ClearCollect(colAccess, 'SE Access List');
+Set(varSelectedSection, LookUp('SE Section List', Title = varSectionName));
+Set(varHasAccess, ...);
+
+But you're trying to decide whether to go to Screen1 before Screen1 has even opened.
+
+Recommended structure
+
+Move the initialization to App.OnStart (or Screen2.OnVisible if you prefer):
+
+Set(
+    varSectionName,
+    Param("section")
+);
+
+ClearCollect(
+    colAccess,
+    'SE Access List'
+);
+
+Set(
+    varSelectedSection,
+    LookUp(
+        'SE Section List',
+        Title = varSectionName
+    )
+);
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & Lower(User().Email)
+        )
+    ) > 0
+);
+
+Then your btn_Start.OnSelect can simply be:
+
+If(
+    !IsBlank(varSectionName) && !varHasAccess,
+    Navigate(
+        Screen5,
+        ScreenTransition.Fade
+    ),
+    Navigate(
+        Screen1,
+        ScreenTransition.Fade
+    )
+)
+
+Alternative (simpler)
+
+Leave the button alone:
+
+Navigate(
+    Screen1,
+    ScreenTransition.Fade
+)
+
+Then let Screen1.OnVisible perform all the checks and redirect:
+
+Set(varSectionName, Param("section"));
+
+ClearCollect(
+    colAccess,
+    'SE Access List'
+);
+
+Set(
+    varSelectedSection,
+    LookUp(
+        'SE Section List',
+        Title = varSectionName
+    )
+);
+
+Set(
+    varHasAccess,
+    CountRows(
+        Filter(
+            colAccess,
+            Section.Value = varSelectedSection.Title &&
+            User.Claims = "i:0#.f|membership|" & Lower(User().Email)
+        )
+    ) > 0
+);
+
+If(
+    !IsBlank(varSectionName) && !varHasAccess,
+    Navigate(Screen5)
+);
+
+Since you've previously had an issue where you couldn't even open Screen1 in edit mode because it immediately redirected to Screen5, I would avoid putting the redirect directly in Screen1.OnVisible.
+
+Instead, move all initialization (varSectionName, colAccess, varSelectedSection, varHasAccess) to App.OnStart or Screen2.OnVisible, and keep the navigation decision in the button. That prevents the design-time redirect problem from happening again.
+
+*****
+
 ClearCollect(colAccess, 'SE Access List');
 
 
