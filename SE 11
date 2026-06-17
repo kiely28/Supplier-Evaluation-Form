@@ -1,3 +1,11 @@
+   Set(
+        varSelectedSection,
+        LookUp('SE Section List', Title = varSectionName)
+    );
+
+
+*****
+
 Set(
         varHasAccess,
         CountRows(
