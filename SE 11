@@ -1,4 +1,11 @@
-   Set(
+Set(varSectionName, Param("section"));
+
+
+******
+
+
+
+Set(
         varSelectedSection,
         LookUp('SE Section List', Title = varSectionName)
     );
