@@ -1,3 +1,111 @@
+If StartScreen = Screen2 and Screen5.OnVisible is blank, then Screen1 itself is probably not the only cause.
+
+Let's find the actual redirect source.
+
+Check these places:
+
+1. Screen2.OnVisible
+
+Look for something like:
+
+Navigate(Screen1)
+
+or
+
+If(
+   ...,
+   Navigate(Screen1)
+)
+
+Since Screen2 is the start screen, it may be navigating to Screen1 automatically.
+
+2. App.OnStart
+
+Look for:
+
+Navigate(Screen1)
+
+or any variable that eventually causes navigation.
+
+3. Screen1.OnHidden
+
+Check if you accidentally put:
+
+Navigate(Screen5)
+
+there.
+
+4. Any Timer Control
+
+Search the app for:
+
+Navigate(Screen5
+
+Use Search (Ctrl+Shift+F) and search for:
+
+Screen5
+
+or
+
+Navigate(
+
+This will show every place where Screen5 is referenced.
+
+
+---
+
+Emergency Fix
+
+If you absolutely cannot access Screen1:
+
+1. Open the app.
+
+
+2. Stay on Screen5.
+
+
+3. In the left Tree View, right-click Screen1 (don't click its name).
+
+
+4. Select Rename.
+
+
+
+If Studio lets you rename it, the screen object is accessible.
+
+Then use the top property dropdown to select OnVisible without opening the screen.
+
+
+---
+
+Most likely scenario
+
+From what you've described, I suspect you added:
+
+If(
+    !varHasAccess,
+    Navigate(Screen5)
+)
+
+inside the large If(IsBlank(varScreen1Loaded), ...) block, and varHasAccess is blank/false during design time.
+
+If that's the case, the safest formula is:
+
+If(
+    !IsBlank(Param("section")) &&
+    !varHasAccess,
+    Navigate(Screen5)
+)
+
+But first we need to regain access to Screen1.
+
+Can you paste the entire current Screen1.OnVisible formula exactly as it is now? The exact placement of the Navigate(Screen5) line matters.
+
+
+
+*****
+
+
 Screen1.OnVisible:
 If(
     IsBlank(varScreen1Loaded),
