@@ -1,3 +1,8 @@
+ClearCollect(colAccess, 'SE Access List');
+
+
+******
+
 Set(varSectionName, Param("section"));
 
 
