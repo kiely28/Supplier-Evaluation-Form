@@ -1,3 +1,17 @@
+Set(
+        varHasAccess,
+        CountRows(
+            Filter(
+                colAccess,
+                Section.Value = varSelectedSection.Title &&
+                User.Claims = "i:0#.f|membership|" & User().Email
+            )
+        ) > 0
+    );
+
+
+*****
+
 in power apps how to combine this to code:
 If(
     !IsBlank(Param("section")) &&
