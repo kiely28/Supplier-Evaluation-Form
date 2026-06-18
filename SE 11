@@ -1,3 +1,40 @@
+ID	Title	SectionInCharge	QuestionNo	EvaluationMethod	EvaluationContents	Max Score	Item Type	Path
+1		PR INK Proc	M1R	Monthly price change. Monthly price change. Monthly price change. Monthly price change. Monthly price change	Total service	3	Item	sites/00S_01518/Lists/SE Question List
+2		PR INK Proc	M6R	Rationalization / VAVE Participation Rationalization / VAVE Participation Rationalization / VAVE Participation	Sales staff service	3	Item	sites/00S_01518/Lists/SE Question List
+3		PR INK Proc	D2R	Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit.	Recovery of delivery problem	4	Item	sites/00S_01518/Lists/SE Question List
+4		PR INK Proc	D3R	Lorem ipsum dolor sit amet, consectetur adipiscing elit.	Flexibility for EPSON demand	4	Item	sites/00S_01518/Lists/SE Question List
+6		VP Proc NP	M1R		Total service	3	Item	sites/00S_01518/Lists/SE Question List
+7		VP Proc NP	M6R		Sales staff service	3	Item	sites/00S_01518/Lists/SE Question List
+8		VP Proc NP	D2R		Recovery of delivery problem	4	Item	sites/00S_01518/Lists/SE Question List
+9		VP Proc NP	D3R		Flexibility for EPSON demand	4	Item	sites/00S_01518/Lists/SE Question List
+10		VP Proc NP	M5R		Product/Production design	4	Item	sites/00S_01518/Lists/SE Question List
+11		VP Proc NP	Q3R		Quality problem occurrence	3	Item	sites/00S_01518/Lists/SE Question List
+12		VP Proc NP	Q4R		Recovery of quality problem	3	Item	sites/00S_01518/Lists/SE Question List
+13		VP Proc NP	Q10R		Management of their supplier	4	Item	sites/00S_01518/Lists/SE Question List
+14		PR Proc NP	M1R	This is a test purposes only. Please see attached file. Thank you. Lorem ipsum dolor. Lorem ipsum dolor	Total service	3	Item	sites/00S_01518/Lists/SE Question List
+15		PR Proc NP	M6R	If you want, I can help you style your comment box to look like a modern form input (Microsoft style).	Sales staff service	3	Item	sites/00S_01518/Lists/SE Question List
+16		PR Proc NP	D2R	Monthly price change.	Recovery of delivery problem	4	Item	sites/00S_01518/Lists/SE Question List
+17		PR Proc NP	D3R	Monthly price change.	Flexibility for EPSON demand	4	Item	sites/00S_01518/Lists/SE Question List
+18		PR Proc NP	M5R		Product/Production design	4	Item	sites/00S_01518/Lists/SE Question List
+19		PR Proc NP	Q3R	Monthly price change.	Quality problem occurrence	3	Item	sites/00S_01518/Lists/SE Question List
+20		PR Proc NP	Q4R	Monthly price change.	Recovery of quality problem	3	Item	sites/00S_01518/Lists/SE Question List
+21		PR Proc NP	Q10R	Monthly price change.	Management of their supplier	4	Item	sites/00S_01518/Lists/SE Question List
+27		Parts Mfg Control	M1R		Total service	3	Item	sites/00S_01518/Lists/SE Question List
+28		Parts Mfg Control	M6R		Sales staff service	4	Item	sites/00S_01518/Lists/SE Question List
+29		Parts Mfg Control	D2R		Recovery of delivery problem	3	Item	sites/00S_01518/Lists/SE Question List
+30		Parts Mfg Control	D3R		Flexibility for EPSON demand	4	Item	sites/00S_01518/Lists/SE Question List
+31		Parts Mfg Control	M5R		Product/Production design	3	Item	sites/00S_01518/Lists/SE Question List
+32		Parts Mfg Control	E4R		Chemical substance	3	Item	sites/00S_01518/Lists/SE Question List
+33		Parts Mfg Control	Q3R		Quality problem occurrence	4	Item	sites/00S_01518/Lists/SE Question List
+34		Parts Mfg Control	Q4R		Recovery of quality problem	4	Item	sites/00S_01518/Lists/SE Question List
+35		Parts Mfg Control	Q10R		Management of their supplier	4	Item	sites/00S_01518/Lists/SE Question List
+
+
+
+
+******
+
+
 Thank you. Now I understand your data model better.
 
 Your report is not actually storing all possible scores (1,2,3,4). It only stores the selected score.
