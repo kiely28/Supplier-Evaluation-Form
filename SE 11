@@ -1,3 +1,213 @@
+Yes. Based on your screenshot, you want a Supplier Evaluation Matrix where:
+
+Rows = Suppliers
+
+Columns = Questions (M1R, M5R, Q4R, C2R, etc.)
+
+Under each question are score options (1,2,3,4)
+
+A colored dot appears on the selected score
+
+Filterable by Fiscal Year, Section, Vendor Type
+
+
+This can be done in Power BI using a Matrix Visual with some data transformation.
+
+
+---
+
+Step 1: Your SharePoint Lists
+
+SE Evaluation List
+
+SectionInCharge	Question	SupplierCode	SupplierName	Score	FiscalYear
+
+PR INK Proc	M1R	341927	LANXESS	3	2026
+PR INK Proc	M5R	341927	LANXESS	2	2026
+PR INK Proc	Q4R	341927	LANXESS	4	2026
+
+
+
+---
+
+SE Question List
+
+QuestionNo	MaxScore
+
+M1R	3
+M5R	4
+Q4R	4
+
+
+
+---
+
+Step 2: Create a Score Dimension Table
+
+In Power BI:
+
+ScoreTable =
+DATATABLE(
+    "ScoreOption", INTEGER,
+    {
+        {1},
+        {2},
+        {3},
+        {4}
+    }
+)
+
+
+---
+
+Step 3: Create Question-Score Combination Table
+
+This generates:
+
+Question
+
+M1R-1
+M1R-2
+M1R-3
+M5R-1
+M5R-2
+M5R-3
+M5R-4
+
+
+QuestionScore =
+GENERATE(
+    'SE Question List',
+    ScoreTable
+)
+
+
+---
+
+Step 4: Create Matrix Measure
+
+SelectedScore =
+VAR CurrentQuestion =
+    SELECTEDVALUE(QuestionScore[QuestionNo])
+
+VAR CurrentOption =
+    SELECTEDVALUE(QuestionScore[ScoreOption])
+
+VAR ActualScore =
+    CALCULATE(
+        MAX('SE Evaluation List'[Score]),
+        FILTER(
+            'SE Evaluation List',
+            'SE Evaluation List'[Question] = CurrentQuestion
+        )
+    )
+
+RETURN
+IF(
+    ActualScore = CurrentOption,
+    "●",
+    BLANK()
+)
+
+
+---
+
+Step 5: Matrix Layout
+
+Rows
+
+SupplierCode
+
+SupplierName
+
+
+Columns
+
+QuestionNo
+
+ScoreOption
+
+
+Result:
+
+Supplier	M1R			M5R				Q4R			
+
+	1	2	3	1	2	3	4	1	2	3	4
+LANXESS			●		●						●
+
+
+Similar to your Excel output.
+
+
+---
+
+Step 6: Add Colors
+
+Create measure:
+
+DotColor =
+VAR Score =
+    MAX('SE Evaluation List'[Score])
+
+RETURN
+SWITCH(
+    TRUE(),
+    Score = 1, "#FF0000",
+    Score = 2, "#FFA500",
+    Score = 3, "#800080",
+    Score = 4, "#0000FF",
+    "#FFFFFF"
+)
+
+Apply:
+
+Conditional Formatting → Font Color
+
+using DotColor.
+
+This will mimic the colored circles in Excel.
+
+
+---
+
+Alternative (Closer to Excel)
+
+If management wants the report to look exactly like the Excel sheet, I recommend:
+
+1. Create a Matrix Visual for interactive analysis.
+
+
+2. Create a Paginated Report (Power BI Report Builder) for printing/exporting.
+
+
+
+Paginated Reports are much better for reproducing:
+
+Merged headers
+
+Question groups
+
+Colored circles
+
+Fixed page layouts
+
+Excel-style reports
+
+
+The screenshot you shared is actually closer to a Paginated Report than a standard Power BI Matrix.
+
+For your data structure (SharePoint Lists), I would use:
+
+Power BI Matrix for dashboards and filtering.
+
+Power BI Paginated Report for the printable supplier evaluation sheet that looks almost identical to the Excel template.
+
+
+
+******
+
+
+
 SE Evaluation List
 SectionInCharge | Question | SupplierCode | Score | FiscalYear | Comment | 
 PR INK Proc	| M1R	   | 341927  | LANXESS | 3 | 2026 | Test Comment |
