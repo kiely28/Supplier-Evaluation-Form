@@ -1,3 +1,198 @@
+Thank you. Now I understand your data model better.
+
+Your report is not actually storing all possible scores (1,2,3,4). It only stores the selected score.
+
+For example:
+
+Supplier	Question	Selected Score
+
+LANXESS	M1R	1
+LANXESS	M6R	2
+LANXESS	D2R	3
+LANXESS	D3R	4
+
+
+while the possible score options come from:
+
+Question	MaxScore
+
+M1R	3
+M6R	3
+D2R	4
+D3R	4
+
+
+which means:
+
+M1R = ○1 ○2 ○3
+M6R = ○1 ○2 ○3
+D2R = ○1 ○2 ○3 ○4
+D3R = ○1 ○2 ○3 ○4
+
+and the selected score should be shown as:
+
+M1R
+● ○ ○
+
+M6R
+○ ● ○
+
+D2R
+○ ○ ● ○
+
+D3R
+○ ○ ○ ●
+
+
+---
+
+Recommended Data Model
+
+Create a helper table in Power BI:
+
+ScoreOption =
+DATATABLE(
+    "Score", INTEGER,
+    {
+        {1},
+        {2},
+        {3},
+        {4}
+    }
+)
+
+Then create:
+
+QuestionScore =
+FILTER(
+    CROSSJOIN(
+        'SE Question List',
+        ScoreOption
+    ),
+    ScoreOption[Score] <= 'SE Question List'[MaxScore]
+)
+
+Result:
+
+QuestionNo	Score
+
+M1R	1
+M1R	2
+M1R	3
+M6R	1
+M6R	2
+M6R	3
+D2R	1
+D2R	2
+D2R	3
+D2R	4
+D3R	1
+D3R	2
+D3R	3
+D3R	4
+
+
+
+---
+
+Measure for the Dot
+
+SelectedDot =
+VAR CurrentQuestion =
+    SELECTEDVALUE(QuestionScore[QuestionNo])
+
+VAR CurrentScore =
+    SELECTEDVALUE(QuestionScore[Score])
+
+VAR SelectedScore =
+    CALCULATE(
+        MAX('SE Evaluation List'[Score]),
+        FILTER(
+            'SE Evaluation List',
+            'SE Evaluation List'[Question] = CurrentQuestion
+        )
+    )
+
+RETURN
+IF(
+    SelectedScore = CurrentScore,
+    "●",
+    BLANK()
+)
+
+
+---
+
+Matrix Setup
+
+Rows
+
+SupplierCode
+SupplierName
+
+Columns
+
+QuestionNo
+Score
+
+Values
+
+SelectedDot
+
+Result:
+
+Supplier	M1R			M6R			D2R				D3R			
+
+	1	2	3	1	2	3	1	2	3	4	1	2	3	4
+LANXESS	●				●				●					●
+
+
+This is almost identical to your Excel screenshot.
+
+
+---
+
+If You Want the Exact Excel Layout
+
+Your screenshot has:
+
+Questions
+          M1R        M6R         D2R           D3R
+         1 2 3      1 2 3      1 2 3 4      1 2 3 4
+LANXESS  ●          ●              ●             ●
+
+A standard Power BI Matrix can do this.
+
+However, if you also want:
+
+Fiscal Year at the top
+
+Letter to Procurement
+
+Comments section
+
+Exact printable format
+
+Export identical to Excel
+
+
+then use Power BI Report Builder (Paginated Report). It is designed for reports like the one in your screenshot.
+
+For management reports, I would build:
+
+1. Power BI Dashboard (interactive)
+
+
+2. Paginated Report (Excel-style printable report)
+
+
+
+This gives you the same experience as your current supplier evaluation workbook while still using SharePoint Lists as the data source.
+
+
+
+*****
+
 
 
 SE Evaluation List
