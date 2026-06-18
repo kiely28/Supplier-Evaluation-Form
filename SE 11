@@ -1,3 +1,23 @@
+
+
+SE Evaluation List
+SectionInCharge | Question | SupplierCode | Score | FiscalYear | Comment | 
+PR INK Proc	| M1R	   | 341927  | LANXESS | 1 | 2026 | TestComment1 |
+PR INK Proc	| M6R	   | 341927  | LANXESS | 2 | 2026 | TestComment2 |
+PR INK Proc	| D2R	   | 341927  | LANXESS | 3 | 2026 | TestComment3 |
+PR INK Proc	| D3R	   | 341927  | LANXESS | 4 | 2026 | TestComment4 |
+
+SE Question List
+SectionInCharge | QuestionNo | EvaluationMethod | EvaluationContents | MaxScore | 
+PR INK Proc     |    M1R     | Monthly price change | Total service  |    3     |
+PR INK Proc     |    M6R     | Rationalization      | Sales staff service  | 3  |
+PR INK Proc     |    D2R     | VAVE Participation   | Recovery of delivery  | 4 |
+PR INK Proc     |    D3R     | Lorem ipsum dolor    | Flexibility fordemand | 4 |
+
+
+*****
+
+
 Yes. Based on your screenshot, you want a Supplier Evaluation Matrix where:
 
 Rows = Suppliers
