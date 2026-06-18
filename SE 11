@@ -1,3 +1,15 @@
+SE Evaluation List
+SectionInCharge | Question | SupplierCode | Score | FiscalYear | Comment | 
+PR INK Proc	| M1R	   | 341927  | LANXESS | 3 | 2026 | Test Comment |
+
+SE Question List
+SectionInCharge | QuestionNo | EvaluationMethod | EvaluationContents | MaxScore | 
+PR INK Proc     |    M1R     | Monthly price change | Total service  |    3     |
+
+
+****
+
+
 That's the main problem.
 
 Everything required for your access check is currently inside Screen1.OnVisible:
