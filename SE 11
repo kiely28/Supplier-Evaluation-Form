@@ -1,3 +1,10 @@
+There's already a relationship between these two columns.
+
+
+
+*****
+
+
 No problem. Since you're currently at the New Relationship popup, let's first close it because we need to create the QuestionKey columns before Power BI can create the relationship.
 
 Step A - Cancel the Relationship Window
