@@ -1,4 +1,103 @@
 
+please help me to design like the uploaded image in power bi
+the data is in sharepoint list
+
+
+
+In uploaded image it has 
+
+
+Vendor code(Supplier Code) | Supplier Name |        		Questions			    |					
+			   | 		   | M1R     | M5R	| M6R	| M7R	  | E4R	    | Q3R   |	
+        		   |     	   | 1 2 3   | 1 2 3 4	| 1 2 3	| 1 2 3	4 | 1 2	3 4 | 1	2 3 |
+341927 			   | LANXESS	   | 	     |    	|  	|         |         |       |
+
+
+
+and this is the sharepoint list:
+
+SE Evaluation List (List)
+(Data type)
+SectionInCharge - Single line of text
+Question - Single line of text
+SupplierCode - Single line of text
+Supplier - Single line of text
+Score -Single line of text 
+FiscalYear - Single line of text
+Comment - Multiple lines of text
+Created - defalt system date and time
+Created By - default user (Person)
+
+(Sample data)
+SectionInCharge | Question | SupplierCode | Supplier | Score | FiscalYear | Comment      | Created		         | Created By    |
+PR INK Proc	| M1R	   | 341927       | LANXESS  | 1     | 2026       | TestComment1 | (defalt system date and time) | (default user)|
+PR INK Proc	| M6R	   | 341927       | LANXESS  | 2     | 2026       | TestComment1 |				 |		 |
+PR INK Proc	| D2R	   | 341927       | LANXESS  | 3     | 2026       | TestComment1 |				 |		 |
+PR INK Proc	| D3R	   | 341927       | LANXESS  | 4     | 2026       | TestComment1 |				 |		 |
+VP INK Proc	| E4R	   | 341927       | LANXESS  | 1     | 2026       | TestComment1 |				 |		 |
+VP INK Proc	| Q3R	   | 341927       | LANXESS  | 2     | 2026       | TestComment1 |				 |		 |
+
+
+The SE Evaluation List is a SharePoint list used to store evaluation results submitted from the Supplier Evaluation App in Power Apps.
+Each record represents the evaluation result for a specific question, supplier, and section.
+
+per section, it has different Question for example in PR INK Proc there  M1R, M6R, D2R and D3R while in VP INK Proc it has E4R and Q3R 
+
+For reporting, the data is summarized and displayed per section in a pivot format, where questions are shown as columns and scores are shown per supplier.
+
+For example:
+For the section PR INK Proc, the app saves one record per question (M1R, M6R, D2R, D3R) for a specific supplier.
+The Score column stores the selected answer from the app (based on radio button input).
+The system also saves the FiscalYear and Comment for the selected section (PR INK Proc).
+
+
+if you need the Question and the subnum in the design:
+
+
+SharePoint List
+SE Question List (List)
+(Data type)
+SectionInCharge - Single line of text
+QuestionNo - Single line of text
+EvaluationMethod - Single line of text
+EvaluationContents - Single line of text
+MaxScore - Number
+
+(Sample data)
+SectionInCharge | QuestionNo | EvaluationMethod | EvaluationContents | MaxScore | 
+PR INK Proc     |    M1R     | Monthly price change | Total service  |    3     |
+PR INK Proc     |    M6R     | Rationalization      | Sales staff service  | 3  |
+PR INK Proc     |    D2R     | VAVE Participation   | Recovery of delivery  | 4 |
+PR INK Proc     |    D3R     | Lorem ipsum dolor    | Flexibility fordemand | 4 |
+Parts Mfg Control |    M1R   | Monthly price change | Total service  |    3     |
+Parts Mfg Control |    M6R   | Rationalization      | Sales staff service  | 3  |
+Parts Mfg Control |    D2R   | VAVE Participation   | Recovery of delivery  | 4 |
+Parts Mfg Control |    D3R   | Lorem ipsum dolor    | Flexibility fordemand | 4 |
+Parts Mfg Control |    M5R   | Test Method          | Test Contents  |    4     |
+
+For example, in PR INK Proc(SectionInCharge) there are 4 Question the (M1R, M6R, D2R, D3R) per EvaluationMethod and EvaluationContents and The MaxScore determines how many scoring options
+For instance:
+If MaxScore = 3, then 3 options should be shown
+If MaxScore = 4, then 4 options should be shown
+
+
+*******
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 SE Evaluation List (List)
 (Data type)
