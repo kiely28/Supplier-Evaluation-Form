@@ -1,3 +1,184 @@
+This error is expected based on your data structure.
+
+The issue is that QuestionNo is not unique in your DimQuestion table.
+
+For example:
+
+SectionInCharge	QuestionNo
+
+PR INK Proc	M1R
+Parts Mfg Control	M1R
+
+
+Power BI sees:
+
+M1R
+M1R
+
+twice, so it cannot use QuestionNo as the "1" side of the relationship.
+
+
+---
+
+Why this happens
+
+Your Fact table contains:
+
+SectionInCharge	Question
+
+PR INK Proc	M1R
+Parts Mfg Control	M1R
+
+
+and your Question table contains:
+
+SectionInCharge	QuestionNo
+
+PR INK Proc	M1R
+Parts Mfg Control	M1R
+
+
+The real unique key is:
+
+SectionInCharge + Question
+
+not just:
+
+Question
+
+
+---
+
+Solution 1 (Recommended)
+
+Create a composite key in both tables.
+
+In Power Query
+
+FactEvaluation
+
+Add Column → Custom Column
+
+Name:
+
+QuestionKey
+
+Formula:
+
+[SectionInCharge] & "|" & [Question]
+
+Result:
+
+SectionInCharge	Question	QuestionKey
+
+PR INK Proc	M1R	PR INK Proc|M1R
+PR INK Proc	D2R	PR INK Proc|D2R
+VP INK Proc	E4R	VP INK Proc|E4R
+
+
+
+---
+
+DimQuestion
+
+Add another custom column:
+
+QuestionKey
+
+Formula:
+
+[SectionInCharge] & "|" & [QuestionNo]
+
+Result:
+
+SectionInCharge	QuestionNo	QuestionKey
+
+PR INK Proc	M1R	PR INK Proc|M1R
+Parts Mfg Control	M1R	Parts Mfg Control|M1R
+
+
+Now every row is unique.
+
+
+---
+
+Create Relationship
+
+Delete the old relationship attempt.
+
+Create:
+
+FactEvaluation[QuestionKey]
+        *
+        |
+        |
+        1
+DimQuestion[QuestionKey]
+
+Cardinality:
+
+Many to One (*:1)
+
+Cross filter:
+
+Single
+
+This should work.
+
+
+---
+
+Verify Uniqueness First
+
+In Power BI:
+
+1. Go to Data View
+
+
+2. Select DimQuestion
+
+
+3. Sort by QuestionKey
+
+
+
+Check whether any duplicate QuestionKey exists.
+
+Example of bad data:
+
+SectionInCharge	QuestionNo
+
+PR INK Proc	M1R
+PR INK Proc	M1R
+
+
+If you have duplicates like this, relationship still won't work.
+
+
+---
+
+Alternative (Not Recommended)
+
+You could create a relationship only on QuestionNo after creating a distinct question table:
+
+QuestionNo
+
+M1R
+M5R
+M6R
+D2R
+
+
+But then you'll lose the section-specific MaxScore and metadata, which you'll need later for the matrix design.
+
+For your supplier evaluation reporting, the QuestionKey approach is the correct design.
+
+Can you show me a screenshot or sample of your DimQuestion table after adding QuestionKey? Then I'll help you create the relationship and build the matrix correctly.
+
+
+*****
+
+
 Column 'QuestionNo' in Table 'DimQuestion' contains a duplicate value 'M1R' and this is not allowed for
 columns on the one side of a many-to-one relationship or for columns that are used as the primary key of a
 table
