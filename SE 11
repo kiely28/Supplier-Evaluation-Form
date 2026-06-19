@@ -1,3 +1,9 @@
+Column 'QuestionNo' in Table 'DimQuestion' contains a duplicate value 'M1R' and this is not allowed for
+columns on the one side of a many-to-one relationship or for columns that are used as the primary key of a
+table
+
+****
+
 Sure. Let's start with Step 1 only: Load the SharePoint Lists and Create Relationships.
 
 
