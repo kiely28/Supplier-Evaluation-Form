@@ -1,3 +1,179 @@
+That's actually good news.
+
+The error:
+
+There's already a relationship between these two columns.
+
+means Power BI successfully detected that a relationship already exists between:
+
+FactEvaluation[QuestionKey]
+and
+DimQuestion[QuestionKey]
+
+or there is already another active relationship between the same two tables.
+
+
+---
+
+Let's Verify
+
+Go to:
+
+Model View
+
+Look between:
+
+FactEvaluation
+DimQuestion
+
+Do you see a line connecting them?
+
+If YES
+
+Double-click the line.
+
+Tell me what it shows:
+
+From:
+FactEvaluation[????]
+
+To:
+DimQuestion[????]
+
+or send a screenshot.
+
+
+---
+
+Most Likely Scenario
+
+Earlier you may have created:
+
+FactEvaluation[Question]
+      →
+DimQuestion[QuestionNo]
+
+before creating QuestionKey.
+
+Power BI saved it.
+
+Now when you're trying to create:
+
+FactEvaluation[QuestionKey]
+      →
+DimQuestion[QuestionKey]
+
+Power BI blocks it because there is already a relationship between the same two tables.
+
+
+---
+
+Check Existing Relationship
+
+In Model View:
+
+1. Double-click the relationship line.
+
+
+2. A window opens.
+
+
+3. Check which columns are connected.
+
+
+
+If it shows
+
+Question
+→
+QuestionNo
+
+then we need to delete it.
+
+
+---
+
+Delete Old Relationship
+
+1. Click the relationship line.
+
+
+2. Press:
+
+
+
+Delete
+
+on keyboard
+
+OR
+
+Right-click →
+
+Delete
+
+
+---
+
+Create New Relationship
+
+After deleting:
+
+Drag
+
+FactEvaluation[QuestionKey]
+
+onto
+
+DimQuestion[QuestionKey]
+
+Set:
+
+Cardinality:
+Many to One (*:1)
+
+Cross Filter:
+Single
+
+Active:
+✓
+
+Click OK.
+
+
+---
+
+Before Deleting Anything
+
+Can you tell me:
+
+Question 1
+
+Do you currently see a relationship line between the tables?
+
+Question 2
+
+If you double-click it, what columns are connected?
+
+Example:
+
+FactEvaluation[Question]
+→
+DimQuestion[QuestionNo]
+
+or
+
+FactEvaluation[QuestionKey]
+→
+DimQuestion[QuestionKey]
+
+That will tell us whether the relationship is already correct or if we need to replace it.
+
+
+
+*****
+
+
 There's already a relationship between these two columns.
 
 
