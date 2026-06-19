@@ -1,3 +1,386 @@
+Sure. Let's start with Step 1 only: Load the SharePoint Lists and Create Relationships.
+
+
+---
+
+Part 1 - Connect Power BI to SharePoint List
+
+You have 2 SharePoint Lists:
+
+List 1
+
+SE Evaluation List
+
+Stores actual evaluation results.
+
+List 2
+
+SE Question List
+
+Stores question definitions and MaxScore.
+
+
+---
+
+Step 1.1 Get Data from SharePoint
+
+Open Power BI Desktop.
+
+Click
+
+Home
+→ Get Data
+→ More...
+
+Search:
+
+SharePoint Online List
+
+Select it and click:
+
+Connect
+
+
+---
+
+Step 1.2 Enter SharePoint Site URL
+
+Enter ONLY the SharePoint Site URL.
+
+Example:
+
+https://companyname.sharepoint.com/sites/SupplierEvaluation
+
+NOT:
+
+https://companyname.sharepoint.com/sites/SupplierEvaluation/Lists/SE Evaluation List
+
+Click:
+
+OK
+
+Sign in if prompted.
+
+
+---
+
+Step 1.3 Select Lists
+
+Power BI will show all SharePoint Lists.
+
+Select:
+
+✔ SE Evaluation List
+
+✔ SE Question List
+
+Click:
+
+Transform Data
+
+
+---
+
+Part 2 - Clean Data Types
+
+Now Power Query opens.
+
+
+---
+
+SE Evaluation List
+
+Check the columns:
+
+Column	Type
+
+SupplierCode	Text
+Supplier	Text
+Question	Text
+Score	Whole Number
+FiscalYear	Whole Number
+SectionInCharge	Text
+Comment	Text
+
+
+
+---
+
+Change Score to Number
+
+Currently SharePoint stores:
+
+Score = Single Line of Text
+
+Power BI imports as Text.
+
+Click:
+
+Score Column
+→ Data Type
+→ Whole Number
+
+
+---
+
+Change FiscalYear
+
+Change:
+
+FiscalYear
+
+to
+
+Whole Number
+
+
+---
+
+SE Question List
+
+Check:
+
+Column	Type
+
+SectionInCharge	Text
+QuestionNo	Text
+MaxScore	Whole Number
+EvaluationMethod	Text
+EvaluationContents	Text
+
+
+
+---
+
+Make sure:
+
+MaxScore
+
+is
+
+Whole Number
+
+
+---
+
+Part 3 - Rename Tables
+
+On left side:
+
+Rename:
+
+From
+
+SE Evaluation List
+
+to
+
+FactEvaluation
+
+
+---
+
+Rename:
+
+From
+
+SE Question List
+
+to
+
+DimQuestion
+
+
+---
+
+Click:
+
+Close & Apply
+
+
+---
+
+Part 4 - Create Relationship
+
+After loading:
+
+Click:
+
+Model View
+
+(left side icon with connected boxes)
+
+
+---
+
+You should see:
+
+FactEvaluation
+DimQuestion
+
+
+---
+
+Create Relationship
+
+Drag:
+
+FactEvaluation[Question]
+
+onto
+
+DimQuestion[QuestionNo]
+
+
+---
+
+Power BI will open:
+
+Create Relationship
+
+Set:
+
+Left
+
+FactEvaluation[Question]
+
+Right
+
+DimQuestion[QuestionNo]
+
+Cardinality
+
+Many to One (*:1)
+
+because
+
+FactEvaluation
+
+contains many M1R rows
+
+while
+
+DimQuestion
+
+contains one M1R definition.
+
+
+---
+
+Cross Filter
+
+Choose:
+
+Single
+
+
+---
+
+Click:
+
+OK
+
+
+---
+
+Result
+
+You should have:
+
+FactEvaluation
+      *
+      |
+      |
+      1
+DimQuestion
+
+Like:
+
+FactEvaluation[Question]
+          *
+          |
+          |
+          1
+DimQuestion[QuestionNo]
+
+
+---
+
+Verify Relationship
+
+Click:
+
+Data View
+
+Select:
+
+FactEvaluation
+
+Create a simple table visual:
+
+Add:
+
+Supplier
+Question
+Score
+MaxScore
+
+Notice:
+
+MaxScore
+
+comes from:
+
+DimQuestion
+
+If Power BI can display it correctly, the relationship is working.
+
+
+---
+
+Important Check Before Proceeding
+
+Your sample data shows:
+
+FactEvaluation
+
+Question = M1R
+Question = M6R
+Question = D2R
+Question = D3R
+
+DimQuestion
+
+QuestionNo = M1R
+QuestionNo = M6R
+QuestionNo = D2R
+QuestionNo = D3R
+
+The values must match exactly.
+
+Examples that cause problems:
+
+FactEvaluation = "M1R"
+DimQuestion = " M1R"
+
+or
+
+FactEvaluation = "m1r"
+DimQuestion = "M1R"
+
+If they don't match, we'll clean them in Power Query before creating the relationship.
+
+
+---
+
+Once you've completed this step, send me a screenshot of your Model View relationship diagram, and I'll guide you through Step 2 (creating the ScoreTable and dynamic Matrix layout).
+
+
+
+*****
+
+
+
 Yes, this design can be created in Power BI, but not with a standard Matrix visual alone because your Excel layout has:
 
 1. Dynamic Question columns (M1R, M6R, D2R, etc.)
