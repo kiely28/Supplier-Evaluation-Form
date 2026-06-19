@@ -1,3 +1,296 @@
+Yes, this design can be created in Power BI, but not with a standard Matrix visual alone because your Excel layout has:
+
+1. Dynamic Question columns (M1R, M6R, D2R, etc.)
+
+
+2. Dynamic Score sub-columns (1,2,3,4 based on MaxScore)
+
+
+3. A dot/indicator showing the selected score
+
+
+4. Different sections having different questions
+
+
+
+This is more of a survey score matrix than a normal pivot table.
+
+
+---
+
+Recommended Power BI Design
+
+Final Layout
+
+Supplier Code	Supplier Name	M1R	M1R	M1R	M6R	M6R	M6R	D2R	D2R	D2R	D2R
+
+		1	2	3	1	2	3	1	2	3	4
+341927	LANXESS	●				●				●	
+
+
+Exactly like your Excel screenshot.
+
+
+---
+
+Step 1 - Load SharePoint Lists
+
+Fact Table
+
+SE Evaluation List
+
+SupplierCode	Supplier	Question	Score	SectionInCharge
+
+341927	LANXESS	M1R	1	PR INK Proc
+341927	LANXESS	M6R	2	PR INK Proc
+341927	LANXESS	D2R	3	PR INK Proc
+
+
+
+---
+
+Dimension Table
+
+SE Question List
+
+QuestionNo	MaxScore
+
+M1R	3
+M6R	3
+D2R	4
+D3R	4
+
+
+
+---
+
+Create relationship:
+
+SE Evaluation List[Question]
+        ->
+SE Question List[QuestionNo]
+
+
+---
+
+Step 2 - Create Score Dimension
+
+Create a DAX table:
+
+ScoreTable =
+GENERATESERIES(1,4,1)
+
+Result:
+
+Value
+
+1
+2
+3
+4
+
+
+Rename Value to:
+
+ScoreNumber
+
+
+---
+
+Step 3 - Create Visual Indicator Measure
+
+QuestionScore =
+VAR SelectedScore =
+    MAX('SE Evaluation List'[Score])
+
+VAR CurrentColumn =
+    SELECTEDVALUE(ScoreTable[ScoreNumber])
+
+RETURN
+IF(
+    VALUE(SelectedScore) = CurrentColumn,
+    UNICHAR(9679),
+    BLANK()
+)
+
+Produces:
+
+●
+
+for selected score.
+
+
+---
+
+Step 4 - Create Matrix
+
+Rows
+
+SupplierCode
+Supplier
+
+Columns
+
+Question
+ScoreNumber
+
+Hierarchy:
+
+Question
+   ScoreNumber
+
+Result:
+
+M1R        M6R         D2R
+        1 2 3      1 2 3      1 2 3 4
+LANXESS ●          ●               ●
+
+
+---
+
+Step 5 - Hide Unused Scores
+
+Problem:
+
+Questions with MaxScore=3 will still show:
+
+1 2 3 4
+
+Need to hide 4.
+
+Create measure:
+
+ShowScore =
+VAR MaxAllowed =
+    MAX('SE Question List'[MaxScore])
+
+VAR CurrentScore =
+    SELECTEDVALUE(ScoreTable[ScoreNumber])
+
+RETURN
+IF(
+    CurrentScore <= MaxAllowed,
+    1,
+    BLANK()
+)
+
+Add this measure to:
+
+Filters on this visual
+
+Set:
+
+ShowScore is not blank
+
+Now:
+
+M1R = 1 2 3
+M6R = 1 2 3
+D2R = 1 2 3 4
+
+
+---
+
+Step 6 - Add Section Filter
+
+Add a slicer:
+
+SectionInCharge
+
+When user selects:
+
+PR INK Proc
+
+Columns become:
+
+M1R
+M6R
+D2R
+D3R
+
+When user selects:
+
+Parts Mfg Control
+
+Columns become:
+
+M1R
+M5R
+M6R
+D2R
+D3R
+
+Automatically.
+
+
+---
+
+Step 7 - Show Comment
+
+Add another Matrix/Table beside it:
+
+Supplier	Comment
+
+LANXESS	TestComment1
+
+
+or create measure:
+
+SupplierComment =
+MAX('SE Evaluation List'[Comment])
+
+
+---
+
+If you want it to look almost exactly like the Excel sheet
+
+The best approach is:
+
+Option A (Recommended)
+
+Use:
+
+Matrix Visual
+
+Question → ScoreNumber hierarchy
+
+Dot measure (●)
+
+
+This is easiest and fully dynamic.
+
+Option B (Closest to Excel)
+
+Use the custom visual:
+
+Hierarchy Matrix by Profitbase
+
+or
+
+Inforiver Matrix
+
+These allow:
+
+Multi-level column headers
+
+Better formatting
+
+Excel-like layouts
+
+Dynamic question grouping
+
+
+and will look much closer to your uploaded screenshot.
+
+For your SharePoint structure, I would use Matrix + ScoreTable + QuestionScore measure because it remains fully dynamic when different sections have different questions and MaxScores.
+
+
+
+
+
+*****
+
+
 
 please help me to design like the uploaded image in power bi
 the data is in sharepoint list
