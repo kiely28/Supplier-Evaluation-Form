@@ -1,3 +1,310 @@
+No problem. Since you're currently at the New Relationship popup, let's first close it because we need to create the QuestionKey columns before Power BI can create the relationship.
+
+Step A - Cancel the Relationship Window
+
+Click:
+
+Cancel
+
+on the New Relationship popup.
+
+
+---
+
+Step B - Open Power Query
+
+From the top ribbon:
+
+Home
+→ Transform Data
+
+Power Query Editor will open.
+
+You should see:
+
+FactEvaluation
+DimQuestion
+
+(or possibly your original SharePoint list names)
+
+on the left side.
+
+
+---
+
+Step C - Create QuestionKey in FactEvaluation
+
+1. Select FactEvaluation
+
+Click:
+
+FactEvaluation
+
+from the left panel.
+
+
+---
+
+2. Add Custom Column
+
+Top Ribbon:
+
+Add Column
+→ Custom Column
+
+A popup appears.
+
+New Column Name
+
+Enter:
+
+QuestionKey
+
+Formula
+
+Enter:
+
+[SectionInCharge] & "|" & [Question]
+
+Like this:
+
+New column name:
+QuestionKey
+
+Custom column formula:
+[SectionInCharge] & "|" & [Question]
+
+Click:
+
+OK
+
+
+---
+
+Result
+
+You should see a new column.
+
+Example:
+
+SectionInCharge	Question	QuestionKey
+
+PR INK Proc	M1R	PR INK Proc|M1R
+PR INK Proc	M6R	PR INK Proc|M6R
+VP INK Proc	E4R	VP INK Proc|E4R
+
+
+
+---
+
+Step D - Create QuestionKey in DimQuestion
+
+Now select:
+
+DimQuestion
+
+from the left panel.
+
+
+---
+
+Again click:
+
+Add Column
+→ Custom Column
+
+
+---
+
+New Column Name
+
+QuestionKey
+
+Formula
+
+[SectionInCharge] & "|" & [QuestionNo]
+
+Click:
+
+OK
+
+
+---
+
+Result
+
+Example:
+
+SectionInCharge	QuestionNo	QuestionKey
+
+PR INK Proc	M1R	PR INK Proc|M1R
+PR INK Proc	M6R	PR INK Proc|M6R
+Parts Mfg Control	M1R	Parts Mfg Control|M1R
+
+
+Notice:
+
+PR INK Proc|M1R
+
+and
+
+Parts Mfg Control|M1R
+
+are now different values.
+
+This makes them unique.
+
+
+---
+
+Step E - Verify No Duplicates
+
+Still in DimQuestion.
+
+Click the new:
+
+QuestionKey
+
+column.
+
+Look at several rows.
+
+You should NOT see duplicates like:
+
+PR INK Proc|M1R
+PR INK Proc|M1R
+
+twice.
+
+If you do, tell me because we'll need to remove duplicates.
+
+
+---
+
+Step F - Apply Changes
+
+Top Left:
+
+Home
+→ Close & Apply
+
+Wait for Power BI to finish loading.
+
+
+---
+
+Step G - Create Relationship
+
+Now go to:
+
+Model View
+
+(left side icon with connected boxes)
+
+
+---
+
+Find:
+
+FactEvaluation
+
+and
+
+DimQuestion
+
+
+---
+
+Drag:
+
+FactEvaluation[QuestionKey]
+
+onto
+
+DimQuestion[QuestionKey]
+
+
+---
+
+The New Relationship window appears.
+
+Set:
+
+From Table
+
+FactEvaluation
+
+Column:
+
+QuestionKey
+
+
+---
+
+To Table
+
+DimQuestion
+
+Column:
+
+QuestionKey
+
+
+---
+
+Cardinality
+
+Choose:
+
+Many to one (*:1)
+
+
+---
+
+Cross filter direction
+
+Choose:
+
+Single
+
+
+---
+
+Make this relationship active
+
+Checked ✔
+
+
+---
+
+Click:
+
+OK
+
+
+---
+
+If you still get an error
+
+Please send:
+
+1. Screenshot of DimQuestion
+
+
+2. Showing these columns:
+
+
+
+SectionInCharge
+QuestionNo
+QuestionKey
+
+and I'll identify exactly which rows are causing duplicates.
+
+******
+
+
+
 This error is expected based on your data structure.
 
 The issue is that QuestionNo is not unique in your DimQuestion table.
