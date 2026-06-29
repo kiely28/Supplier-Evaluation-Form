@@ -1,0 +1,12 @@
+please create a sample simple email about this is the link to sharepoint apps:
+https://apps.powerapps.com/play/e/default-3ce358ea-700e-4f0f-bb37-fd0b7c21366c/a/4ea6cb3b-9f90-4149-a723-c0617581d259?tenantId=3ce358ea-700e-4f0f-bb37-fd0b7c21366c&hint=e25e75d1-d5f4-4bfb-bdf6-94f54db160c2&sourcetime=1781659608934
+
+but in order to access specific section it must the user is register to sharepoint list(SE Access)
+
+then add this format at the end of the link to access the specific section register to the user
+
+&section=PR%20INK%20Proc
+
+also please give an explanation on how to create this(&section=PR%20INK%20Proc) if another section
+
+in this one email i will send. thank you
