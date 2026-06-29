@@ -1,3 +1,47 @@
+Hi Team,
+
+Please use the link below to access the SharePoint Apps:
+
+https://apps.powerapps.com/play/e/default-3ce358ea-700e-4f0f-bb37-fd0b7c21366c/a/4ea6cb3b-9f90-4149-a723-c0617581d259?tenantId=3ce358ea-700e-4f0f-bb37-fd0b7c21366c&hint=e25e75d1-d5f4-4bfb-bdf6-94f54db160c2&sourcetime=1781659608934
+
+Note:
+
+- To access a specific section in the application, your account must first be registered in the SE Access SharePoint list.
+- If your account is not yet registered, you will not be able to access the assigned section.
+
+To open a specific section directly, add the following to the end of the application URL:
+
+"&section=PR%20INK%20Proc"
+
+Example:
+"https://apps.powerapps.com/play/...&section=PR%20INK%20Proc"
+
+Creating a Section Parameter
+
+To create a link for another section:
+
+1. Copy the exact section name.
+2. Replace every space with "%20".
+3. Append it to the end of the URL in the following format:
+
+"&section=SectionName"
+
+Examples:
+
+- PR INK Proc → "&section=PR%20INK%20Proc"
+- Warehouse → "&section=Warehouse"
+- Quality Assurance → "&section=Quality%20Assurance"
+- Production Line 1 → "&section=Production%20Line%201"
+
+If you encounter any access issues, please contact the system administrator to verify that your account has been added to the SE Access list.
+
+Thank you.
+
+
+
+****
+
+
 please create a sample simple email about this is the link to sharepoint apps:
 https://apps.powerapps.com/play/e/default-3ce358ea-700e-4f0f-bb37-fd0b7c21366c/a/4ea6cb3b-9f90-4149-a723-c0617581d259?tenantId=3ce358ea-700e-4f0f-bb37-fd0b7c21366c&hint=e25e75d1-d5f4-4bfb-bdf6-94f54db160c2&sourcetime=1781659608934
 
