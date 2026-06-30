@@ -1,3 +1,57 @@
+If your URL contains:
+
+&section=SMNCC
+
+then inside your Power Apps app you should be able to retrieve it using:
+
+Param("section")
+
+If the data is not loading, here are the most common causes:
+
+1. Verify the parameter is actually received. Add a temporary Label and set its Text property to:
+
+Param("section")
+
+If it displays SMNCC, then the URL parameter is working. If it's blank, the app isn't receiving the parameter. 
+
+
+2. Check where you're reading the parameter. If you're doing:
+
+Set(varSection, Param("section"))
+
+in App.OnStart, it may not update if the app is already open. Many developers instead initialize it in Screen.OnVisible or ensure the app is freshly launched. Also, URL parameters don't change until the app reloads. 
+
+
+3. Check your filter. For example:
+
+Filter(MyList, Section = Param("section"))
+
+Verify that the SharePoint/Dataverse value is exactly "SMNCC" (no extra spaces, different capitalization, or different internal value).
+
+
+4. Test with a variable.
+
+Set(varSection, Param("section"));
+
+Then display varSection in a label and use:
+
+Filter(MyList, Section = varSection)
+
+
+
+I need a little more information to pinpoint the issue:
+
+What is your Items formula for the gallery or data table that isn't loading?
+
+Where are you calling Param("section")? (App.OnStart, Screen.OnVisible, etc.)
+
+Is your data source SharePoint, SQL Server, or Dataverse?
+
+
+If you paste your App.OnStart, Screen.OnVisible, and the Gallery.Items formula, I can tell you exactly why section=SMNCC isn't loading your data.
+
+*****
+
 https://apps.powerapps.com/play/e/default-3ce358ea-700e-4f0f-bb37-fd0b7c21366c/a/e6122dc7-e674-4b4a-8003-ed1313071c6c?tenantId=3ce358ea-700e-4f0f-bb37-fd0b7c21366c&hint=f9cc60f2-9635-4ab3-9af2-aaae1fb4a713&sourcetime=1782703943661
 &section=SMNCC
 ****
