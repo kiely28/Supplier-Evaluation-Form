@@ -1,3 +1,53 @@
+Yes. Instead of hardcoding column P, you can find the Vendor column dynamically the same way you found ControlNumber and AppliedBy.
+
+Replace this code:
+
+lastRowTarget = wsTarget.Cells(wsTarget.Rows.Count, "P").End(xlUp).Row
+
+For r = 2 To lastRowTarget
+    If wsTarget.Cells(r, "C").Value = "" Then
+        wsTarget.Cells(r, "C").Value = wsTarget.Cells(r, "P").Value
+    End If
+Next r
+
+With this:
+
+Dim colVendor As Long
+Dim lastCol As Long
+Dim j As Long
+
+'Find Vendor column dynamically
+colVendor = 0
+lastCol = wsTarget.Cells(1, wsTarget.Columns.Count).End(xlToLeft).Column
+
+For j = 1 To lastCol
+    If Trim(wsTarget.Cells(1, j).Value) = "Vendor" Then
+        colVendor = j
+        Exit For
+    End If
+Next j
+
+If colVendor = 0 Then
+    MsgBox "Vendor column not found in " & wbTarget.Name, vbExclamation
+Else
+    lastRowTarget = wsTarget.Cells(wsTarget.Rows.Count, colVendor).End(xlUp).Row
+
+    For r = 2 To lastRowTarget
+        If Trim(wsTarget.Cells(r, "C").Value) = "" Then
+            wsTarget.Cells(r, "C").Value = wsTarget.Cells(r, colVendor).Value
+        End If
+    Next r
+End If
+
+Even better (recommended)
+
+Since you are already using dynamic column detection, you can also make column C dynamic if its header has a name (for example, "Storage Location"). That way, your macro won't break if someone inserts or moves columns in the workbook.
+
+If you tell me the header name of column C, I can update your entire macro so both the source column (Vendor) and destination column are found by their header names instead of fixed column letters.
+
+
+****
+
 
 the column name of P is Vendor and my problem is how to check the column name Vendor instead of setting it to column P?
 
