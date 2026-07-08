@@ -1,3 +1,258 @@
+Yes. The easiest approach is:
+
+1. Open D:\SE Evaluation List.xlsx
+
+
+2. Refresh All and wait until the refresh is finished.
+
+
+3. Read only the records for the desired FiscalYear (or use the latest FiscalYear if you prefer).
+
+
+4. Group by:
+
+SupplierCode
+
+Question
+
+FiscalYear
+
+
+
+5. Average all the scores (regardless of SectionInCharge).
+
+
+6. Round the average to the nearest whole number.
+
+
+7. Open D:\Summary.xlsx
+
+
+8. Find the matching OP Code and Question column.
+
+
+9. Write the rounded score.
+
+
+
+For your examples:
+
+Section	Question	SupplierCode	Score	FiscalYear
+
+PR Proc	M1R	137337	1	2026
+SMNCC	M1R	137337	2	2026
+
+
+Average = (1+2)/2 = 1.5
+
+Rounded = 2
+
+Result in Summary:
+
+OP Code	M1R
+
+137337	2
+
+
+
+---
+
+If:
+
+Section	Question	SupplierCode	Score	FiscalYear
+
+PR Proc	M1R	137337	1	2026
+SMNCC	M1R	137337	1	2026
+
+
+Average = 1
+
+Rounded = 1
+
+Result:
+
+OP Code	M1R
+
+137337	1
+
+
+
+---
+
+Recommended VBA Macro
+
+This macro uses dictionaries so it is very fast even for thousands of records.
+
+Option Explicit
+
+Sub UpdateSummary()
+
+    Const SOURCE_FILE As String = "D:\SE Evaluation List.xlsx"
+    Const SUMMARY_FILE As String = "D:\Summary.xlsx"
+
+    Const HEADER_ROW_SOURCE As Long = 1
+    Const HEADER_ROW_SUMMARY As Long = 11
+    Const FIRST_DATA_ROW_SUMMARY As Long = 12
+
+    Dim wbSource As Workbook
+    Dim wbSummary As Workbook
+    Dim wsSource As Worksheet
+    Dim wsSummary As Worksheet
+
+    Dim lastRow As Long
+    Dim lastCol As Long
+
+    Dim dictScore As Object
+    Dim dictCount As Object
+    Dim dictRows As Object
+    Dim dictCols As Object
+
+    Dim key As String
+    Dim supplier As String
+    Dim question As String
+    Dim fiscal As String
+    Dim score As Double
+
+    Dim i As Long
+    Dim r As Long
+    Dim c As Long
+
+    Dim opCol As Long
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Set wbSource = Workbooks.Open(SOURCE_FILE)
+
+    'Refresh Power Query / Connections
+    wbSource.RefreshAll
+    Application.CalculateUntilAsyncQueriesDone
+
+    Set wsSource = wbSource.Sheets(1)
+
+    Set dictScore = CreateObject("Scripting.Dictionary")
+    Set dictCount = CreateObject("Scripting.Dictionary")
+
+    lastRow = wsSource.Cells(wsSource.Rows.Count, "C").End(xlUp).Row
+
+    '=======================================
+    'Collect totals
+    '=======================================
+    For i = 2 To lastRow
+
+        supplier = Trim(wsSource.Cells(i, "C").Value)
+        question = Trim(wsSource.Cells(i, "B").Value)
+        score = Val(wsSource.Cells(i, "E").Value)
+        fiscal = Trim(wsSource.Cells(i, "F").Value)
+
+        If supplier <> "" And question <> "" Then
+
+            key = supplier & "|" & question & "|" & fiscal
+
+            If dictScore.Exists(key) Then
+                dictScore(key) = dictScore(key) + score
+                dictCount(key) = dictCount(key) + 1
+            Else
+                dictScore.Add key, score
+                dictCount.Add key, 1
+            End If
+
+        End If
+
+    Next i
+
+    Set wbSummary = Workbooks.Open(SUMMARY_FILE)
+    Set wsSummary = wbSummary.Sheets(1)
+
+    opCol = Application.Match("OP Code", wsSummary.Rows(HEADER_ROW_SUMMARY), 0)
+
+    Set dictRows = CreateObject("Scripting.Dictionary")
+    Set dictCols = CreateObject("Scripting.Dictionary")
+
+    'Supplier rows
+    r = FIRST_DATA_ROW_SUMMARY
+
+    Do While wsSummary.Cells(r, opCol).Value <> ""
+
+        dictRows(Trim(wsSummary.Cells(r, opCol).Value)) = r
+        r = r + 1
+
+    Loop
+
+    'Question columns
+    lastCol = wsSummary.Cells(HEADER_ROW_SUMMARY, wsSummary.Columns.Count).End(xlToLeft).Column
+
+    For c = opCol + 1 To lastCol
+
+        If Trim(wsSummary.Cells(HEADER_ROW_SUMMARY, c).Value) <> "" Then
+
+            dictCols(Trim(wsSummary.Cells(HEADER_ROW_SUMMARY, c).Value)) = c
+
+        End If
+
+    Next c
+
+    '=======================================
+    'Write rounded averages
+    '=======================================
+    Dim arr
+    Dim avgScore As Double
+
+    For Each key In dictScore.Keys
+
+        arr = Split(key, "|")
+
+        supplier = arr(0)
+        question = arr(1)
+
+        avgScore = dictScore(key) / dictCount(key)
+
+        If dictRows.Exists(supplier) Then
+
+            If dictCols.Exists(question) Then
+
+                wsSummary.Cells( _
+                    dictRows(supplier), _
+                    dictCols(question) _
+                ).Value = WorksheetFunction.Round(avgScore, 0)
+
+            End If
+
+        End If
+
+    Next key
+
+    wbSummary.Save
+    wbSource.Close False
+    wbSummary.Close True
+
+    Application.ScreenUpdating = True
+
+    MsgBox "Summary successfully updated."
+
+End Sub
+
+Advantages of this macro
+
+✔ Refreshes SE Evaluation List.xlsx before processing.
+
+✔ Averages scores for the same SupplierCode + Question + FiscalYear across different SectionInCharge values.
+
+✔ Rounds the average to the nearest whole number (1.5 → 2).
+
+✔ Automatically matches SupplierCode to OP Code.
+
+✔ Automatically matches Question (M1R, M5R, D2R, etc.) to the corresponding column in the summary.
+
+✔ Uses dictionaries for fast performance with large datasets.
+
+
+One suggestion: if your source workbook contains multiple fiscal years (2025, 2026, 2027, etc.), I can modify the macro so it automatically uses only the latest FiscalYear (for example, 2026) instead of writing scores from every fiscal year. This avoids older years overwriting newer results.
+
+
+****
+
+
 
 The location of the excel file is D:\SE Evaluation List.xlsx
 please (Refresh All) before check the value
