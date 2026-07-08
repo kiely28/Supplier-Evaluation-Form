@@ -1,3 +1,74 @@
+That compile error is caused by this line:
+
+For Each key In dictScore.Keys
+
+because key was probably declared as a String (or another type). In VBA, the control variable in a For Each loop must be a Variant or an Object.
+
+Fix
+
+Change this declaration:
+
+Dim key As String
+
+to:
+
+Dim key As Variant
+
+or, if you prefer, declare it separately:
+
+Dim key As Variant
+
+Then your loop will work:
+
+Dim key As Variant
+
+For Each key In dictScore.Keys
+
+    arr = Split(CStr(key), "|")
+
+    supplier = arr(0)
+    question = arr(1)
+
+    avgScore = dictScore(key) / dictCount(key)
+
+    If dictRows.Exists(supplier) Then
+        If dictCols.Exists(question) Then
+            wsSummary.Cells(dictRows(supplier), dictCols(question)).Value = _
+                WorksheetFunction.Round(avgScore, 0)
+        End If
+    End If
+
+Next key
+
+I also noticed a few things in your requirements
+
+I can improve the macro to:
+
+✅ Automatically wait until Refresh All is completely finished.
+
+✅ Use only FiscalYear 2026 (or automatically detect the latest fiscal year).
+
+✅ Clear the existing scores in Summary.xlsx before writing new ones.
+
+✅ Handle duplicate question headers if any.
+
+✅ Produce a summary message such as:
+
+Suppliers Updated : 425
+Cells Written     : 3,860
+Missing OP Codes  : 7
+Missing Questions : 2
+
+✅ Run much faster (around 5–10× faster) by reading the worksheets into arrays instead of accessing cells one by one.
+
+
+Since this is becoming a complete automation, I recommend rewriting it using arrays and dictionaries for the best performance and reliability.
+
+
+
+****
+
+
 Compile error:
 For Each control variable must be Variant or Object
 
