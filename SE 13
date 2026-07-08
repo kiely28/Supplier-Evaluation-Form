@@ -1,3 +1,33 @@
+Compile error:
+For Each control variable must be Variant or Object
+
+
+and the columns for Summary file is 
+Column  in excel summary| Question under column
+CO	M1R	
+CP	M4R	
+CQ	M5R	
+CR	M6R	
+CS	M7R	
+CT	M9R	
+CU	M10R	
+CV	M12R	
+CW	E4R	
+CX	Q3R
+CY	Q4R	
+CZ	Q6R	
+DA	Q10R	
+DB	C2R	
+DC	C3R	
+DD	C4R	
+DE	C5R	
+DF	D1R	
+DG	D2R	
+DH	D3R
+
+
+****
+
 Yes. The easiest approach is:
 
 1. Open D:\SE Evaluation List.xlsx
