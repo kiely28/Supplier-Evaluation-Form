@@ -1,3 +1,150 @@
+Yes. This can be done entirely using Excel VBA.
+
+From your sample:
+
+Source File (SE Evaluation List)
+
+SupplierCode → Match to OP Code in the Summary file.
+
+Question → Match to the column header (M1R, M5R, D2R, etc.) in the Summary file.
+
+Score → Value to write into the corresponding cell.
+
+
+Summary File
+
+Column OP Code contains the supplier code.
+
+Row with headers contains M1R, M5R, D2R, M7R, ...
+
+The macro finds the correct supplier row and question column, then writes the score.
+
+
+Example
+
+Source data
+
+SupplierCode	Question	Score
+
+137337	M1R	1
+137337	M7R	2
+244228	C3R	3
+
+
+Summary
+
+OP Code	M1R	M7R	C3R
+
+137337	1	2	
+244228			3
+
+
+
+---
+
+VBA Macro
+
+Sub UpdateSummaryScores()
+
+    Dim wsSource As Worksheet
+    Dim wsSummary As Worksheet
+
+    Dim lastRowSource As Long
+    Dim lastRowSummary As Long
+    Dim lastColSummary As Long
+
+    Dim colSupplier As Long
+    Dim colQuestion As Long
+    Dim colScore As Long
+
+    Dim dictRows As Object
+    Dim dictCols As Object
+
+    Dim i As Long
+    Dim supplierCode As String
+    Dim question As String
+    Dim score As Variant
+
+    Set wsSource = Workbooks("Source.xlsx").Sheets("Sheet1")
+    Set wsSummary = Workbooks("Summary.xlsx").Sheets("Sheet1")
+
+    Set dictRows = CreateObject("Scripting.Dictionary")
+    Set dictCols = CreateObject("Scripting.Dictionary")
+
+    'Find columns in source
+    colSupplier = Application.Match("SupplierCode", wsSource.Rows(1), 0)
+    colQuestion = Application.Match("Question", wsSource.Rows(1), 0)
+    colScore = Application.Match("Score", wsSource.Rows(1), 0)
+
+    'Find OP Code column in summary
+    Dim opCol As Long
+    opCol = Application.Match("OP Code", wsSummary.Rows(11), 0)
+
+    lastRowSummary = wsSummary.Cells(wsSummary.Rows.Count, opCol).End(xlUp).Row
+    lastColSummary = wsSummary.Cells(11, wsSummary.Columns.Count).End(xlToLeft).Column
+
+    'Store Supplier Codes
+    For i = 12 To lastRowSummary
+        supplierCode = Trim(wsSummary.Cells(i, opCol).Value)
+        If supplierCode <> "" Then
+            dictRows(supplierCode) = i
+        End If
+    Next i
+
+    'Store Question Headers
+    Dim c As Long
+    For c = opCol + 1 To lastColSummary
+        question = Trim(wsSummary.Cells(11, c).Value)
+        If question <> "" Then
+            dictCols(question) = c
+        End If
+    Next c
+
+    lastRowSource = wsSource.Cells(wsSource.Rows.Count, colSupplier).End(xlUp).Row
+
+    'Transfer Scores
+    For i = 2 To lastRowSource
+
+        supplierCode = Trim(wsSource.Cells(i, colSupplier).Value)
+        question = Trim(wsSource.Cells(i, colQuestion).Value)
+        score = wsSource.Cells(i, colScore).Value
+
+        If dictRows.Exists(supplierCode) Then
+            If dictCols.Exists(question) Then
+
+                wsSummary.Cells(dictRows(supplierCode), _
+                                dictCols(question)).Value = score
+
+            End If
+        End If
+
+    Next i
+
+    MsgBox "Summary updated successfully!"
+
+End Sub
+
+I can improve this further
+
+Since I noticed from your screenshots that the header row is not Row 1 (it appears to be around Row 11) and your source sheet may also have different header locations, I can make the macro:
+
+✅ Automatically detect the header row.
+
+✅ Automatically find the SupplierCode, Question, and Score columns by name.
+
+✅ Automatically find the OP Code column and all question columns (M1R, D2R, C3R, etc.).
+
+✅ Work even if columns are moved or new question columns are added.
+
+
+That version is much more robust and is what I'd recommend for your files.
+
+
+
+*****
+
+
+
 Yes. Instead of hardcoding column P, you can find the Vendor column dynamically the same way you found ControlNumber and AppliedBy.
 
 Replace this code:
