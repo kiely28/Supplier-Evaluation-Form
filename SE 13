@@ -1,3 +1,38 @@
+
+The location of the excel file is D:\SE Evaluation List.xlsx
+please (Refresh All) before check the value
+
+Question Column is B
+SupplierCode Column is C
+Score Column is E
+FiscalYear Column is F
+
+if there is a 2 or more SupplierCode in same Question but different SectionInCharge per FiscalYear then
+for example if:
+
+PR Proc	| M1R	| 137337 | 1 | 2026
+SMNCC	| M1R	| 137337 | 2 | 2026
+
+the average of 1 and 2 is 1.5, 
+and rounded to the nearest whole number, 
+it becomes 2.
+then paste 2 in Score in M1R.
+
+if the Score is same,
+PR Proc	| M1R	| 137337 | 1 | 2026
+SMNCC	| M1R	| 137337 | 1 | 2026
+then paste 1 in Score in M1R.
+
+
+
+
+
+
+
+*****
+
+
+
 Yes. This can be done entirely using Excel VBA.
 
 From your sample:
