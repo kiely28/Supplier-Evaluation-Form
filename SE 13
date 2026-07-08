@@ -1,3 +1,345 @@
+Absolutely. Based on all the information you've given me, I'd actually rewrite the macro instead of patching the previous one. It will be cleaner, faster, and less prone to errors.
+
+What this macro does
+
+1. Opens D:\SE Evaluation List.xlsx.
+
+
+2. Refreshes all data connections.
+
+
+3. Waits until the refresh is complete.
+
+
+4. Reads all records from query (2).
+
+
+5. Groups records by:
+
+SupplierCode
+
+Question
+
+FiscalYear
+
+
+
+6. If multiple sections (PR Proc, SMNCC, etc.) exist for the same SupplierCode and Question, it:
+
+Calculates the average score.
+
+Rounds it to the nearest whole number.
+
+
+
+7. Opens D:\Summary.xlsx.
+
+
+8. Finds the matching OP Code.
+
+
+9. Writes the score into the correct Question column (CO:DH).
+
+
+10. Saves and closes both workbooks.
+
+
+
+
+---
+
+Complete VBA Code
+
+Option Explicit
+
+Sub UpdateSummaryScore()
+
+    Const SourceFile As String = "D:\SE Evaluation List.xlsx"
+    Const SummaryFile As String = "D:\Summary.xlsx"
+
+    Dim wbSource As Workbook
+    Dim wbSummary As Workbook
+
+    Dim wsSource As Worksheet
+    Dim wsSummary As Worksheet
+
+    Dim dictSum As Object
+    Dim dictCount As Object
+    Dim dictRows As Object
+    Dim dictQuestion As Object
+
+    Dim LastRow As Long
+    Dim i As Long
+
+    Dim SupplierCode As String
+    Dim Question As String
+    Dim FiscalYear As String
+
+    Dim Score As Double
+    Dim Key As Variant
+    Dim Arr
+
+    Dim AvgScore As Double
+
+    Dim OPCol As Long
+    Dim RowNo As Long
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Set dictSum = CreateObject("Scripting.Dictionary")
+    Set dictCount = CreateObject("Scripting.Dictionary")
+    Set dictRows = CreateObject("Scripting.Dictionary")
+    Set dictQuestion = CreateObject("Scripting.Dictionary")
+
+    '=============================
+    'Open Source File
+    '=============================
+    Set wbSource = Workbooks.Open(SourceFile)
+
+    wbSource.RefreshAll
+    Application.CalculateUntilAsyncQueriesDone
+    DoEvents
+
+    Set wsSource = wbSource.Sheets("query (2)")
+
+    LastRow = wsSource.Cells(wsSource.Rows.Count, "C").End(xlUp).Row
+
+    '=============================
+    'Read Source Data
+    '=============================
+    For i = 2 To LastRow
+
+        SupplierCode = Trim(wsSource.Cells(i, "C").Value)
+
+        Question = Trim(wsSource.Cells(i, "B").Value)
+
+        FiscalYear = Trim(wsSource.Cells(i, "F").Value)
+
+        Score = Val(wsSource.Cells(i, "E").Value)
+
+        If SupplierCode <> "" And Question <> "" Then
+
+            Key = SupplierCode & "|" & Question & "|" & FiscalYear
+
+            If dictSum.Exists(Key) Then
+
+                dictSum(Key) = dictSum(Key) + Score
+                dictCount(Key) = dictCount(Key) + 1
+
+            Else
+
+                dictSum.Add Key, Score
+                dictCount.Add Key, 1
+
+            End If
+
+        End If
+
+    Next i
+
+    '=============================
+    'Open Summary
+    '=============================
+    Set wbSummary = Workbooks.Open(SummaryFile)
+
+    Set wsSummary = wbSummary.Sheets("EPPI_Calculation Form")
+
+    OPCol = Columns("M").Column
+
+    '=============================
+    'Store OP Codes
+    '=============================
+    LastRow = wsSummary.Cells(wsSummary.Rows.Count, OPCol).End(xlUp).Row
+
+    For i = 13 To LastRow
+
+        SupplierCode = Trim(wsSummary.Cells(i, OPCol).Value)
+
+        If SupplierCode <> "" Then
+
+            dictRows(SupplierCode) = i
+
+        End If
+
+    Next i
+
+    '=============================
+    'Question Columns
+    '=============================
+
+    dictQuestion.Add "M1R", Columns("CO").Column
+    dictQuestion.Add "M4R", Columns("CP").Column
+    dictQuestion.Add "M5R", Columns("CQ").Column
+    dictQuestion.Add "M6R", Columns("CR").Column
+    dictQuestion.Add "M7R", Columns("CS").Column
+    dictQuestion.Add "M9R", Columns("CT").Column
+    dictQuestion.Add "M10R", Columns("CU").Column
+    dictQuestion.Add "M12R", Columns("CV").Column
+    dictQuestion.Add "E4R", Columns("CW").Column
+    dictQuestion.Add "Q3R", Columns("CX").Column
+    dictQuestion.Add "Q4R", Columns("CY").Column
+    dictQuestion.Add "Q6R", Columns("CZ").Column
+    dictQuestion.Add "Q10R", Columns("DA").Column
+    dictQuestion.Add "C2R", Columns("DB").Column
+    dictQuestion.Add "C3R", Columns("DC").Column
+    dictQuestion.Add "C4R", Columns("DD").Column
+    dictQuestion.Add "C5R", Columns("DE").Column
+    dictQuestion.Add "D1R", Columns("DF").Column
+    dictQuestion.Add "D2R", Columns("DG").Column
+    dictQuestion.Add "D3R", Columns("DH").Column
+
+    '=============================
+    'Write Scores
+    '=============================
+    For Each Key In dictSum.Keys
+
+        Arr = Split(CStr(Key), "|")
+
+        SupplierCode = Arr(0)
+        Question = Arr(1)
+
+        AvgScore = dictSum(Key) / dictCount(Key)
+
+        If dictRows.Exists(SupplierCode) Then
+
+            If dictQuestion.Exists(Question) Then
+
+                wsSummary.Cells( _
+                    dictRows(SupplierCode), _
+                    dictQuestion(Question)).Value = _
+                    WorksheetFunction.Round(AvgScore, 0)
+
+            End If
+
+        End If
+
+    Next Key
+
+    wbSummary.Save
+
+    wbSource.Close False
+    wbSummary.Close True
+
+    Application.ScreenUpdating = True
+
+    MsgBox "Summary successfully updated."
+
+End Sub
+
+
+---
+
+Explanation
+
+Step 1
+
+Opens your source file.
+
+Set wbSource = Workbooks.Open(SourceFile)
+
+
+---
+
+Step 2
+
+Refreshes Power Query.
+
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+
+This waits until the refresh has finished.
+
+
+---
+
+Step 3
+
+Reads every row from query (2).
+
+For example:
+
+Section	Question	SupplierCode	Score
+
+PR Proc	M1R	137337	1
+SMNCC	M1R	137337	2
+
+
+The macro creates this key:
+
+137337|M1R|2026
+
+It stores:
+
+Total Score = 3
+
+Count = 2
+
+
+---
+
+Step 4
+
+Calculates the average.
+
+3 ÷ 2 = 1.5
+
+Then:
+
+WorksheetFunction.Round(1.5,0)
+
+becomes
+
+2
+
+
+---
+
+Step 5
+
+Looks for OP Code 137337 in Column M of the Summary sheet.
+
+If found, it remembers the row number.
+
+
+---
+
+Step 6
+
+Looks for the Question.
+
+Example:
+
+Question = M1R
+
+The dictionary knows:
+
+M1R = Column CO
+
+So it writes:
+
+Row of Supplier
+Column CO
+
+=2
+
+
+---
+
+One improvement I'd recommend
+
+Since you're working with Excel files that may be updated repeatedly, I recommend adding one more step before writing scores:
+
+wsSummary.Range("CO13:DH" & LastRow).ClearContents
+
+This clears all previous scores so that suppliers or questions that no longer exist in the source won't leave outdated values in the summary.
+
+I think this is a good addition for keeping the summary accurate.
+
+
+****
+
+
 
 Location: "D:\Summary.xlsx"
 the row header is 12
