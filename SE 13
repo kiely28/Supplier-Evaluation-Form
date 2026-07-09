@@ -1,3 +1,399 @@
+That's actually a better design. If Supplier Evaluation Macro.xlsm already contains the Evaluation List sheet, there's no need to open D:\SE Evaluation List.xlsx at all.
+
+You can simply use the workbook that contains the macro.
+
+Replace this section:
+
+Const SourceFile As String = "D:\SE Evaluation List.xlsx"
+
+Dim wbSource As Workbook
+
+Set wbSource = Workbooks.Open(SourceFile)
+
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+
+Set wsSource = wbSource.Sheets("query (2)")
+
+With this:
+
+Dim wbSource As Workbook
+
+Set wbSource = ThisWorkbook
+
+'Refresh Power Query / Connections
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+DoEvents
+
+Set wsSource = wbSource.Sheets("Evaluation List")
+
+Then remove this line near the end of the macro:
+
+wbSource.Close False
+
+because you do not want to close the workbook that contains the macro.
+
+
+---
+
+Your workbook setup will be:
+
+Supplier Evaluation Macro.xlsm
+
+Contains the macro.
+
+Sheet: Evaluation List
+
+Refreshes this workbook before processing.
+
+
+Summary workbook
+
+D:\Summary.xlsx
+
+Opens automatically.
+
+Updates the scores.
+
+Saves and closes.
+
+
+
+---
+
+One more improvement
+
+Instead of:
+
+Application.CalculateUntilAsyncQueriesDone
+
+I recommend using this to ensure the refresh has fully completed:
+
+wbSource.RefreshAll
+
+Do While wbSource.Refreshing
+    DoEvents
+Loop
+
+Application.CalculateUntilAsyncQueriesDone
+
+Or, if Refreshing isn't available for your workbook, we can wait on each connection individually. This tends to be more reliable when using Power Query.
+
+I can also provide a version with **progress updates** (e.g., "Refreshing data...", "Calculating averages...", "Updating Summary...") so you can see what the macro is doing while it runs.
+
+
+*****
+
+
+Yes. Since the macro is now stored in Supplier Evaluation Macro.xlsm, and the source data is in the Evaluation List sheet of the same workbook, the code becomes simpler.
+
+Workbook Structure
+
+Supplier Evaluation Macro.xlsm
+
+Sheet: Evaluation List (Source Data)
+
+Contains the VBA Macro
+
+
+Summary Workbook
+
+D:\Summary.xlsx
+
+Sheet Name:
+
+EPPI_Calculation Form
+
+
+---
+
+Complete VBA Code
+
+Option Explicit
+
+Sub UpdateSummaryScore()
+
+    Const SUMMARY_FILE As String = "D:\Summary.xlsx"
+
+    Dim wbSource As Workbook
+    Dim wbSummary As Workbook
+
+    Dim wsSource As Worksheet
+    Dim wsSummary As Worksheet
+
+    Dim dictSum As Object
+    Dim dictCount As Object
+    Dim dictRows As Object
+    Dim dictQuestion As Object
+
+    Dim LastRow As Long
+    Dim i As Long
+
+    Dim SupplierCode As String
+    Dim Question As String
+    Dim FiscalYear As String
+
+    Dim Score As Double
+    Dim AvgScore As Double
+
+    Dim Key As Variant
+    Dim Arr
+
+    Dim OPCol As Long
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Set dictSum = CreateObject("Scripting.Dictionary")
+    Set dictCount = CreateObject("Scripting.Dictionary")
+    Set dictRows = CreateObject("Scripting.Dictionary")
+    Set dictQuestion = CreateObject("Scripting.Dictionary")
+
+    '==================================================
+    'Source Workbook (This Workbook)
+    '==================================================
+    Set wbSource = ThisWorkbook
+
+    'Refresh all queries
+    wbSource.RefreshAll
+    Application.CalculateUntilAsyncQueriesDone
+    DoEvents
+
+    Set wsSource = wbSource.Sheets("Evaluation List")
+
+    LastRow = wsSource.Cells(wsSource.Rows.Count, "C").End(xlUp).Row
+
+    '==================================================
+    'Read Source Data
+    '==================================================
+    For i = 2 To LastRow
+
+        SupplierCode = Trim(wsSource.Cells(i, "C").Value)
+        Question = Trim(wsSource.Cells(i, "B").Value)
+        FiscalYear = Trim(wsSource.Cells(i, "F").Value)
+        Score = Val(wsSource.Cells(i, "E").Value)
+
+        If SupplierCode <> "" And Question <> "" Then
+
+            Key = SupplierCode & "|" & Question & "|" & FiscalYear
+
+            If dictSum.Exists(Key) Then
+
+                dictSum(Key) = dictSum(Key) + Score
+                dictCount(Key) = dictCount(Key) + 1
+
+            Else
+
+                dictSum.Add Key, Score
+                dictCount.Add Key, 1
+
+            End If
+
+        End If
+
+    Next i
+
+    '==================================================
+    'Open Summary Workbook
+    '==================================================
+    Set wbSummary = Workbooks.Open(SUMMARY_FILE)
+
+    Set wsSummary = wbSummary.Sheets("EPPI_Calculation Form")
+
+    OPCol = 13          'Column M
+
+    '==================================================
+    'Store Supplier Rows
+    '==================================================
+    LastRow = wsSummary.Cells(wsSummary.Rows.Count, OPCol).End(xlUp).Row
+
+    For i = 13 To LastRow
+
+        SupplierCode = Trim(wsSummary.Cells(i, OPCol).Value)
+
+        If SupplierCode <> "" Then
+
+            dictRows(SupplierCode) = i
+
+        End If
+
+    Next i
+
+    '==================================================
+    'Question Columns
+    '==================================================
+
+    dictQuestion.Add "M1R", wsSummary.Columns("CO").Column
+    dictQuestion.Add "M4R", wsSummary.Columns("CP").Column
+    dictQuestion.Add "M5R", wsSummary.Columns("CQ").Column
+    dictQuestion.Add "M6R", wsSummary.Columns("CR").Column
+    dictQuestion.Add "M7R", wsSummary.Columns("CS").Column
+    dictQuestion.Add "M9R", wsSummary.Columns("CT").Column
+    dictQuestion.Add "M10R", wsSummary.Columns("CU").Column
+    dictQuestion.Add "M12R", wsSummary.Columns("CV").Column
+    dictQuestion.Add "E4R", wsSummary.Columns("CW").Column
+    dictQuestion.Add "Q3R", wsSummary.Columns("CX").Column
+    dictQuestion.Add "Q4R", wsSummary.Columns("CY").Column
+    dictQuestion.Add "Q6R", wsSummary.Columns("CZ").Column
+    dictQuestion.Add "Q10R", wsSummary.Columns("DA").Column
+    dictQuestion.Add "C2R", wsSummary.Columns("DB").Column
+    dictQuestion.Add "C3R", wsSummary.Columns("DC").Column
+    dictQuestion.Add "C4R", wsSummary.Columns("DD").Column
+    dictQuestion.Add "C5R", wsSummary.Columns("DE").Column
+    dictQuestion.Add "D1R", wsSummary.Columns("DF").Column
+    dictQuestion.Add "D2R", wsSummary.Columns("DG").Column
+    dictQuestion.Add "D3R", wsSummary.Columns("DH").Column
+
+    '==================================================
+    'Optional: Clear Previous Scores
+    '==================================================
+    wsSummary.Range("CO13:DH" & LastRow).ClearContents
+
+    '==================================================
+    'Write Average Scores
+    '==================================================
+    For Each Key In dictSum.Keys
+
+        Arr = Split(CStr(Key), "|")
+
+        SupplierCode = Arr(0)
+        Question = Arr(1)
+
+        AvgScore = dictSum(Key) / dictCount(Key)
+
+        If dictRows.Exists(SupplierCode) Then
+
+            If dictQuestion.Exists(Question) Then
+
+                wsSummary.Cells( _
+                    dictRows(SupplierCode), _
+                    dictQuestion(Question)).Value = _
+                    WorksheetFunction.Round(AvgScore, 0)
+
+            End If
+
+        End If
+
+    Next Key
+
+    wbSummary.Save
+    wbSummary.Close
+
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
+    MsgBox "Summary successfully updated!", vbInformation
+
+End Sub
+
+
+---
+
+How the macro works
+
+Step 1 - Refresh the Evaluation List
+
+Set wbSource = ThisWorkbook
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+
+This refreshes your Evaluation List sheet before processing.
+
+
+---
+
+Step 2 - Read every record
+
+For example:
+
+Section	Question	SupplierCode	Score	FiscalYear
+
+PR Proc	M1R	137337	1	2026
+SMNCC	M1R	137337	2	2026
+
+
+The macro groups them using this key:
+
+137337|M1R|2026
+
+
+---
+
+Step 3 - Calculate the average
+
+For the example above:
+
+Total Score = 3
+Count = 2
+
+Average = 1.5
+Rounded = 2
+
+
+---
+
+Step 4 - Open Summary.xlsx
+
+The macro opens:
+
+D:\Summary.xlsx
+
+and uses the EPPI_Calculation Form sheet.
+
+
+---
+
+Step 5 - Match the supplier
+
+It looks for the supplier code in Column M (OP Code).
+
+Example:
+
+137337
+
+Suppose it's on row 55.
+
+
+---
+
+Step 6 - Match the question
+
+The macro already knows the mapping:
+
+Question	Summary Column
+
+M1R	CO
+M4R	CP
+M5R	CQ
+M6R	CR
+M7R	CS
+M9R	CT
+M10R	CU
+M12R	CV
+E4R	CW
+Q3R	CX
+Q4R	CY
+Q6R	CZ
+Q10R	DA
+C2R	DB
+C3R	DC
+C4R	DD
+C5R	DE
+D1R	DF
+D2R	DG
+D3R	DH
+
+
+If the question is M1R, it writes the rounded average into Column CO for that supplier's row.
+
+Suggested improvement
+
+One thing I'd improve is how the macro waits for RefreshAll. Application.CalculateUntilAsyncQueriesDone works in many cases, but Power Query refreshes can sometimes continue afterward. If your workbook uses Power Query, I can update the macro to wait until all refreshes are fully complete before processing the data, making it more reliable.
+
+
+*******
+
 Absolutely. Based on all the information you've given me, I'd actually rewrite the macro instead of patching the previous one. It will be cleaner, faster, and less prone to errors.
 
 What this macro does
