@@ -1,3 +1,90 @@
+There are several possible reasons. Based on your macro, the most likely cause is that the macro is getting stuck while waiting for the SharePoint refresh, so it never reaches the code that opens Summary.xlsx.
+
+Step 1: Check where the macro stops
+
+Press F8 in the VBA Editor and execute the macro one line at a time.
+
+If it stops or appears to hang at:
+
+Call RefreshSEEvaluationList
+
+or
+
+Loop While cn.OLEDBConnection.Refreshing
+
+then the refresh loop is the issue.
+
+
+---
+
+Step 2: Add debug messages
+
+Temporarily add these lines:
+
+MsgBox "Refreshing Evaluation List..."
+
+Call RefreshSEEvaluationList
+
+MsgBox "Refresh Complete"
+
+Set wbSummary = Workbooks.Open(SUMMARY_FILE)
+
+MsgBox "Summary Opened"
+
+This will tell you exactly where the macro stops.
+
+
+---
+
+Step 3: Check the Summary file path
+
+Make sure this file actually exists:
+
+Const SUMMARY_FILE As String = "D:\Summary.xlsx"
+
+You can test it with:
+
+If Dir(SUMMARY_FILE) = "" Then
+    MsgBox "Summary file not found!"
+    Exit Sub
+End If
+
+
+---
+
+Step 4: Most likely cause
+
+Because you mentioned your connection is "Query - SE Evaluation List" and it comes from a SharePoint list, the line:
+
+Loop While cn.OLEDBConnection.Refreshing
+
+may never become False, causing the macro to wait forever. As a result, it never reaches:
+
+Set wbSummary = Workbooks.Open(SUMMARY_FILE)
+
+
+---
+
+I need one more detail
+
+To pinpoint the problem, please tell me:
+
+1. Does Excel freeze, or does it simply keep showing "Refreshing SharePoint data..."?
+
+
+2. Does the "Refresh Complete" message appear (if you add it)?
+
+
+3. Does the Evaluation List actually finish refreshing before the macro appears stuck?
+
+
+
+Also, if possible, copy and paste your current VBA code (especially the RefreshSEEvaluationList procedure and the beginning of UpdateSummaryScore). Since we've modified it several times, I'd like to review the exact version you're running and identify the specific line causing the issue.
+
+
+*********
+
+
 Perfect. Since you know the connection name is Query - SE Evaluation List, we can wait specifically for that connection instead of checking every workbook connection. That's more reliable for your SharePoint OLE DB query.
 
 Add this helper procedure
