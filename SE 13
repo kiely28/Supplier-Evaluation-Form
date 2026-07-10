@@ -1,3 +1,200 @@
+Yes. Since your Evaluation List is connected to a SharePoint List using an OLE DB Query, simply calling:
+
+ThisWorkbook.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+
+is not always enough. Excel may continue refreshing the connection after CalculateUntilAsyncQueriesDone finishes, causing the macro to process incomplete data.
+
+A better approach is to:
+
+1. Call RefreshAll.
+
+
+2. Wait until every WorkbookConnection has finished refreshing.
+
+
+3. Then continue with processing.
+
+
+
+
+---
+
+I recommend creating a helper procedure
+
+Place this above your main macro.
+
+Option Explicit
+
+Sub WaitForRefresh(wb As Workbook)
+
+    Dim cn As WorkbookConnection
+    Dim Refreshing As Boolean
+
+    Do
+
+        Refreshing = False
+
+        DoEvents
+
+        For Each cn In wb.Connections
+
+            On Error Resume Next
+
+            Select Case cn.Type
+
+                Case xlConnectionTypeOLEDB
+
+                    If cn.OLEDBConnection.Refreshing Then
+                        Refreshing = True
+                    End If
+
+                Case xlConnectionTypeODBC
+
+                    If cn.ODBCConnection.Refreshing Then
+                        Refreshing = True
+                    End If
+
+            End Select
+
+            On Error GoTo 0
+
+            If Refreshing Then Exit For
+
+        Next cn
+
+    Loop While Refreshing
+
+End Sub
+
+
+---
+
+Then in your main macro, replace:
+
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+DoEvents
+
+with:
+
+wbSource.RefreshAll
+
+Call WaitForRefresh(wbSource)
+
+Application.CalculateUntilAsyncQueriesDone
+
+
+---
+
+What happens?
+
+Suppose your workbook has these connections:
+
+SharePoint List
+SAP Query
+Power Query
+
+The macro does:
+
+Refresh All
+
+↓
+
+Connection 1 refreshing...
+
+↓
+
+Connection 2 refreshing...
+
+↓
+
+Connection 3 refreshing...
+
+↓
+
+ALL Finished
+
+↓
+
+Read Evaluation List
+
+Instead of:
+
+Refresh All
+
+↓
+
+Read Sheet immediately
+
+↓
+
+Oops...
+SharePoint still refreshing...
+
+
+---
+
+Even Better (Recommended)
+
+Since your workbook only has one SharePoint OLE DB connection, we can make it even cleaner and more reliable by waiting for that specific connection by name rather than checking every connection.
+
+For example, if your connection is named:
+
+Query - Evaluation List
+
+or
+
+SharePoint List
+
+the macro can wait only for that connection.
+
+This is more reliable and slightly faster because it doesn't loop through all connections repeatedly.
+
+I can also optimize the entire macro
+
+From everything you've shared, I can produce a Version 2 that includes:
+
+✅ Progress indicator in the Excel Status Bar:
+
+Refreshing SharePoint...
+
+Calculating averages...
+
+Opening Summary...
+
+Updating Summary...
+
+
+✅ Waits until the SharePoint connection is 100% finished.
+
+✅ Uses arrays instead of reading cells one by one (much faster for large lists).
+
+✅ Error handling (missing Summary file, missing sheet, connection failure, etc.).
+
+✅ A final summary showing:
+
+Number of source records processed.
+
+Number of suppliers updated.
+
+Number of scores written.
+
+Number of missing OP Codes.
+
+Total execution time.
+
+
+
+For a SharePoint list with thousands of records, that optimized version will be significantly faster and more robust than the current one.
+
+
+
+
+
+**************
+
+
 Please see the attached updated Supplier Evaluation Macro file.
 
 A new function has been added to update the Response of Performance Evaluation by EPPI in the Supplier Periodic Evaluation Summary. The response data is retrieved from the Supplier Evaluation App (Power Apps).
