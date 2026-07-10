@@ -1,3 +1,240 @@
+Sub UpdateSummary()
+
+    'Const SourceFile As String = "C:\Users\B014172\Desktop\SE Evaluation List.xlsx"
+    'Const SummaryFile As String = Trim(ThisWorkbook.Sheets("Main").Range("B5").Value)
+    'Const SummaryFile As String = "D:\all_files\0. FY25 Supplier periodic evaluation Summary.xlsx"
+    'Dim SummaryFile As String
+    SummaryFile = Trim(ThisWorkbook.Sheets("Main").Range("B5").Value)
+
+    Dim wbSource As Workbook
+    Dim wbSummary As Workbook
+
+    Dim wsSource As Worksheet
+    Dim wsSummary As Worksheet
+
+    Dim dictSum As Object
+    Dim dictCount As Object
+    Dim dictRows As Object
+    Dim dictQuestion As Object
+
+    Dim LastRow As Long
+    Dim i As Long
+
+    Dim SupplierCode As String
+    Dim Question As String
+    Dim FiscalYear As String
+
+    Dim Score As Double
+    Dim Key As Variant
+    Dim Arr
+
+    Dim AvgScore As Double
+
+    Dim OPCol As Long
+    'Dim RowNo As Long
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.StatusBar = "Updating Summary..."
+
+    Set dictSum = CreateObject("Scripting.Dictionary")
+    Set dictCount = CreateObject("Scripting.Dictionary")
+    Set dictRows = CreateObject("Scripting.Dictionary")
+    Set dictQuestion = CreateObject("Scripting.Dictionary")
+
+    '=============================
+    'Open Source File
+    '=============================
+    'Set wbSource = Workbooks.Open(SourceFile)
+'''    Set wbSource = ThisWorkbook
+'''
+'''    wbSource.RefreshAll
+'''    Application.CalculateUntilAsyncQueriesDone
+'''    DoEvents
+'''
+'''    'Set wsSource = wbSource.Sheets("query (2)")
+'''    Set wsSource = wbSource.Sheets("SE Evaluation List")
+
+
+    Set wbSource = ThisWorkbook
+
+    Application.StatusBar = "Refreshing Evaluation List..."
+    
+    wbSource.RefreshAll
+    
+    'Wait until all Power Query refreshes are finished
+    Dim Conn As WorkbookConnection
+    Dim Refreshing As Boolean
+    
+    Do
+        Refreshing = False
+    
+        For Each Conn In wbSource.Connections
+    
+            On Error Resume Next
+    
+            If Conn.Type = xlConnectionTypeOLEDB Then
+                If Conn.OLEDBConnection.Refreshing Then
+                    Refreshing = True
+                    Exit For
+                End If
+            ElseIf Conn.Type = xlConnectionTypeODBC Then
+                If Conn.ODBCConnection.Refreshing Then
+                    Refreshing = True
+                    Exit For
+                End If
+            End If
+    
+            On Error GoTo 0
+    
+        Next Conn
+    
+        DoEvents
+    
+    Loop While Refreshing
+    
+    Application.CalculateUntilAsyncQueriesDone
+    Application.StatusBar = False
+    
+    Set wsSource = wbSource.Worksheets("SE Evaluation List")
+
+
+    LastRow = wsSource.Cells(wsSource.Rows.Count, "C").End(xlUp).Row
+
+    '=============================
+    'Read Source Data
+    '=============================
+    For i = 2 To LastRow
+
+        SupplierCode = Trim(wsSource.Cells(i, "C").Value)
+
+        Question = Trim(wsSource.Cells(i, "B").Value)
+
+        FiscalYear = Trim(wsSource.Cells(i, "F").Value)
+
+        Score = val(wsSource.Cells(i, "E").Value)
+
+        If SupplierCode <> "" And Question <> "" Then
+
+            Key = SupplierCode & "|" & Question & "|" & FiscalYear
+
+            If dictSum.Exists(Key) Then
+
+                dictSum(Key) = dictSum(Key) + Score
+                dictCount(Key) = dictCount(Key) + 1
+
+            Else
+
+                dictSum.Add Key, Score
+                dictCount.Add Key, 1
+
+            End If
+
+        End If
+
+    Next i
+
+    '=============================
+    'Open Summary
+    '=============================
+    Set wbSummary = Workbooks.Open(SummaryFile)
+
+    Set wsSummary = wbSummary.Sheets("EPPI_Calculation Form")
+
+    OPCol = Columns("N").Column
+
+    '=============================
+    'Store OP Codes
+    '=============================
+    LastRow = wsSummary.Cells(wsSummary.Rows.Count, OPCol).End(xlUp).Row
+
+    For i = 13 To LastRow
+
+        SupplierCode = Trim(wsSummary.Cells(i, OPCol).Value)
+
+        If SupplierCode <> "" Then
+
+            dictRows(SupplierCode) = i
+
+        End If
+
+    Next i
+
+    '=============================
+    'Question Columns
+    '=============================
+
+    dictQuestion.Add "M1R", Columns("CO").Column
+    dictQuestion.Add "M4R", Columns("CP").Column
+    dictQuestion.Add "M5R", Columns("CQ").Column
+    dictQuestion.Add "M6R", Columns("CR").Column
+    dictQuestion.Add "M7R", Columns("CS").Column
+    dictQuestion.Add "M9R", Columns("CT").Column
+    dictQuestion.Add "M10R", Columns("CU").Column
+    dictQuestion.Add "M12R", Columns("CV").Column
+    dictQuestion.Add "E4R", Columns("CW").Column
+    dictQuestion.Add "Q3R", Columns("CX").Column
+    dictQuestion.Add "Q4R", Columns("CY").Column
+    dictQuestion.Add "Q6R", Columns("CZ").Column
+    dictQuestion.Add "Q10R", Columns("DA").Column
+    dictQuestion.Add "C2R", Columns("DB").Column
+    dictQuestion.Add "C3R", Columns("DC").Column
+    dictQuestion.Add "C4R", Columns("DD").Column
+    dictQuestion.Add "C5R", Columns("DE").Column
+    dictQuestion.Add "D1R", Columns("DF").Column
+    dictQuestion.Add "D2R", Columns("DG").Column
+    dictQuestion.Add "D3R", Columns("DH").Column
+    
+    '==================================================
+    'Optional: Clear Previous Scores
+    '==================================================
+    'wsSummary.Range("CO13:DH" & LastRow).ClearContents
+
+    '=============================
+    'Write Scores
+    '=============================
+    For Each Key In dictSum.Keys
+
+        Arr = Split(CStr(Key), "|")
+
+        SupplierCode = Arr(0)
+        Question = Arr(1)
+
+        AvgScore = dictSum(Key) / dictCount(Key)
+
+        If dictRows.Exists(SupplierCode) Then
+
+            If dictQuestion.Exists(Question) Then
+
+                wsSummary.Cells( _
+                    dictRows(SupplierCode), _
+                    dictQuestion(Question)).Value = _
+                    WorksheetFunction.Round(AvgScore, 0)
+
+            End If
+
+        End If
+
+    Next Key
+
+    wbSummary.Save
+    'wbSource.Close True
+
+    'wbSource.Close False
+    'wbSummary.Close True
+
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    Application.StatusBar = False
+
+    'MsgBox "Summary successfully updated."
+    'MsgBox "File updated successfully." & vbCrLf & SummaryFile, vbInformation
+
+End Sub
+
+*****
+
+
 Yes. Since you're using Power Query, I recommend changing the refresh part of the macro. Application.CalculateUntilAsyncQueriesDone alone doesn't always wait until every Power Query finishes.
 
 Replace this section:
