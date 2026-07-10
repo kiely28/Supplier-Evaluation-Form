@@ -1,3 +1,107 @@
+Yes. Since you're using Power Query, I recommend changing the refresh part of the macro. Application.CalculateUntilAsyncQueriesDone alone doesn't always wait until every Power Query finishes.
+
+Replace this section:
+
+Set wbSource = ThisWorkbook
+
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+DoEvents
+
+Set wsSource = wbSource.Sheets("Evaluation List")
+
+with this:
+
+Set wbSource = ThisWorkbook
+
+Application.StatusBar = "Refreshing Evaluation List..."
+
+wbSource.RefreshAll
+
+'Wait until all Power Query refreshes are finished
+Dim Conn As WorkbookConnection
+Dim Refreshing As Boolean
+
+Do
+    Refreshing = False
+
+    For Each Conn In wbSource.Connections
+
+        On Error Resume Next
+
+        If Conn.Type = xlConnectionTypeOLEDB Then
+            If Conn.OLEDBConnection.Refreshing Then
+                Refreshing = True
+                Exit For
+            End If
+        ElseIf Conn.Type = xlConnectionTypeODBC Then
+            If Conn.ODBCConnection.Refreshing Then
+                Refreshing = True
+                Exit For
+            End If
+        End If
+
+        On Error GoTo 0
+
+    Next Conn
+
+    DoEvents
+
+Loop While Refreshing
+
+Application.CalculateUntilAsyncQueriesDone
+Application.StatusBar = False
+
+Set wsSource = wbSource.Worksheets("Evaluation List")
+
+I also recommend three additional improvements
+
+Since we've refined the macro quite a bit, these changes will make it more reliable:
+
+1. Clear only the score columns
+
+Instead of clearing every row to the bottom of the sheet, use:
+
+Dim LastSummaryRow As Long
+
+LastSummaryRow = wsSummary.Cells(wsSummary.Rows.Count, "M").End(xlUp).Row
+
+wsSummary.Range("CO13:DH" & LastSummaryRow).ClearContents
+
+2. Prevent duplicate question errors
+
+When building the dictQuestion dictionary:
+
+If Not dictQuestion.Exists("M1R") Then dictQuestion.Add "M1R", wsSummary.Columns("CO").Column
+
+This avoids errors if the code runs more than once without recreating the dictionary.
+
+3. Add progress messages
+
+You can show the current step in Excel's status bar:
+
+Application.StatusBar = "Reading Evaluation List..."
+
+Application.StatusBar = "Calculating Average Scores..."
+
+Application.StatusBar = "Updating Summary..."
+
+Application.StatusBar = False
+
+This is especially helpful if you have thousands of records.
+
+My recommendation
+
+Given your workflow (Power Query → VBA → Summary workbook), I suggest one more enhancement: instead of reading cells one at a time, read the Evaluation List into a VBA array, perform all calculations in memory, and then write the results back in one operation. For large datasets (5,000–50,000 rows), this can reduce the runtime from a minute or more to just a few seconds.
+
+I can help you build that optimized version as well.
+
+
+
+*****
+
+
+
 Please update the code to that displays real-time progress in the Excel status bar while processing supplier records.
 
 Requirements:
