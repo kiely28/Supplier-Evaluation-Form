@@ -1,3 +1,103 @@
+That's the missing piece. Power Query loaded as an Excel Table (ListObject) should not be monitored through WorkbookConnection.OLEDBConnection.Refreshing. That's why your code gets stuck.
+
+Instead, wait for the ListObject's QueryTable to finish refreshing.
+
+Replace your entire RefreshSEEvaluationList() procedure with this:
+
+Private Sub RefreshSEEvaluationList()
+
+    Dim ws As Worksheet
+    Dim lo As ListObject
+    Dim StartTime As Double
+
+    Set ws = ThisWorkbook.Worksheets("SE Evaluation List")
+    Set lo = ws.ListObjects(1)     'The Power Query output table
+
+    Application.StatusBar = "Refreshing SharePoint data..."
+
+    'Refresh the entire workbook
+    ThisWorkbook.RefreshAll
+
+    'Wait until async queries are finished
+    Application.CalculateUntilAsyncQueriesDone
+
+    'Wait until the Power Query table finishes refreshing
+    StartTime = Timer
+
+    Do
+        DoEvents
+
+        On Error Resume Next
+
+        If lo.QueryTable.Refreshing = False Then Exit Do
+
+        On Error GoTo 0
+
+        'Timeout after 5 minutes
+        If Timer - StartTime > 300 Then
+            MsgBox "Refresh timed out after 5 minutes.", vbExclamation
+            Exit Do
+        End If
+
+    Loop
+
+    Application.StatusBar = False
+
+End Sub
+
+Even better (recommended)
+
+I'd actually avoid checking .Refreshing at all. Since the table itself is what you process, you can use Excel's synchronous refresh:
+
+Private Sub RefreshSEEvaluationList()
+
+    Dim ws As Worksheet
+    Dim lo As ListObject
+
+    Set ws = ThisWorkbook.Worksheets("SE Evaluation List")
+    Set lo = ws.ListObjects(1)
+
+    Application.StatusBar = "Refreshing SharePoint data..."
+
+    lo.QueryTable.BackgroundQuery = False
+    lo.QueryTable.Refresh
+
+    Application.StatusBar = False
+
+End Sub
+
+Setting BackgroundQuery = False makes the refresh synchronous, so VBA waits until the SharePoint refresh is completely finished before moving on. That eliminates the need for any polling loop.
+
+One question
+
+To make this completely reliable, could you tell me:
+
+1. On the SE Evaluation List sheet, what is the name of the Excel Table?
+
+
+
+You can find it by:
+
+Clicking anywhere inside the table.
+
+Going to Table Design (or Table tab).
+
+Looking at the Table Name box on the left.
+
+
+It will be something like:
+
+Table1
+
+SE_Evaluation_List
+
+Query_from_SharePoint
+
+
+Knowing the actual table name lets us reference it directly instead of using ListObjects(1), which is safer if more tables are added to the sheet later.
+
+****
+
 "SE Evaluation List" is loaded through Power Query and appears to be an Excel Table (ListObject)
 ****
 
