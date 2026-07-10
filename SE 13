@@ -1,3 +1,7 @@
+"SE Evaluation List" is loaded through Power Query and appears to be an Excel Table (ListObject)
+****
+
+
 Thank you for sharing the code. I can see the problem.
 
 The issue is not in your UpdateSummary() macro. It's in this procedure:
