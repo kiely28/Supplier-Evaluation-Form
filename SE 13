@@ -1,3 +1,78 @@
+Perfect. Since you know the connection name is Query - SE Evaluation List, we can wait specifically for that connection instead of checking every workbook connection. That's more reliable for your SharePoint OLE DB query.
+
+Add this helper procedure
+
+Place this at the top of your VBA module, before UpdateSummaryScore():
+
+Private Sub RefreshSEEvaluationList()
+
+    Dim cn As WorkbookConnection
+
+    Set cn = ThisWorkbook.Connections("Query - SE Evaluation List")
+
+    Application.StatusBar = "Refreshing SharePoint data..."
+
+    cn.Refresh
+
+    Do
+        DoEvents
+        On Error Resume Next
+    Loop While cn.OLEDBConnection.Refreshing
+
+    On Error GoTo 0
+
+    Application.CalculateUntilAsyncQueriesDone
+
+    Application.StatusBar = False
+
+End Sub
+
+Then, in your UpdateSummaryScore() macro, replace this section:
+
+wbSource.RefreshAll
+Application.CalculateUntilAsyncQueriesDone
+DoEvents
+
+with:
+
+Call RefreshSEEvaluationList
+
+
+---
+
+One important note
+
+Some SharePoint/OLE DB connections don't expose the .Refreshing property consistently, depending on how the query was created. If that's the case, the above code may raise an error such as:
+
+> Object doesn't support this property or method
+
+
+
+or it may exit before the data is fully refreshed.
+
+Because your connection is Query - SE Evaluation List, I recommend a different approach that is even more reliable for Power Query and SharePoint connections.
+
+Can you tell me one thing?
+
+In Excel, go to:
+
+Data → Queries & Connections
+
+When you see Query - SE Evaluation List, is it:
+
+1. A Power Query (created with Get Data / Power Query), or
+
+
+2. A legacy Microsoft Query / OLE DB connection?
+
+
+
+The waiting method is slightly different for those two connection types, and I'd like to give you the most reliable version.
+
+
+********
+
+
 Yes. Since your Evaluation List is connected to a SharePoint List using an OLE DB Query, simply calling:
 
 ThisWorkbook.RefreshAll
