@@ -1,3 +1,28 @@
+Please update the code to that displays real-time progress in the Excel status bar while processing supplier records.
+
+Requirements:
+- Determine the total number of suppliers from the last used row in column N.
+- Loop through each supplier starting from row 13(row 12 is the header).
+- Update the status bar with the message:
+
+  Updating summary X of Y
+
+  where:
+  - X = current supplier number being processed
+  - Y = total number of suppliers
+
+- Use DoEvents so the status bar updates during execution.
+- Reset the status bar to its default state when the macro finishes.
+- Include proper variable declarations and comments.
+- Provide complete VBA code.
+
+
+
+
+****
+
+
+
 That's actually a better design. If Supplier Evaluation Macro.xlsm already contains the Evaluation List sheet, there's no need to open D:\SE Evaluation List.xlsx at all.
 
 You can simply use the workbook that contains the macro.
