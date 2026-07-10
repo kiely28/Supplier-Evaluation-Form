@@ -1,3 +1,22 @@
+Please see the attached updated Supplier Evaluation Macro file.
+
+A new function has been added to update the Response of Performance Evaluation by EPPI in the Supplier Periodic Evaluation Summary. The response data is retrieved from the Supplier Evaluation App (Power Apps).
+
+Please refer to the screenshot below for the location of the new feature.
+
+[Insert Screenshot]
+
+New Feature: Click Update Summary under Response of Performance Evaluation by EPPI to update the Supplier Periodic Evaluation Summary with the latest responses from the Supplier Evaluation App (Power Apps).
+
+Please review and test the enhancement. Should you encounter any issues or have any feedback, please let me know.
+
+Thank you.
+
+Best regards,
+ King
+
+*****
+
 Sub UpdateSummary()
 
     'Const SourceFile As String = "C:\Users\B014172\Desktop\SE Evaluation List.xlsx"
