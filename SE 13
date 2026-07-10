@@ -1,3 +1,134 @@
+Thank you for sharing the code. I can see the problem.
+
+The issue is not in your UpdateSummary() macro. It's in this procedure:
+
+Do
+    DoEvents
+    On Error Resume Next
+Loop While cn.OLEDBConnection.Refreshing
+
+For SharePoint OLE DB connections, the .Refreshing property often never changes to False, even though the refresh has already finished. As a result, your loop never exits, so the macro never opens the summary workbook.
+
+Solution 1 (Recommended)
+
+Since you're using RefreshAll, don't call cn.Refresh.
+
+Replace your entire RefreshSEEvaluationList() with this:
+
+Private Sub RefreshSEEvaluationList()
+
+    Application.StatusBar = "Refreshing SharePoint data..."
+
+    ThisWorkbook.RefreshAll
+
+    Application.CalculateUntilAsyncQueriesDone
+
+    DoEvents
+
+    'Wait a little longer to ensure SharePoint finishes updating
+    Application.Wait Now + TimeValue("00:00:03")
+
+    Application.StatusBar = False
+
+End Sub
+
+This works well for many SharePoint list connections.
+
+
+---
+
+Solution 2 (Best and Most Reliable)
+
+Instead of waiting on the Refreshing property, wait until the worksheet data stops changing.
+
+Since your data is on the SE Evaluation List sheet, we can monitor the last row.
+
+Private Sub RefreshSEEvaluationList()
+
+    Dim ws As Worksheet
+    Dim LastRow1 As Long
+    Dim LastRow2 As Long
+
+    Set ws = ThisWorkbook.Sheets("SE Evaluation List")
+
+    Application.StatusBar = "Refreshing SharePoint data..."
+
+    ThisWorkbook.RefreshAll
+
+    Do
+
+        DoEvents
+
+        LastRow1 = ws.Cells(ws.Rows.Count, "C").End(xlUp).Row
+
+        Application.Wait Now + TimeValue("00:00:01")
+
+        LastRow2 = ws.Cells(ws.Rows.Count, "C").End(xlUp).Row
+
+    Loop Until LastRow1 = LastRow2
+
+    Application.CalculateUntilAsyncQueriesDone
+
+    Application.StatusBar = False
+
+End Sub
+
+This waits until the row count becomes stable before continuing.
+
+
+---
+
+I also noticed two other issues
+
+1. Wrong column reference
+
+You wrote:
+
+OPCol = Columns("N").Column
+
+Earlier you said OP Code is in column M.
+
+If that's still true, change it to:
+
+OPCol = wsSummary.Columns("M").Column
+
+If it has moved to N, then your current code is correct.
+
+
+---
+
+2. Use worksheet-qualified Columns
+
+Instead of:
+
+Columns("CO").Column
+
+use:
+
+wsSummary.Columns("CO").Column
+
+Otherwise, if another workbook becomes active, Columns("CO") may refer to the wrong workbook.
+
+For example:
+
+dictQuestion.Add "M1R", wsSummary.Columns("CO").Column
+
+This is safer and more reliable.
+
+
+---
+
+My recommendation
+
+Because you're refreshing a SharePoint List, I would not use .OLEDBConnection.Refreshing at all.
+
+A more robust approach is to wait for the QueryTable (or ListObject) associated with the SharePoint data to finish refreshing. That method is much more dependable for SharePoint-connected tables.
+
+If your SE Evaluation List sheet is loaded as an Excel Table (ListObject), I can provide a version that waits for the table refresh to complete before processing. That is the approach I'd recommend for production use.
+
+*****
+
+
 it simply keep showing "Refreshing SharePoint data..."
 
 this is the code:
