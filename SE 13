@@ -1,3 +1,11 @@
+
+please give a sample email that please see updated excel vba macro file supplier evaluation macro. 
+added a new function/button for updating Response of Performance Evaluation by EPPI in Supplier periodic evaluation summary from supplier evaluation app(power apps) and (i will put a screenshot for the  new button)
+
+
+****
+
+
 That's the missing piece. Power Query loaded as an Excel Table (ListObject) should not be monitored through WorkbookConnection.OLEDBConnection.Refreshing. That's why your code gets stuck.
 
 Instead, wait for the ListObject's QueryTable to finish refreshing.
