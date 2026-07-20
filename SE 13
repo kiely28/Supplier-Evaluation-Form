@@ -1,3 +1,21 @@
+Here's a simple Kaizen B format you can use:
+
+Subject:
+Dynamic Excel Data Processing and Automatic Employee ID Assignment
+
+Before (Actual Result):
+The program used a fixed row count and a hardcoded Employee ID, which caused missing data and required manual updates.
+
+After (Actual Result):
+The program now automatically detects the last row in Excel and assigns the Employee ID based on the scheduled run, ensuring complete data processing without manual changes.
+
+Effectiveness:
+This improvement eliminates missing data, ensures accurate results, and reduces manual work and human errors.This is concise and appropriate for a Kaizen B submission.
+
+
+
+****
+
 The Employee ID can now be entered through the UI, eliminating the need for manual updates.
 
 
