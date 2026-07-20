@@ -1,3 +1,32 @@
+Here's the updated simple explanation with your additional point included.
+
+Before:
+
+- The program used a fixed number of rows when reading the Excel file. If the actual data exceeded the fixed row count, some records were missed, causing the total count to be incorrect.
+- The Tbl Authority Logs report in SSRS did not match the results from the manual export due to the missing data.
+- The Employee ID was hardcoded, so it had to be changed manually whenever the schedule or assigned employee changed.
+- There was no user interface for entering the SSRS username and password, making account changes difficult.
+
+After:
+
+- The program now automatically detects the last row in the Excel file and processes all available data, ensuring that no records are missed.
+- The Tbl Authority Logs report in SSRS now matches the manual export because all records are processed correctly.
+- The Employee ID is now set automatically based on the scheduled run, eliminating the need for manual updates.
+- A user interface has been added for entering the SSRS username and password, making account updates easier without modifying the program.
+
+Benefits:
+
+- No missing data.
+- Accurate record count and matching SSRS reports.
+- Less manual work.
+- Easier account management.
+- Reduced risk of human error.
+
+
+
+*****
+
+
 before: Tbl Authority Logs in ssrs is not match from the manual export. no ui for username, password.
 
 
