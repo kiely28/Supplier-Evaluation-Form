@@ -1,3 +1,15 @@
+before:
+have missing data. rows are fix set. the count is not match vs the actual
+
+after:
+dynamically set to last row in excel
+
+also improvement: set emp id for based schedule of run unlike in old program it is hardcode.
+
+
+
+*******
+
 
 please give a sample email that please see updated excel vba macro file supplier evaluation macro. 
 added a new function/button for updating Response of Performance Evaluation by EPPI in Supplier periodic evaluation summary from supplier evaluation app(power apps) and (i will put a screenshot for the  new button)
