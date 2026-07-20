@@ -1,3 +1,26 @@
+Here's a simpler version that is easy to understand:
+
+Before:
+
+- The program used a fixed number of rows when reading the Excel file. If the actual data exceeded the fixed row count, some records were missed, causing the total count to be incorrect.
+- The Employee ID was hardcoded, so it had to be changed manually whenever the schedule or assigned employee changed.
+
+After:
+
+- The program now automatically detects the last row in the Excel file and processes all available data, ensuring that no records are missed.
+- The Employee ID is now set automatically based on the scheduled run, eliminating the need for manual updates.
+
+Benefits:
+
+- No missing data.
+- Accurate record count.
+- Less manual work.
+- Reduced risk of human error.This version is suitable for a Kaizen report or presentation and keeps the explanation straightforward.
+
+
+
+*****
+
 Here's a professional explanation you can use for your Kaizen B documentation:
 
 Kaizen B – Program Improvement
