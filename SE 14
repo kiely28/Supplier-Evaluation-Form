@@ -5,7 +5,7 @@ A. Supplier Evaluation App (Power Apps)
 3	Complete Answer 1: Evaluation Sheet for Suppliers.	Power Apps
 4	Click Next (all required questions must be answered before proceeding).		Power Apps
 5	If the evaluation is incomplete, display message: "Please answer the evaluation before proceeding."	Power Apps
-6	Answer 2: Evaluation Method (Comment Optional).		Power Apps
+6	Answer 2: Evaluation Method (Optional).		Power Apps
 7	Click Submit to save and submit the completed Supplier Evaluation form		Power Apps
 8	Upon successful submission, display message: "Your form has been submitted successfully."	Power Apps
 9	If the evaluation was previously submitted for the current year, display message: "Your evaluation for this year has already been submitted."		Power Apps
