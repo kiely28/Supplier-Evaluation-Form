@@ -1,0 +1,17 @@
+No.		Action item 			System
+A. Supplier Evaluation App (Power Apps)					
+1	Open the Supplier Evaluation App link with the required Section parameter.	Power Apps
+2	Click Start to begin the Supplier Evaluation process and load the evaluation.	Power Apps
+3	Complete Answer 1: Evaluation Sheet for Suppliers.	Power Apps
+4	Click Next (all required questions must be answered before proceeding).		Power Apps
+5	If the evaluation is incomplete, display message: "Please answer the evaluation before proceeding."	Power Apps
+6	Answer 2: Evaluation Method (Comment Optional).		Power Apps
+7	Click Submit to save and submit the completed Supplier Evaluation form		Power Apps
+8	Upon successful submission, display message: "Your form has been submitted successfully."	Power Apps
+9	If the evaluation was previously submitted for the current year, display message: "Your evaluation for this year has already been submitted."		Power Apps
+
+B. Supplier Evaluation Macro (Excel VBA Macro)					
+1	Click Update Summary button to initiate the summary update process.	Excel VBA Macro
+2	Refresh the SE Evaluation List sheet.		Excel VBA Macro
+3	Update the Supplier Periodic Evaluation Summary Template using the latest supplier evaluation records.	Excel VBA Macro
+4	Display pop-up message box: "File updated successfully.".	Excel VBA Macro
