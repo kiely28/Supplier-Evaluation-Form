@@ -1,3 +1,33 @@
+Here is a simplified version with Action Item only:
+
+UAT Action Items
+
+A. Supplier Evaluation App (Power Apps)
+
+1. Open the Supplier Evaluation App using the required Section parameter.
+2. Click Start to begin the Supplier Evaluation process.
+3. Complete Answer 1: Evaluation Sheet for Suppliers.
+4. Click Next after answering all required questions.
+5. Verify that a validation message is displayed when required questions are left unanswered.
+6. Complete Answer 2: Evaluation Method (Optional).
+7. Click Submit to submit the completed Supplier Evaluation form.
+8. Verify that a successful submission message is displayed.
+9. Verify that the system prevents duplicate submissions for the current year.
+
+B. Supplier Evaluation Macro (Excel VBA Macro)
+
+1. Open the Supplier Evaluation Summary Macro file.
+2. Click the Update Summary button.
+3. Refresh the SE Evaluation List.
+4. Update the Supplier Periodic Evaluation Summary Template using the latest evaluation records.
+5. Verify that the summary data is updated correctly.
+6. Verify that a "File updated successfully." message is displayed after the update is completed.This format is concise and is commonly used in UAT checklists, with each action starting with a clear test activity.
+
+
+
+******
+
+
 No.		Action item 			System
 A. Supplier Evaluation App (Power Apps)					
 1	Open the Supplier Evaluation App link with the required Section parameter.	Power Apps
