@@ -1,3 +1,81 @@
+
+Background / Overview
+Problems Encountered
+
+Objectives
+Proposal
+
+Benefits
+
+Risk Management
+
+
+OVERVIEW OF THE PROJECT / BRIEF INTRODUCTION>
+
+The Supplier evaluation excel macro project aims to automate the process of collecting
+evaluation data from multiple suppliers and EPPI related section (excel based) and consolidate
+them into a single, structured summary sheet for score calculation and analysis.
+
+---
+
+Benefits:
+Efficiency: Eliminates manual copy-paste from multiple sheets.
+
+Accuracy: Reduces human error in tabulation.
+
+Transparency: Provides a clear, centralized summary result.
+
+---
+
+History / Current Situation
+
+Last July 29,2025 EPPI received sudden announcement from SEC that Supplier periodic evaluation
+will be handle by EPPI on our own.
+SEC system cannot be shared to EPPI, thus EPPI needs to establish our own system/method.
+SEC shared the questionnaire forms & Summary Table to compute the result of each supplier
+
+---
+
+Current Challenges with Manual Process
+
+1. Time-Consuming Process
+Entering scores and comments from multiple suppliers and end-users takes a lot of time,
+especially if there are many criteria and respondents.
+Repetitive tasks like copying and pasting increase workload.
+
+2. High Risk of Human Error
+Typing mistakes, wrong cell references, or skipped rows can lead to inaccurate evaluations.
+Misalignment of data (e.g., entering a score under the wrong supplier) is common.
+
+3. Difficulty in Consolidation
+Combining multiple sheets or files manually is prone to duplication or missing data.
+Tracking which evaluations are complete becomes challenging.
+
+4. Limited Traceability
+Hard to audit changes or identify who entered which data.
+No automatic log of updates or corrections.
+
+5. Slow Reporting
+Manual tabulation delays the generation of summary result.
+Any change requires redoing calculations manually.
+
+---
+
+Proposal
+
+Propose to automate the Supplier Evaluation process with an Excel macro which can:
+.Pull data from multiple sheets/files.
+·Validate inputs automatically.
+·Calculate weighted scores and rankings instantly.
+.Generate a centralized summary with one click.
+
+
+
+
+
+******
+
+
 Here is a simplified version with Action Item only:
 
 UAT Action Items
