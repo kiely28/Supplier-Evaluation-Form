@@ -1,3 +1,54 @@
+ALTER PROCEDURE [dbo].[MA_GetAttendeesByMeetingId1]
+	@CreatedBy NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+	SELECT
+		tmeet.MeetingId,
+		tmeet.Title,
+		tmeet.StartDateTime,
+		tmeet.EndDateTime,
+
+		muser.[EmployeeNo]
+		,CONCAT(muser.FirstName, ' ', COALESCE(muser.MiddleName, ''), ' ', muser.LastName) AS FullName
+		,muser.[Grade]
+		,CONCAT(muser.DivisionName, '/', muser.DepartmentName, '/', muser.SectionName) AS Department
+		,tpart.[TapIn]
+		,tpart.[TapOut]
+		FROM [db_MeetingAttendance].[dbo].[Tbl_Participants] tpart
+			INNER JOIN [db_EPPIIIP_New].[dbo].[TBL_M_USERMASTER] muser
+		ON 
+			muser.EmployeeNo = tpart.EmployeeNo
+
+			INNER JOIN [db_MeetingAttendance].[dbo].[tbl_meetings] tmeet ON tpart.MeetingId = tmeet.MeetingId
+			WHERE tmeet.CreatedBy = @CreatedBy
+	UNION 
+	SELECT
+		tmeet.MeetingId,
+		tmeet.Title,
+		tmeet.StartDateTime,
+		tmeet.EndDateTime,
+
+
+		muser.[EmployeeNo]
+		,CONCAT(muser.FirstName, ' ', COALESCE(muser.MiddleName, ''), ' ', muser.LastName) AS FullName
+		,muser.[Grade]
+		,CONCAT(muser.DivisionName, '/', muser.DepartmentName, '/', muser.SectionName) AS Department
+		,tpart.[TapIn]
+		,tpart.[TapOut]
+		FROM [db_MeetingAttendance].[dbo].[Tbl_Participants] tpart
+			INNER JOIN [db_EPPIIIP_New].[dbo].[vw_UserMaster_CardSerialNo] muser
+		ON 
+			muser.CardSerialNo = tpart.CardSerialNo
+
+			INNER JOIN [db_MeetingAttendance].[dbo].[tbl_meetings] tmeet ON tpart.MeetingId = tmeet.MeetingId
+			WHERE tmeet.CreatedBy = @CreatedBy
+		ORDER BY TapIn DESC;
+
+END
+
+*****
 
 Background / Overview
 Problems Encountered
