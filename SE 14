@@ -1,3 +1,19 @@
+Here's a simple and professional email you can use:
+
+Hi Team,
+
+Please see the attached file for the UAT Scenario of the Supplier Evaluation App and the updated Supplier Evaluation Macro.
+
+Kindly review the attached documents and let me know if there are any comments or corrections.
+
+Thank you.If you'd like, I can also make it more formal or include a request for approval.
+
+
+
+*****
+
+
+
 ALTER PROCEDURE [dbo].[MA_GetAttendeesByMeetingId1]
 	@CreatedBy NVARCHAR(50)
 AS
