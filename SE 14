@@ -1,3 +1,84 @@
+
+Please create a modern Power Apps canvas application called "SE Access Management".
+
+Data Source:
+- SharePoint List: SE Access List
+- Columns:
+  - Section (Single line of text)
+  - User (Person or Group)
+
+Requirements:
+
+1. Dashboard Screen
+- Title: "SE Access Management"
+- Search box to search by Section, User Name, or Email.
+- Refresh button.
+- Send All Emails button.
+
+2. Gallery
+Display all records from the SharePoint list in a responsive gallery.
+
+Each gallery row should display:
+- Section
+- User Display Name
+- User Email
+- Last Email Sent (optional)
+
+Each row should contain:
+- Send Email button
+
+3. Send Email Functionality
+- Clicking "Send Email" sends an email only to the selected user.
+- Email should contain:
+  - User Name
+  - Section
+  - Power Apps link
+  - Friendly message
+
+Example Email:
+
+Subject:
+SE Access Notification
+
+Body:
+Hello {UserName},
+
+You have been granted access to Section: {Section}.
+
+Please click the link below to open the application:
+{PowerAppsLink}
+
+Thank you.
+
+4. Send All Emails
+- Clicking "Send All Emails" triggers a Power Automate flow.
+- Flow retrieves all users from the SharePoint list.
+- Flow sends personalized emails to every user.
+- Display success notification after completion.
+
+5. User Experience
+- Loading spinner during email processing.
+- Success and error notifications.
+
+6. Security
+- Retrieve email from the SharePoint Person column.
+
+7. Optional Enhancements
+- Add Last Email Sent column and update it after a successful email.
+- Add Email Status column (Pending, Sent, Failed).
+
+Expected Output:
+- Power Apps canvas app design.
+- Power Fx formulas.
+- Power Automate flow design.
+- SharePoint list integration.
+- Modern UI layout and component recommendations.
+
+
+
+*****
+
+
 Here's a simple and professional email you can use:
 
 Hi Team,
