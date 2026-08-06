@@ -1,3 +1,442 @@
+SE Access Management – Power Apps Canvas Application Design
+
+1. SharePoint List
+
+List Name: SE Access List
+
+Column	Type
+
+Title	Default (Optional)
+Section	Single line of text
+User	Person or Group
+Last Email Sent	Date and Time (Optional)
+Email Status	Choice (Pending, Sent, Failed) (Optional)
+
+
+
+---
+
+2. Power Apps Layout
+
++------------------------------------------------------+
+| SE Access Management                                 |
+|------------------------------------------------------|
+| 🔍 Search...                     🔄 Refresh  📧 Send All |
+|------------------------------------------------------|
+| Gallery                                              |
+|------------------------------------------------------|
+| Section                                              |
+| User Name                                            |
+| User Email                                           |
+| Last Email Sent                                      |
+| [Send Email]                                         |
+|------------------------------------------------------|
+| Section                                              |
+| User Name                                            |
+| User Email                                           |
+| Last Email Sent                                      |
+| [Send Email]                                         |
++------------------------------------------------------+
+
+
+---
+
+3. Screen Controls
+
+Screen
+
+scrDashboard
+
+
+---
+
+Search Box
+
+txtSearch
+
+Hint:
+
+Search Section, Name or Email
+
+
+---
+
+Refresh Button
+
+OnSelect
+
+Refresh('SE Access List');
+
+Notify(
+    "Data refreshed successfully.",
+    NotificationType.Success
+)
+
+
+---
+
+Send All Button
+
+OnSelect
+
+Set(varLoading,true);
+
+Flow_SendAllEmails.Run();
+
+Set(varLoading,false);
+
+Notify(
+    "All emails were sent successfully.",
+    NotificationType.Success
+)
+
+
+---
+
+4. Gallery
+
+Items
+
+Search(
+    'SE Access List',
+    txtSearch.Text,
+    Section,
+    User.DisplayName,
+    User.Email
+)
+
+
+---
+
+Inside the gallery add:
+
+Section
+
+ThisItem.Section
+
+
+---
+
+User Name
+
+ThisItem.User.DisplayName
+
+
+---
+
+User Email
+
+ThisItem.User.Email
+
+
+---
+
+Last Email Sent
+
+Text(
+    ThisItem.'Last Email Sent',
+    "dd-mmm-yyyy hh:mm AM/PM"
+)
+
+
+---
+
+5. Send Email Button
+
+OnSelect
+
+Set(varLoading,true);
+
+Flow_SendSingleEmail.Run(
+    ThisItem.User.Email,
+    ThisItem.User.DisplayName,
+    ThisItem.Section,
+    ThisItem.ID
+);
+
+Refresh('SE Access List');
+
+Set(varLoading,false);
+
+Notify(
+    "Email sent successfully.",
+    NotificationType.Success
+)
+
+
+---
+
+6. Loading Spinner
+
+Insert Spinner
+
+Visible
+
+varLoading
+
+
+---
+
+7. Success Notification
+
+Notify(
+    "Completed successfully.",
+    NotificationType.Success
+)
+
+
+---
+
+8. Error Notification
+
+Notify(
+    "Something went wrong.",
+    NotificationType.Error
+)
+
+
+---
+
+9. Power Automate Flow
+
+Flow 1
+
+Flow_SendSingleEmail
+
+Trigger
+
+Power Apps (V2)
+
+Inputs
+
+Email
+
+UserName
+
+Section
+
+ItemID
+
+
+
+---
+
+Send an Email (V2)
+
+To
+
+Email
+
+Subject
+
+SE Access Notification
+
+Body (HTML)
+
+Hello <b>@{triggerBody()['UserName']}</b>,
+<br><br>
+
+You have been granted access to Section:
+
+<b>@{triggerBody()['Section']}</b>
+
+<br><br>
+
+Please click the link below to open the application.
+
+<br><br>
+
+<a href="https://apps.powerapps.com/play/APPID">
+Open SE Application
+</a>
+
+<br><br>
+
+Thank you.
+
+
+---
+
+Update SharePoint Item
+
+Last Email Sent
+
+utcNow()
+
+Email Status
+
+Sent
+
+
+---
+
+If email fails
+
+Email Status = Failed
+
+
+---
+
+10. Flow 2
+
+Flow_SendAllEmails
+
+
+---
+
+Trigger
+
+Power Apps
+
+↓
+
+Get Items
+
+↓
+
+Apply to Each
+
+↓
+
+Send Email
+
+↓
+
+Update Item
+
+
+---
+
+Pseudo Flow
+
+Power Apps
+      │
+Get Items
+      │
+Apply to each
+      │
+ ├── Send Email
+ ├── Update Last Email Sent
+ └── Update Status = Sent
+
+
+---
+
+11. Search Function
+
+Searches all of the following:
+
+Section
+
+User Name
+
+Email
+
+
+Search(
+    'SE Access List',
+    txtSearch.Text,
+    Section,
+    User.DisplayName,
+    User.Email
+)
+
+
+---
+
+12. Modern Color Theme
+
+Component	Color
+
+Header	#2563EB
+Background	#F8FAFC
+Cards	White
+Primary Button	#2563EB
+Success	#22C55E
+Error	#EF4444
+Text	#1F2937
+
+
+
+---
+
+13. Suggested Icons
+
+🏠 Dashboard
+
+🔍 Search
+
+🔄 Refresh
+
+📧 Send Email
+
+📨 Send All
+
+✅ Success
+
+❌ Error
+
+⏳ Loading
+
+
+
+---
+
+14. Recommended Components
+
+Header component
+
+Search component
+
+Command bar (Refresh / Send All)
+
+Responsive Vertical Gallery
+
+Loading overlay with spinner
+
+Notification banners
+
+Reusable Primary Button component
+
+Empty-state message when no records match the search
+
+
+
+---
+
+15. Recommended App Structure
+
+App
+│
+├── scrDashboard
+│     ├── Header
+│     ├── Search Box
+│     ├── Refresh Button
+│     ├── Send All Emails Button
+│     ├── Responsive Gallery
+│     ├── Loading Spinner
+│     └── Notifications
+│
+├── Flow_SendSingleEmail
+│
+└── Flow_SendAllEmails
+
+Additional Best Practices
+
+Enable responsive containers so the app works well on desktop and tablet.
+
+Store the Power Apps URL in an app variable (for example, Set(varAppLink, "...")) so it only needs to be updated in one place if the app URL changes.
+
+Use the email address from the SharePoint Person column (User.Email) instead of maintaining a separate email field, ensuring emails are always sent to the correct user.
+
+Refresh the SharePoint list after sending emails so the Last Email Sent and Email Status fields are immediately reflected in the gallery.
+
+In the Send All Emails flow, configure Run after on the update actions to mark each record as Sent or Failed based on the email action result, allowing processing to continue even if one recipient fails.
+
+
+
+*****
+
 
 Please create a modern Power Apps canvas application called "SE Access Management".
 
