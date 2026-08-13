@@ -1,3 +1,27 @@
+Problems Encountered
+
+Current Challenges with Manual Process
+
+1. Time-Consuming Process
+Manually collecting and encoding evaluation results from different suppliers and sections takes a lot of time.
+
+2. Risk of Human Error
+Manual copying and encoding can cause incorrect scores, missing data, or data entered in the wrong location.
+
+3. Difficult Data Consolidation
+Combining evaluation results from multiple Excel files and sheets can be difficult and may result in duplicate or missing information.
+
+4. Difficult to Track Evaluations
+It is challenging to monitor which suppliers or sections have already submitted their evaluation and which are still pending.
+
+5. Slow Summary Preparation
+Manual consolidation and calculation take time, especially when there are many evaluation records.
+
+6. Repetitive Manual Tasks
+Users repeatedly open files, copy data, paste information, and update the summary, increasing workload and processing time.
+
+*****
+
 Background / Overview
 
 The Supplier Evaluation Excel Macro project aims to automate and streamline the current supplier evaluation process by collecting evaluation data from multiple suppliers and EPPI-related sections using Excel-based evaluation forms. The collected data is consolidated into a single, structured summary file for standardized score calculation, monitoring, and analysis.
