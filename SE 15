@@ -1,3 +1,261 @@
+Yes, it is possible, but there is an important distinction:
+
+> Task Scheduler cannot directly run an Excel macro from a SharePoint web URL.
+The practical setup is to sync the SharePoint document library to the Windows PC using OneDrive, then have Task Scheduler open the locally synced .xlsm file with Excel. Changes saved by the macro will then synchronize back to SharePoint. Microsoft supports syncing SharePoint libraries to File Explorer through OneDrive. 
+
+
+
+Recommended setup
+
+SharePoint Document Library
+          ↓
+     OneDrive Sync
+          ↓
+Windows PC
+C:\Users\...\Company\SharePoint Folder\
+          ↓
+     Task Scheduler
+          ↓
+       EXCEL.EXE
+          ↓
+   Your .XLSM Macro
+          ↓
+SQL Server → Stored Procedure
+          ↓
+       Sheet1
+          ↓
+   Excel Table
+          ↓
+      Save File
+          ↓
+     OneDrive Sync
+          ↓
+SharePoint Document Library
+
+1. Put your .xlsm in SharePoint
+
+For example:
+
+SharePoint
+└── Documents
+    └── Automation
+        └── SPO_Data_Automation.xlsm
+
+You can upload the macro-enabled Excel file directly to the SharePoint document library. 
+
+2. Sync the SharePoint library to the PC
+
+In SharePoint:
+
+Document Library → Sync
+
+Then OneDrive will create a corresponding folder in Windows File Explorer. Microsoft recommends either Add shortcut to OneDrive or Sync for accessing SharePoint files locally. 
+
+For example, your local path might become:
+
+C:\Users\King\Company Name\IT - Documents\Automation\SPO_Data_Automation.xlsm
+
+The exact path will depend on your organization's OneDrive/SharePoint setup.
+
+3. Make sure the file is available locally
+
+This is important for Task Scheduler.
+
+Right-click the .xlsm file and choose:
+
+Always keep on this device
+
+This prevents the file from being only an online placeholder.
+
+4. Task Scheduler runs Excel
+
+Task Scheduler can launch Excel with the workbook.
+
+For example:
+
+Program/script:
+
+C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE
+
+Add arguments:
+
+"C:\Users\King\Company Name\IT - Documents\Automation\SPO_Data_Automation.xlsm"
+
+However, there's one more important part: opening the workbook does not automatically mean your desired macro will run.
+
+I recommend having a small Workbook_Open() event in the .xlsm:
+
+Private Sub Workbook_Open()
+
+    Call GetSPODataFromSQLServer
+
+End Sub
+
+Then the sequence becomes:
+
+Task Scheduler
+      ↓
+Open Excel
+      ↓
+Open SPO_Data_Automation.xlsm
+      ↓
+Workbook_Open()
+      ↓
+GetSPODataFromSQLServer
+      ↓
+Execute tblauth_spo_data
+      ↓
+Update Sheet1
+      ↓
+Create tblSPOData
+      ↓
+Save
+      ↓
+Close Excel
+      ↓
+OneDrive synchronizes
+      ↓
+SharePoint updated
+
+5. I recommend adding automatic Excel closing
+
+For a scheduled process, I would modify your macro so that after saving it also closes Excel.
+
+For example:
+
+ThisWorkbook.Save
+
+Application.DisplayAlerts = False
+ThisWorkbook.Close SaveChanges:=True
+Application.DisplayAlerts = True
+
+That way, Task Scheduler doesn't leave an Excel process running in the background.
+
+
+---
+
+⚠️ One major issue: Excel macro security
+
+This is probably the most important part of your setup.
+
+Microsoft blocks VBA macros from files that are considered to come from the Internet, including files downloaded from SharePoint/OneDrive in some circumstances. Microsoft recommends approaches such as opening the file in the desktop app, using appropriate trusted-site policies, or managing the file's trust/security configuration. 
+
+For a company automation, I would not simply disable Excel macro security globally.
+
+Instead, your IT administrator can establish an appropriate trusted configuration for the organization's SharePoint environment. Microsoft also documents Trusted Locations for Office files, where files in those locations can have active content enabled. 
+
+
+---
+
+⚠️ Another important issue: Task Scheduler + logged-in user
+
+There is a difference between:
+
+A. User is logged in
+
+and
+
+B. Nobody is logged in
+
+For Excel VBA automation, I strongly recommend initially configuring Task Scheduler to run only when the user is logged in.
+
+For example:
+
+Task Scheduler
+   ↓
+Run only when user is logged on
+   ↓
+Excel Desktop
+   ↓
+.xlsm
+   ↓
+VBA
+
+This is much easier to troubleshoot than running Excel invisibly under a background service account.
+
+
+---
+
+For your specific project
+
+Since your macro already does:
+
+SQL Server
+     ↓
+tblauth_spo_data
+     ↓
+Sheet1
+     ↓
+tblSPOData
+     ↓
+Save
+
+I would structure your final automation as:
+
+SPO_Data_Automation.xlsm
+
+Sheet1
+
+tblSPOData
+
+ThisWorkbook
+
+Private Sub Workbook_Open()
+
+    Call GetSPODataFromSQLServer
+
+End Sub
+
+Module1
+
+Sub GetSPODataFromSQLServer()
+
+    'Connect SQL Server
+    'Execute tblauth_spo_data
+    'Clear Sheet1
+    'Insert data
+    'Create tblSPOData
+    'Save workbook
+    'Close workbook
+
+End Sub
+
+Task Scheduler
+
+Trigger:
+Every day at 7:00 AM
+
+Action:
+Start Excel
+
+Program:
+EXCEL.EXE
+
+Argument:
+"SPO_Data_Automation.xlsm"
+
+SharePoint
+
+Document Library
+└── Automation
+    └── SPO_Data_Automation.xlsm
+
+OneDrive
+
+SharePoint Automation
+        ↕
+Local synced folder
+
+This is a very reasonable architecture for your current SQL Server → Excel VBA → SharePoint requirement.
+
+One caveat: because the workbook itself is being edited and saved through a synced SharePoint/OneDrive location, you should avoid having multiple users open/edit that same .xlsm at the time the scheduled task runs. The scheduled automation should ideally have one dedicated PC/account responsible for running it. SharePoint/OneDrive will synchronize the saved result back to the library. 
+
+If you want, I can give you the  next: the complete production-ready setup, Workbook_Open, and the exact final VBA (`SQL Server → table → save → close`) including Windows Task Scheduler settings.Program, Arguments, Start in, trigger, and conditions
+
+
+****
+
+
 Yes. We can add an automatic Save after the SQL Server data is retrieved and the Excel Table is created.
 
 I recommend using ThisWorkbook.Save, which saves the same Excel file where the macro is located.
