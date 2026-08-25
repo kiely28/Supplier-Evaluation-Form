@@ -1,3 +1,196 @@
+Yes. After retrieving the SQL Server data into Sheet1, we can automatically convert the result into an Excel Table.
+
+This version also deletes the previous table first, so you can run the macro repeatedly without getting duplicate table-name errors.
+
+Option Explicit
+
+Sub GetSPODataFromSQLServer()
+
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    
+    Dim ws As Worksheet
+    Dim tbl As ListObject
+    
+    Dim serverName As String
+    Dim databaseName As String
+    Dim username As String
+    Dim password As String
+    
+    Dim connectionString As String
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim i As Long
+    
+    On Error GoTo ErrorHandler
+    
+    '=========================================
+    ' SQL SERVER SETTINGS
+    '=========================================
+    serverName = "YOUR_SERVER_NAME"
+    databaseName = "YOUR_DATABASE_NAME"
+    username = "YOUR_USERNAME"
+    password = "YOUR_PASSWORD"
+    
+    '=========================================
+    ' DESTINATION WORKSHEET
+    '=========================================
+    Set ws = ThisWorkbook.Worksheets("Sheet1")
+    
+    '=========================================
+    ' DELETE EXISTING EXCEL TABLES
+    '=========================================
+    For Each tbl In ws.ListObjects
+        tbl.Unlist
+    Next tbl
+    
+    'Clear previous data
+    ws.Cells.ClearContents
+    
+    '=========================================
+    ' SQL SERVER CONNECTION
+    '=========================================
+    connectionString = _
+        "Provider=SQLOLEDB;" & _
+        "Data Source=" & serverName & ";" & _
+        "Initial Catalog=" & databaseName & ";" & _
+        "User ID=" & username & ";" & _
+        "Password=" & password & ";"
+    
+    Set conn = CreateObject("ADODB.Connection")
+    
+    conn.CommandTimeout = 60
+    conn.Open connectionString
+    
+    '=========================================
+    ' STORED PROCEDURE
+    '=========================================
+    Set cmd = CreateObject("ADODB.Command")
+    
+    With cmd
+        .ActiveConnection = conn
+        .CommandType = 4 ' adCmdStoredProc
+        .CommandText = "tblauth_spo_data"
+        .CommandTimeout = 60
+    End With
+    
+    '=========================================
+    ' EXECUTE STORED PROCEDURE
+    '=========================================
+    Set rs = cmd.Execute
+    
+    '=========================================
+    ' WRITE COLUMN HEADERS
+    '=========================================
+    For i = 0 To rs.Fields.Count - 1
+        ws.Cells(1, i + 1).Value = rs.Fields(i).Name
+    Next i
+    
+    '=========================================
+    ' WRITE DATA
+    '=========================================
+    If Not rs.EOF Then
+        ws.Range("A2").CopyFromRecordset rs
+    End If
+    
+    '=========================================
+    ' FIND LAST ROW/COLUMN
+    '=========================================
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    
+    '=========================================
+    ' CREATE EXCEL TABLE
+    '=========================================
+    If lastRow >= 1 And lastCol >= 1 Then
+        
+        Set tbl = ws.ListObjects.Add( _
+            SourceType:=xlSrcRange, _
+            Source:=ws.Range(ws.Cells(1, 1), _
+                             ws.Cells(lastRow, lastCol)), _
+            XlListObjectHasHeaders:=xlYes)
+        
+        'Table name
+        tbl.Name = "tblSPOData"
+        
+        'Table style
+        tbl.TableStyle = "TableStyleMedium2"
+        
+    End If
+    
+    '=========================================
+    ' FORMAT
+    '=========================================
+    ws.Rows(1).Font.Bold = True
+    ws.Columns.AutoFit
+    
+    '=========================================
+    ' CLEAN UP
+    '=========================================
+    rs.Close
+    conn.Close
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    MsgBox "SQL Server data successfully retrieved." & vbCrLf & _
+           "Excel Table created: tblSPOData", _
+           vbInformation, "Success"
+    
+    Exit Sub
+
+ErrorHandler:
+
+    MsgBox "Error retrieving data from SQL Server." & vbCrLf & vbCrLf & _
+           "Error Number: " & Err.Number & vbCrLf & _
+           "Description: " & Err.Description, _
+           vbCritical, "SQL Server Error"
+    
+    On Error Resume Next
+    
+    If Not rs Is Nothing Then
+        If rs.State = 1 Then rs.Close
+    End If
+    
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+
+End Sub
+
+Result
+
+After running the macro:
+
+Sheet1
+
+┌──────┬────────────────┬─────────┬──────────────────┐
+│ ID   │ Name           │ Section │ Email            │
+├──────┼────────────────┼─────────┼──────────────────┤
+│ 1    │ Juan Dela Cruz │ IT      │ juan@email.com   │
+│ 2    │ Maria Santos   │ HR      │ maria@email.com  │
+└──────┴────────────────┴─────────┴──────────────────┘
+
+It will become an actual Excel Table named:
+
+tblSPOData
+
+This means you can use structured references such as:
+
+=tblSPOData[Name]
+
+and Excel will automatically extend formulas/formatting when the SQL data changes.
+
+One recommendation: If this is going to be used as a recurring macro, I would also add a Refresh button on the Excel sheet that runs this macro and perhaps show "Last Updated: 25-Aug-2026 12:36 PM" so users know when the SQL Server data was last retrieved.
+
+*****
+
 Yes. Below is a VBA example that connects to SQL Server using SQL Server Authentication, executes the stored procedure tblauth_spo_data, and writes the returned data into an Excel worksheet.
 
 1. What you need to change
