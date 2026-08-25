@@ -1,1 +1,192 @@
+Yes. Below is a VBA example that connects to SQL Server using SQL Server Authentication, executes the stored procedure tblauth_spo_data, and writes the returned data into an Excel worksheet.
 
+1. What you need to change
+
+Replace these values:
+
+YOUR_SERVER_NAME → SQL Server name/IP
+
+YOUR_DATABASE_NAME → Database name
+
+YOUR_USERNAME → SQL Server login
+
+YOUR_PASSWORD → SQL Server password
+
+Sheet1 → Your destination worksheet
+
+
+2. VBA Macro
+
+Option Explicit
+
+Sub GetSPODataFromSQLServer()
+
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    
+    Dim ws As Worksheet
+    Dim serverName As String
+    Dim databaseName As String
+    Dim username As String
+    Dim password As String
+    
+    Dim connectionString As String
+    
+    On Error GoTo ErrorHandler
+    
+    '=========================================
+    ' SQL SERVER SETTINGS
+    '=========================================
+    serverName = "YOUR_SERVER_NAME"
+    databaseName = "YOUR_DATABASE_NAME"
+    username = "YOUR_USERNAME"
+    password = "YOUR_PASSWORD"
+    
+    '=========================================
+    ' DESTINATION WORKSHEET
+    '=========================================
+    Set ws = ThisWorkbook.Worksheets("Sheet1")
+    
+    '=========================================
+    ' SQL SERVER CONNECTION STRING
+    '=========================================
+    connectionString = _
+        "Provider=SQLOLEDB;" & _
+        "Data Source=" & serverName & ";" & _
+        "Initial Catalog=" & databaseName & ";" & _
+        "User ID=" & username & ";" & _
+        "Password=" & password & ";"
+    
+    '=========================================
+    ' CREATE CONNECTION
+    '=========================================
+    Set conn = CreateObject("ADODB.Connection")
+    
+    conn.CommandTimeout = 60
+    conn.Open connectionString
+    
+    '=========================================
+    ' CREATE COMMAND
+    '=========================================
+    Set cmd = CreateObject("ADODB.Command")
+    
+    With cmd
+        .ActiveConnection = conn
+        .CommandType = 4 ' adCmdStoredProc
+        .CommandText = "tblauth_spo_data"
+        .CommandTimeout = 60
+    End With
+    
+    '=========================================
+    ' EXECUTE STORED PROCEDURE
+    '=========================================
+    Set rs = cmd.Execute
+    
+    '=========================================
+    ' CLEAR OLD DATA
+    '=========================================
+    ws.Cells.ClearContents
+    
+    '=========================================
+    ' WRITE COLUMN HEADERS
+    '=========================================
+    Dim i As Long
+    
+    For i = 0 To rs.Fields.Count - 1
+        ws.Cells(1, i + 1).Value = rs.Fields(i).Name
+    Next i
+    
+    '=========================================
+    ' WRITE DATA TO EXCEL
+    '=========================================
+    If Not rs.EOF Then
+        ws.Range("A2").CopyFromRecordset rs
+    End If
+    
+    '=========================================
+    ' FORMAT
+    '=========================================
+    ws.Rows(1).Font.Bold = True
+    ws.Columns.AutoFit
+    
+    MsgBox "Data successfully retrieved from SQL Server.", _
+           vbInformation, "SQL Server Data"
+    
+    '=========================================
+    ' CLEAN UP
+    '=========================================
+    rs.Close
+    conn.Close
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    Exit Sub
+
+ErrorHandler:
+
+    MsgBox "Error retrieving data from SQL Server." & vbCrLf & vbCrLf & _
+           "Error Number: " & Err.Number & vbCrLf & _
+           "Description: " & Err.Description, _
+           vbCritical, "SQL Server Error"
+    
+    On Error Resume Next
+    
+    If Not rs Is Nothing Then
+        If rs.State = 1 Then rs.Close
+    End If
+    
+    If Not conn Is Nothing Then
+        If conn.State = 1 Then conn.Close
+    End If
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+
+End Sub
+
+Example configuration
+
+For example, if your SQL Server is:
+
+Server: 192.168.1.100
+Database: EPPI
+Username: sa
+Password: MyPassword123
+
+you would set:
+
+serverName = "192.168.1.100"
+databaseName = "EPPI"
+username = "sa"
+password = "MyPassword123"
+
+The macro will essentially perform:
+
+EXEC tblauth_spo_data
+
+and put the result into Excel like:
+
+ID	Name	Section	Email
+
+1	Juan Dela Cruz	IT	juan@email.com
+2	Maria Santos	HR	maria@email.com
+
+
+If your stored procedure has parameters
+
+If tblauth_spo_data requires parameters, for example:
+
+EXEC tblauth_spo_data @Section = 'IT'
+
+then the VBA needs to add the parameter:
+
+cmd.Parameters.Append cmd.CreateParameter( _
+    "@Section", 200, 1, 100, "IT")
+
+where 200 is adVarChar and 1 is adParamInput.
+
+If you give me the stored procedure definition (ALTER/CREATE PROCEDURE tblauth_spo_data ...) and your desired Excel sheet/columns, I can modify the macro specifically for your procedure, including its parameters and data formatting.
