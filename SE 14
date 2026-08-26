@@ -1,3 +1,29 @@
+
+
+***
+
+Proposal
+Propose to automate the Supplier Evaluation process with an Excel macro which can:
+- Pull data from multiple sheets/files.
+- Validate inputs automatically.
+- Calculate weighted scores and rankings instantly.
+- Generate a centralized summary with one click.
+
+Survey Form:
+Suppliers identify using vendor code
+Evaluation score (from Supplier & EPPI)
+Excel Macro Action:
+Reads inputs - validates - calculates weighted scores - ranks suppliers
+Summary Output:
+Consolidated summary sheet with Supplier code, Name, Score, Ranking
+
+Key Features:
+Error Notification: There is a Warning if any sheet or filename is incorrect.
+Result Updates: Refresh summary when new responses are added.
+Button Trigger: Add a button on the master sheet to run the macro easily.
+Other optional features: Charts for Rank A & C suppliers, score distribution, suppliers subject for Corrective action
+
+
 ***
 
 Risk Management
