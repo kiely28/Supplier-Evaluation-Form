@@ -1,4 +1,46 @@
 
+***
+
+Your proposal slide is already clear. I would recommend shortening and restructuring it for presentation so the process and benefits are easier to understand.
+
+Proposal
+
+Propose to automate the Supplier Evaluation process using an Excel Macro that can:
+
+Collect Data – Pull evaluation data from multiple sheets/files.
+
+Validate Data – Automatically check inputs, files, and required data.
+
+Calculate Results – Calculate weighted scores and supplier rankings.
+
+Generate Summary – Create a centralized evaluation summary with one click.
+
+
+Evaluation Process
+
+Step	Process
+
+Survey Form	Suppliers are identified using Vendor Code. Evaluation scores are provided by Suppliers and EPPI sections.
+Excel Macro	Read → Validate → Calculate → Rank evaluation data automatically.
+Summary Output	Consolidated summary showing Vendor Code, Supplier Name, Score, and Ranking.
+
+
+Key Features
+
+Error Notification – Displays a warning when a required sheet, file, or data is incorrect or missing.
+
+Automatic Result Update – Refreshes the summary when new evaluation responses are added.
+
+One-Click Processing – A button on the master sheet runs the macro.
+
+Result Visualization (Optional) – Charts for Rank A & C suppliers, score distribution, and suppliers requiring corrective action.
+
+
+Suggested Process Flow for the Slide
+
+Survey Forms → Excel Files / Sheets → Excel Macro → Validation → Score Calculation → Supplier Ranking → Summary & Charts
+
+This version makes the proposal easier to present because it clearly shows what goes in → what the macro does → what comes out.
 
 ***
 
