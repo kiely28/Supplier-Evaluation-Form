@@ -2,6 +2,23 @@
 
 Risk Management
 
+The project identifies potential risks that may affect the accuracy, reliability, and timely completion of the supplier evaluation process. The following mitigation strategies will help minimize these risks.
+
+Risk Category	Risk Description	Cause	Impact	Mitigation Strategy
+
+Data Accuracy	Incorrect or incomplete evaluation data	Manual encoding or missing inputs	Incorrect supplier score	Apply data validation and checking
+Data Consolidation	Data may not be properly consolidated	Changes in file structure or source data	Incomplete or incorrect summary	Use standardized templates and automated consolidation
+System / Macro	Macro may encounter errors during execution	VBA errors, broken links, or file changes	Delayed evaluation processing	Add error handling and validation checks
+File Management	Wrong or outdated file may be processed	Incorrect file location or file version	Incorrect evaluation results	Use fixed file paths and file validation
+Data Availability	Required evaluation data is missing or incomplete	Supplier/section has not submitted data	Delayed completion of evaluation	Monitor submission status and follow up on missing data
+Calculation	Incorrect score calculation	Formula or parameter changes	Incorrect supplier rating	Standardize formulas and perform result validation
+User Error	Incorrect use of the macro	User unfamiliarity with the process	Processing errors or delays	Provide a simple user guide and instructions
+
+
+***
+
+Risk Management
+
 Risk Category
 Risk Description
 Cause
