@@ -1,3 +1,302 @@
+Yes. 👍 We can add a row count before and after the backup so you can verify that the backup contains the same number of rows as the original table.
+
+I recommend making the final output like this:
+
+Table Name	Backup Table	Original Rows	Backup Rows	Status
+
+Table01	Table01_20260901	1,250	1,250	SUCCESS
+Table02	Table02_20260901	540	540	SUCCESS
+Table03	Table03_20260901	8,921	8,921	SUCCESS
+Table04	Table04_20260901	0	0	SUCCESS
+
+
+Updated Stored Procedure
+
+CREATE OR ALTER PROCEDURE dbo.BackupAllTables
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @BackupDate VARCHAR(8) =
+        CONVERT(VARCHAR(8), GETDATE(), 112);
+
+    DECLARE @TableName SYSNAME;
+    DECLARE @BackupTableName SYSNAME;
+
+    DECLARE @OriginalRows BIGINT;
+    DECLARE @BackupRows BIGINT;
+
+    DECLARE @SQL NVARCHAR(MAX);
+
+    -- Result table
+    DECLARE @Results TABLE
+    (
+        ID INT IDENTITY(1,1),
+        TableName SYSNAME,
+        BackupTableName SYSNAME,
+        OriginalRows BIGINT NULL,
+        BackupRows BIGINT NULL,
+        Status VARCHAR(20),
+        Message VARCHAR(500)
+    );
+
+    -- Temporary list of 16 tables
+    DECLARE @Tables TABLE
+    (
+        ID INT IDENTITY(1,1),
+        TableName SYSNAME
+    );
+
+    INSERT INTO @Tables (TableName)
+    VALUES
+        ('Table01'),
+        ('Table02'),
+        ('Table03'),
+        ('Table04'),
+        ('Table05'),
+        ('Table06'),
+        ('Table07'),
+        ('Table08'),
+        ('Table09'),
+        ('Table10'),
+        ('Table11'),
+        ('Table12'),
+        ('Table13'),
+        ('Table14'),
+        ('Table15'),
+        ('Table16');
+
+    DECLARE TableCursor CURSOR LOCAL FAST_FORWARD FOR
+        SELECT TableName
+        FROM @Tables
+        ORDER BY ID;
+
+    OPEN TableCursor;
+
+    FETCH NEXT FROM TableCursor INTO @TableName;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+
+        SET @BackupTableName = @TableName + '_' + @BackupDate;
+
+        SET @OriginalRows = NULL;
+        SET @BackupRows = NULL;
+
+        BEGIN TRY
+
+            -- Check if original table exists
+            IF OBJECT_ID(@TableName, 'U') IS NULL
+            BEGIN
+                INSERT INTO @Results
+                (
+                    TableName,
+                    BackupTableName,
+                    Status,
+                    Message
+                )
+                VALUES
+                (
+                    @TableName,
+                    @BackupTableName,
+                    'FAILED',
+                    'Original table does not exist.'
+                );
+            END
+
+            -- Check if backup table already exists
+            ELSE IF OBJECT_ID(@BackupTableName, 'U') IS NOT NULL
+            BEGIN
+
+                -- Get row count from existing backup
+                SET @SQL =
+                    'SELECT @Count = COUNT_BIG(*) FROM ' +
+                    QUOTENAME(@BackupTableName);
+
+                EXEC sp_executesql
+                    @SQL,
+                    N'@Count BIGINT OUTPUT',
+                    @Count = @BackupRows OUTPUT;
+
+                -- Get row count from original
+                SET @SQL =
+                    'SELECT @Count = COUNT_BIG(*) FROM ' +
+                    QUOTENAME(@TableName);
+
+                EXEC sp_executesql
+                    @SQL,
+                    N'@Count BIGINT OUTPUT',
+                    @Count = @OriginalRows OUTPUT;
+
+                INSERT INTO @Results
+                (
+                    TableName,
+                    BackupTableName,
+                    OriginalRows,
+                    BackupRows,
+                    Status,
+                    Message
+                )
+                VALUES
+                (
+                    @TableName,
+                    @BackupTableName,
+                    @OriginalRows,
+                    @BackupRows,
+                    'SKIPPED',
+                    'Backup table already exists.'
+                );
+            END
+
+            ELSE
+            BEGIN
+
+                -- Get original row count
+                SET @SQL =
+                    'SELECT @Count = COUNT_BIG(*) FROM ' +
+                    QUOTENAME(@TableName);
+
+                EXEC sp_executesql
+                    @SQL,
+                    N'@Count BIGINT OUTPUT',
+                    @Count = @OriginalRows OUTPUT;
+
+                -- Create backup
+                SET @SQL =
+                    'SELECT * INTO ' +
+                    QUOTENAME(@BackupTableName) +
+                    ' FROM ' +
+                    QUOTENAME(@TableName);
+
+                EXEC sp_executesql @SQL;
+
+                -- Get backup row count
+                SET @SQL =
+                    'SELECT @Count = COUNT_BIG(*) FROM ' +
+                    QUOTENAME(@BackupTableName);
+
+                EXEC sp_executesql
+                    @SQL,
+                    N'@Count BIGINT OUTPUT',
+                    @Count = @BackupRows OUTPUT;
+
+                -- Compare row counts
+                IF @OriginalRows = @BackupRows
+                BEGIN
+                    INSERT INTO @Results
+                    (
+                        TableName,
+                        BackupTableName,
+                        OriginalRows,
+                        BackupRows,
+                        Status,
+                        Message
+                    )
+                    VALUES
+                    (
+                        @TableName,
+                        @BackupTableName,
+                        @OriginalRows,
+                        @BackupRows,
+                        'SUCCESS',
+                        'Backup completed and row count matches.'
+                    );
+                END
+                ELSE
+                BEGIN
+                    INSERT INTO @Results
+                    (
+                        TableName,
+                        BackupTableName,
+                        OriginalRows,
+                        BackupRows,
+                        Status,
+                        Message
+                    )
+                    VALUES
+                    (
+                        @TableName,
+                        @BackupTableName,
+                        @OriginalRows,
+                        @BackupRows,
+                        'WARNING',
+                        'Backup completed but row count does not match.'
+                    );
+                END
+
+            END
+
+        END TRY
+
+        BEGIN CATCH
+
+            INSERT INTO @Results
+            (
+                TableName,
+                BackupTableName,
+                OriginalRows,
+                BackupRows,
+                Status,
+                Message
+            )
+            VALUES
+            (
+                @TableName,
+                @BackupTableName,
+                @OriginalRows,
+                @BackupRows,
+                'FAILED',
+                ERROR_MESSAGE()
+            );
+
+        END CATCH;
+
+        FETCH NEXT FROM TableCursor INTO @TableName;
+
+    END;
+
+    CLOSE TableCursor;
+    DEALLOCATE TableCursor;
+
+    -- Final result
+    SELECT
+        ID,
+        TableName,
+        BackupTableName,
+        OriginalRows,
+        BackupRows,
+        Status,
+        Message
+    FROM @Results
+    ORDER BY ID;
+
+END;
+GO
+
+Then simply run:
+
+EXEC dbo.BackupAllTables;
+
+You'll get the results directly in the Results tab of SSMS.
+
+For example:
+
+ID	TableName	BackupTableName	OriginalRows	BackupRows	Status
+
+1	Table01	Table01_20260901	1,250	1,250	SUCCESS
+2	Table02	Table02_20260901	540	540	SUCCESS
+3	Table03	Table03_20260901	8,921	8,921	SUCCESS
+4	Table04	Table04_20260901	2,105	2,105	SUCCESS
+5	Table05	Table05_20260901	0	0	SUCCESS
+
+
+This is better than just printing messages because you can visually verify all 16 backups and their row counts at once.
+
+One important note: SELECT INTO copies the columns and data, but it does not copy things such as indexes, primary keys, foreign keys, triggers, or other table constraints. If these are intended as simple data snapshots/backups, this approach is fine.
+
+
+****
+
 Functions
 
 Data Collection – Collect evaluation data from suppliers and EPPI sections.
