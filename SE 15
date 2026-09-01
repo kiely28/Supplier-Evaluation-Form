@@ -1,3 +1,256 @@
+Yes. Below is a VBA macro that will:
+
+1. Connect to SQL Server using SQL Server Authentication
+
+
+2. Execute stored procedure TBLAUTH_GETDATA
+
+
+3. Retrieve the result
+
+
+4. Create a new .xlsx file
+
+
+5. Put the SQL result into an Excel Table
+
+
+6. Save and close the new file
+
+
+
+VBA Macro
+
+Put this code in a .xlsm workbook:
+
+Option Explicit
+
+Sub GetDataFromSQLAndSave()
+
+    '=========================================================
+    ' SQL SERVER SETTINGS
+    '=========================================================
+    Dim ServerName As String
+    Dim DatabaseName As String
+    Dim SQLUser As String
+    Dim SQLPassword As String
+    
+    ServerName = "YOUR_SERVER_NAME"
+    DatabaseName = "YOUR_DATABASE_NAME"
+    SQLUser = "YOUR_SQL_USERNAME"
+    SQLPassword = "YOUR_SQL_PASSWORD"
+    
+    '=========================================================
+    ' OUTPUT FILE
+    '=========================================================
+    Dim OutputPath As String
+    
+    OutputPath = ThisWorkbook.Path & "\TBLAUTH_Data.xlsx"
+    
+    '=========================================================
+    ' OBJECTS
+    '=========================================================
+    Dim conn As Object
+    Dim rs As Object
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim tbl As ListObject
+    
+    Dim ConnectionString As String
+    Dim i As Long
+    Dim LastRow As Long
+    Dim LastCol As Long
+    
+    On Error GoTo ErrorHandler
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    '=========================================================
+    ' SQL CONNECTION
+    '=========================================================
+    ConnectionString = _
+        "Provider=SQLOLEDB;" & _
+        "Data Source=" & ServerName & ";" & _
+        "Initial Catalog=" & DatabaseName & ";" & _
+        "User ID=" & SQLUser & ";" & _
+        "Password=" & SQLPassword & ";"
+    
+    Set conn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    conn.Open ConnectionString
+    
+    '=========================================================
+    ' EXECUTE STORED PROCEDURE
+    '=========================================================
+    rs.Open "EXEC TBLAUTH_GETDATA", conn, 0, 1
+    
+    '=========================================================
+    ' CREATE NEW EXCEL FILE
+    '=========================================================
+    Set wb = Workbooks.Add
+    Set ws = wb.Worksheets(1)
+    
+    ws.Name = "TBLAUTH_DATA"
+    
+    '=========================================================
+    ' WRITE COLUMN HEADERS
+    '=========================================================
+    For i = 0 To rs.Fields.Count - 1
+        ws.Cells(1, i + 1).Value = rs.Fields(i).Name
+    Next i
+    
+    '=========================================================
+    ' WRITE SQL DATA
+    '=========================================================
+    If Not rs.EOF Then
+        ws.Range("A2").CopyFromRecordset rs
+    End If
+    
+    '=========================================================
+    ' FIND LAST ROW / COLUMN
+    '=========================================================
+    LastCol = rs.Fields.Count
+    
+    LastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    '=========================================================
+    ' CREATE EXCEL TABLE
+    '=========================================================
+    If LastRow >= 2 Then
+        
+        Set tbl = ws.ListObjects.Add( _
+                    SourceType:=xlSrcRange, _
+                    Source:=ws.Range(ws.Cells(1, 1), _
+                                     ws.Cells(LastRow, LastCol)), _
+                    XlListObjectHasHeaders:=xlYes)
+        
+        tbl.Name = "TblTBLAUTHData"
+        tbl.TableStyle = "TableStyleMedium2"
+        
+    End If
+    
+    '=========================================================
+    ' FORMAT
+    '=========================================================
+    ws.Cells.EntireColumn.AutoFit
+    
+    '=========================================================
+    ' SAVE AS XLSX
+    '=========================================================
+    wb.SaveAs Filename:=OutputPath, _
+              FileFormat:=xlOpenXMLWorkbook
+    
+    wb.Close SaveChanges:=True
+    
+    '=========================================================
+    ' CLOSE SQL CONNECTION
+    '=========================================================
+    rs.Close
+    conn.Close
+    
+    Set rs = Nothing
+    Set conn = Nothing
+    Set ws = Nothing
+    Set wb = Nothing
+    
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    MsgBox "Data successfully retrieved from SQL Server." & vbCrLf & _
+           "Output file:" & vbCrLf & _
+           OutputPath, _
+           vbInformation, "Success"
+    
+    Exit Sub
+
+ErrorHandler:
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    On Error Resume Next
+    
+    If Not rs Is Nothing Then
+        If rs.State <> 0 Then rs.Close
+    End If
+    
+    If Not conn Is Nothing Then
+        If conn.State <> 0 Then conn.Close
+    End If
+    
+    MsgBox "Error: " & Err.Number & vbCrLf & _
+           Err.Description, _
+           vbCritical, "SQL / Excel Error"
+
+End Sub
+
+Change these 4 settings
+
+At the top of the macro, replace:
+
+ServerName = "YOUR_SERVER_NAME"
+DatabaseName = "YOUR_DATABASE_NAME"
+SQLUser = "YOUR_SQL_USERNAME"
+SQLPassword = "YOUR_SQL_PASSWORD"
+
+For example:
+
+ServerName = "192.168.1.100"
+DatabaseName = "EPPI"
+SQLUser = "sa"
+SQLPassword = "YourPassword123"
+
+Or if your SQL Server is an instance:
+
+ServerName = "SERVER01\SQLEXPRESS"
+
+Result
+
+If your stored procedure returns:
+
+UserID	UserName	Section	Email
+
+1001	Juan Dela Cruz	IT	juan@company.com
+1002	Pedro Santos	HR	pedro@company.com
+
+
+The macro creates:
+
+TBLAUTH_Data.xlsx
+
+with a proper Excel Table:
+
+UserID	UserName	Section	Email
+
+1001	Juan Dela Cruz	IT	juan@company.com
+1002	Pedro Santos	HR	pedro@company.com
+
+
+The table will be named:
+
+TblTBLAUTHData
+
+and the file will be saved in the same folder as your .xlsm macro file.
+
+One important consideration
+
+If TBLAUTH_GETDATA has parameters, for example:
+
+EXEC TBLAUTH_GETDATA @Section = 'IT'
+
+the VBA needs to be modified to pass the parameters safely.
+
+Also, if you're going to use this in your SharePoint / Task Scheduler automation like your previous SQL → Excel macro, I recommend changing the macro so that it:
+
+SQL Server → Stored Procedure → Excel Table → Save .xlsx → Close Excel
+
+and optionally delete/overwrite the previous .xlsx automatically.
+
+
+****
+
 Yes. 👍 We can add a row count before and after the backup so you can verify that the backup contains the same number of rows as the original table.
 
 I recommend making the final output like this:
