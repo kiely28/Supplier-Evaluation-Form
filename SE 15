@@ -1,3 +1,21 @@
+Functions
+
+Data Collection – Collect evaluation data from suppliers and EPPI sections.
+
+Data Validation – Check files, sheets, and required inputs.
+
+Score Calculation – Calculate evaluation and weighted scores.
+
+Supplier Ranking – Automatically rank suppliers based on scores.
+
+Summary Generation – Consolidate results into one summary sheet.
+
+Result Update – Refresh results when new evaluation data is added.
+
+Error Notification – Alert users when errors or missing data are detected.
+
+***
+
 Project Summary
 
 The Supplier Evaluation Excel Macro Project aims to automate the collection, validation, calculation, and consolidation of supplier evaluation data. It reduces manual work and human errors while providing faster and more consistent supplier scores, rankings, and summary results.
