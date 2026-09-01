@@ -1,3 +1,10 @@
+Project Summary
+
+The Supplier Evaluation Excel Macro Project aims to automate the collection, validation, calculation, and consolidation of supplier evaluation data. It reduces manual work and human errors while providing faster and more consistent supplier scores, rankings, and summary results.
+
+
+****
+
 Absolutely. For your setup, I recommend separating the SQL Server/data-processing macro from the Workbook_Open() event.
 
 This version will:
