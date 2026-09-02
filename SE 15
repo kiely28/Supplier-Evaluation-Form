@@ -1,3 +1,353 @@
+Yes. The easiest approach is to keep your macro workbook (.xlsm) as the source, retrieve the SQL Server data, then create a separate .xlsx file containing the exported Excel table.
+
+For example:
+
+Macro file: D:\GetAuthorityData.xlsm
+
+Export file: D:\AuthorityData_20260902.xlsx
+
+SQL Server: EPPILIP7L982
+
+Database: db_GNSYS_users
+
+Stored Procedure: TBLAUTH_SPO_DATA
+
+Export sheet: Sheet1
+
+Excel Table: tblSPOData
+
+
+Updated VBA code
+
+Option Explicit
+
+Public Sub GetTblAuthorityData()
+
+    '==================================================
+    ' VARIABLES
+    '==================================================
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    
+    Dim wbExport As Workbook
+    Dim ws As Worksheet
+    Dim tbl As ListObject
+    
+    Dim serverName As String
+    Dim databaseName As String
+    Dim username As String
+    Dim password As String
+    
+    Dim connectionString As String
+    
+    Dim lastRow As Long
+    Dim lastCol As Long
+    Dim i As Long
+    
+    Dim exportFolder As String
+    Dim exportFile As String
+    Dim exportPath As String
+    
+    On Error GoTo ErrorHandler
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    '==================================================
+    ' SQL SERVER SETTINGS
+    '==================================================
+    serverName = "EPPILIP7L982"
+    databaseName = "db_GNSYS_users"
+    username = "sa"
+    password = "sqladmin"
+    
+    '==================================================
+    ' EXPORT FILE SETTINGS
+    '==================================================
+    
+    'Save exported XLSX in the same folder as this macro
+    exportFolder = ThisWorkbook.Path
+    
+    'Create file name using current date and time
+    exportFile = "AuthorityData_" & _
+                 Format(Now, "yyyymmdd_hhnnss") & ".xlsx"
+    
+    exportPath = exportFolder & "\" & exportFile
+    
+    '==================================================
+    ' CREATE NEW EXCEL WORKBOOK
+    '==================================================
+    Set wbExport = Workbooks.Add(xlWBATWorksheet)
+    
+    Set ws = wbExport.Worksheets(1)
+    ws.Name = "Sheet1"
+    
+    '==================================================
+    ' SQL SERVER CONNECTION
+    '==================================================
+    connectionString = _
+        "Provider=SQLOLEDB;" & _
+        "Data Source=" & serverName & ";" & _
+        "Initial Catalog=" & databaseName & ";" & _
+        "User ID=" & username & ";" & _
+        "Password=" & password & ";"
+    
+    Set conn = CreateObject("ADODB.Connection")
+    
+    conn.CommandTimeout = 60
+    conn.Open connectionString
+    
+    '==================================================
+    ' STORED PROCEDURE
+    '==================================================
+    Set cmd = CreateObject("ADODB.Command")
+    
+    With cmd
+        .ActiveConnection = conn
+        .CommandType = 4          'adCmdStoredProc
+        .CommandText = "TBLAUTH_SPO_DATA"
+        .CommandTimeout = 60
+    End With
+    
+    '==================================================
+    ' EXECUTE STORED PROCEDURE
+    '==================================================
+    Set rs = cmd.Execute
+    
+    '==================================================
+    ' WRITE COLUMN HEADERS
+    '==================================================
+    For i = 0 To rs.Fields.Count - 1
+        
+        ws.Cells(1, i + 1).Value = rs.Fields(i).Name
+        
+    Next i
+    
+    '==================================================
+    ' WRITE SQL DATA
+    '==================================================
+    If Not rs.EOF Then
+        
+        ws.Range("A2").CopyFromRecordset rs
+        
+    End If
+    
+    '==================================================
+    ' FIND LAST ROW AND COLUMN
+    '==================================================
+    lastCol = rs.Fields.Count
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    '==================================================
+    ' CREATE EXCEL TABLE
+    '==================================================
+    If lastCol > 0 Then
+        
+        If lastRow >= 2 Then
+            
+            Set tbl = ws.ListObjects.Add( _
+                SourceType:=xlSrcRange, _
+                Source:=ws.Range( _
+                    ws.Cells(1, 1), _
+                    ws.Cells(lastRow, lastCol)), _
+                XlListObjectHasHeaders:=xlYes)
+        
+        Else
+            
+            'Create table with headers only
+            Set tbl = ws.ListObjects.Add( _
+                SourceType:=xlSrcRange, _
+                Source:=ws.Range( _
+                    ws.Cells(1, 1), _
+                    ws.Cells(2, lastCol)), _
+                XlListObjectHasHeaders:=xlYes)
+        
+        End If
+        
+        '==================================================
+        ' TABLE NAME
+        '==================================================
+        tbl.Name = "tblSPOData"
+        
+        '==================================================
+        ' TABLE STYLE
+        '==================================================
+        tbl.TableStyle = "TableStyleMedium2"
+        
+    End If
+    
+    '==================================================
+    ' FORMAT
+    '==================================================
+    ws.Rows(1).Font.Bold = True
+    ws.Columns.AutoFit
+    
+    '==================================================
+    ' CLOSE SQL CONNECTION
+    '==================================================
+    If Not rs Is Nothing Then
+        
+        If rs.State = 1 Then rs.Close
+        
+    End If
+    
+    If Not conn Is Nothing Then
+        
+        If conn.State = 1 Then conn.Close
+        
+    End If
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    '==================================================
+    ' SAVE AS XLSX
+    '==================================================
+    wbExport.SaveAs _
+        Filename:=exportPath, _
+        FileFormat:=xlOpenXMLWorkbook
+    
+    '==================================================
+    ' CLOSE EXPORTED WORKBOOK
+    '==================================================
+    wbExport.Close SaveChanges:=True
+    
+    Set wbExport = Nothing
+    
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    '==================================================
+    ' SUCCESS MESSAGE
+    '==================================================
+    MsgBox _
+        "SQL Server data exported successfully!" & vbCrLf & vbCrLf & _
+        "File:" & vbCrLf & _
+        exportPath, _
+        vbInformation, _
+        "SPO Data Automation"
+    
+    Exit Sub
+
+
+'==================================================
+' ERROR HANDLER
+'==================================================
+ErrorHandler:
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    'Close recordset
+    On Error Resume Next
+    
+    If Not rs Is Nothing Then
+        
+        If rs.State = 1 Then rs.Close
+        
+    End If
+    
+    'Close connection
+    If Not conn Is Nothing Then
+        
+        If conn.State = 1 Then conn.Close
+        
+    End If
+    
+    'Close export workbook if created
+    If Not wbExport Is Nothing Then
+        
+        wbExport.Close SaveChanges:=False
+        
+    End If
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    Set wbExport = Nothing
+    
+    On Error GoTo 0
+    
+    MsgBox _
+        "SQL Server data export failed." & vbCrLf & vbCrLf & _
+        "Error Number: " & Err.Number & vbCrLf & _
+        "Error Description: " & Err.Description, _
+        vbCritical, _
+        "SPO Data Automation Error"
+
+End SubWhat changed?
+
+Your original macro was putting the SQL result into Sheet1 of the macro workbook itself.
+
+The new version instead does this:
+
+GetTblAuthorityData.xlsm
+        │
+        │ Execute
+        ▼
+SQL Server
+EPPILIP7L982
+        │
+        │ TBLAUTH_SPO_DATA
+        ▼
+Create NEW Workbook
+        │
+        ├── Sheet1
+        │
+        └── tblSPOData
+        │
+        ▼
+AuthorityData_20260902_091530.xlsx
+
+The .xlsx file will be created in the same folder where your .xlsm macro is located.
+
+For example:
+
+D:\AuthorityData_20260902_091530.xlsx
+
+One important difference
+
+Your original code has:
+
+Set ws = ThisWorkbook.Worksheets("Sheet1")
+
+The new code uses:
+
+Set wbExport = Workbooks.Add(xlWBATWorksheet)
+Set ws = wbExport.Worksheets(1)
+
+So the SQL data is written directly into the new workbook, not your macro workbook.
+
+Also:
+
+FileFormat:=xlOpenXMLWorkbook
+
+ensures that the exported file is a normal .xlsx file and does not contain VBA.
+
+If you don't want a timestamp
+
+If you want the exported file to always be called:
+
+AuthorityData.xlsx
+
+change:
+
+exportFile = "AuthorityData_" & _
+             Format(Now, "yyyymmdd_hhnnss") & ".xlsx"
+
+to:
+
+exportFile = "AuthorityData.xlsx"
+
+I would recommend the timestamp version if this will eventually be run by Task Scheduler, because it prevents the previous export from being overwritten.
+
+
+****
+
+
 Option Explicit
 
 Public Sub GetTblAuthorityData()
