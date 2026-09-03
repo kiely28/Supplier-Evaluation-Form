@@ -1,3 +1,8 @@
+I have an Excel approval template saved in a SharePoint Document Library. After the final approval in Power Automate, I want to automatically insert the approver’s signature image into the Excel template using Office Script.
+
+
+****
+
 Yes. The easiest approach is to keep your macro workbook (.xlsm) as the source, retrieve the SQL Server data, then create a separate .xlsx file containing the exported Excel table.
 
 For example:
