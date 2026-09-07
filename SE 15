@@ -1,3 +1,169 @@
+Yes. Only the User ID and Username destination cells need to change.
+
+The mapping will now be:
+
+User IDs: C12:C26
+
+Usernames: G12:G26
+
+
+Use this updated Office Script:
+
+function main(
+  workbook: ExcelScript.Workbook,
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+  userIds: string[],
+  userNames: string[]
+) {
+
+  // =========================================================
+  // SETTINGS
+  // =========================================================
+
+  const sheetName = "Sheet1";
+  const maxRows = 15;
+
+  // =========================================================
+  // GET WORKSHEET
+  // =========================================================
+
+  const sheet = workbook.getWorksheet(sheetName);
+
+  if (!sheet) {
+    throw new Error(`Worksheet "${sheetName}" was not found.`);
+  }
+
+  // =========================================================
+  // POPULATE MAIN INFORMATION
+  // =========================================================
+
+  sheet.getRange("F7").setValue(requestingSection);
+  sheet.getRange("D8").setValue(requestDate);
+  sheet.getRange("E9").setValue(reactivationDate);
+
+  // =========================================================
+  // CLEAR EXISTING USER DATA
+  // =========================================================
+
+  sheet.getRange("C12:C26").clear(ExcelScript.ClearApplyTo.contents);
+  sheet.getRange("G12:G26").clear(ExcelScript.ClearApplyTo.contents);
+
+  // =========================================================
+  // LIMIT TO MAXIMUM 15 USERS
+  // =========================================================
+
+  const count = Math.min(
+    Math.max(userIds.length, userNames.length),
+    maxRows
+  );
+
+  // =========================================================
+  // PREPARE USER ID DATA
+  // =========================================================
+
+  const idData: string[][] = [];
+
+  for (let i = 0; i < count; i++) {
+
+    if (i < userIds.length) {
+      idData.push([String(userIds[i])]);
+    } else {
+      idData.push([""]);
+    }
+  }
+
+  // =========================================================
+  // PREPARE USER NAME DATA
+  // =========================================================
+
+  const nameData: string[][] = [];
+
+  for (let i = 0; i < count; i++) {
+
+    if (i < userNames.length) {
+      nameData.push([String(userNames[i])]);
+    } else {
+      nameData.push([""]);
+    }
+  }
+
+  // =========================================================
+  // WRITE USER IDS TO C12:C26
+  // =========================================================
+
+  if (idData.length > 0) {
+    sheet
+      .getRangeByIndexes(11, 2, idData.length, 1)
+      .setValues(idData);
+  }
+
+  // =========================================================
+  // WRITE USER NAMES TO G12:G26
+  // =========================================================
+
+  if (nameData.length > 0) {
+    sheet
+      .getRangeByIndexes(11, 6, nameData.length, 1)
+      .setValues(nameData);
+  }
+
+  // =========================================================
+  // FORCE TEXT FORMAT
+  // =========================================================
+
+  sheet.getRange("C12:C26").setNumberFormat("@");
+  sheet.getRange("G12:G26").setNumberFormat("@");
+
+  // =========================================================
+  // RETURN INFORMATION TO POWER AUTOMATE
+  // =========================================================
+
+  return {
+    status: "Success",
+    usersWritten: count,
+    requestingSection: requestingSection,
+    requestDate: requestDate,
+    reactivationDate: reactivationDate
+  };
+}
+
+New Excel mapping
+
+Data	Excel Range
+
+RequestingSection	F7
+RequestDate	D8
+ReactivationDate	E9
+User ID 1	C12
+User ID 2	C13
+...	...
+User ID 15	C26
+Username 1	G12
+Username 2	G13
+...	...
+Username 15	G26
+
+
+So if your SharePoint records are:
+
+001 - Juan Dela Cruz
+002 - Bong Gakaday
+003 - Pedro Santos
+
+the Excel result will be:
+
+C12 = 001    G12 = Juan Dela Cruz
+C13 = 002    G13 = Bong Gakaday
+C14 = 003    G14 = Pedro Santos
+
+The Power Automate array configuration does not need to change. UserIds and UserNames are still passed to the script as string[].
+
+
+*****
+
+
 Yes. A clean way to build this is:
 
 PowerApps → SharePoint "Reactivation List" → Power Automate → Get Items by Reference No. → Build two arrays → Office Script → Reactivation.xlsx
