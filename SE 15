@@ -1,3 +1,360 @@
+Yes. Since your TblAuthorityData.xlsx is already being saved to your SharePoint document library, you can create a Power Automate flow that reads the Excel table TblAuthorityData and populates the SharePoint List GNS Tbl Authority.
+
+I recommend a full refresh approach:
+
+> Excel TblAuthorityData → Delete existing SharePoint records → Read Excel rows → Create SharePoint items
+
+
+
+This keeps the SharePoint list synchronized with the latest Excel data.
+
+1. Confirm your Excel table
+
+Your Excel file should contain a table named:
+
+TblAuthorityData
+
+with columns corresponding to:
+
+Excel Column	SharePoint Column
+
+UserID	UserID
+Username	Username
+Department	Department
+
+
+Your VBA code already creates the table with:
+
+TblAuthorityData
+
+So that's good.
+
+
+---
+
+2. Create the Power Automate Flow
+
+Go to Power Automate → Create → Scheduled cloud flow.
+
+For example:
+
+Flow name:
+
+GNS Tbl Authority - Update SharePoint
+
+You could run it every 30 minutes, every hour, or once a day depending on your requirement.
+
+For the first version, I recommend Manually trigger a flow so you can test it easily.
+
+
+---
+
+3. Add "List rows present in a table"
+
+Add:
+
+Excel Online (Business) → List rows present in a table
+
+Configure:
+
+Location
+
+Select your SharePoint site:
+
+https://epsongroup.sharepoint.com/sites/00S_01605
+
+Document Library
+
+Select:
+
+ISD-Portal
+
+File
+
+Select:
+
+GNS Reactivation Archive/TblAuthorityData.xlsx
+
+Table
+
+Select:
+
+TblAuthorityData
+
+Your configuration should look approximately like:
+
+List rows present in a table
+
+Location:
+SharePoint Site
+
+Document Library:
+ISD-Portal
+
+File:
+TblAuthorityData.xlsx
+
+Table:
+TblAuthorityData
+
+Important
+
+Do not select the worksheet Sheet1 as the table.
+
+The Power Automate action needs the Excel table name:
+
+TblAuthorityData
+
+
+---
+
+4. First remove the existing SharePoint records
+
+Because your VBA file is being regenerated with the latest SQL Server data, I recommend replacing the SharePoint list contents rather than continuously adding duplicate records.
+
+Add:
+
+SharePoint → Get items
+
+Configure:
+
+Site Address:
+https://epsongroup.sharepoint.com/sites/00S_01605
+
+List Name:
+GNS Tbl Authority
+
+You should now have:
+
+Manually trigger a flow
+        ↓
+List rows present in a table
+        ↓
+Get items
+
+
+---
+
+5. Delete the existing SharePoint items
+
+Add:
+
+Apply to each
+
+For the input, select:
+
+value
+
+from Get items.
+
+Inside the Apply to each, add:
+
+SharePoint → Delete item
+
+Configure:
+
+Site Address:
+https://epsongroup.sharepoint.com/sites/00S_01605
+
+List Name:
+GNS Tbl Authority
+
+Id:
+ID
+
+The ID should come from the Get items action.
+
+So this section becomes:
+
+Get items
+   ↓
+Apply to each
+   ↓
+Delete item
+
+This clears the old SharePoint data.
+
+
+---
+
+6. Add another Apply to each for Excel
+
+After the deletion section, add another:
+
+Apply to each
+
+For the input, select:
+
+value
+
+from:
+
+List rows present in a table
+
+This is important because each Excel row needs to become one SharePoint item.
+
+
+---
+
+7. Create SharePoint item
+
+Inside the second Apply to each, add:
+
+SharePoint → Create item
+
+Configure:
+
+Site Address:
+https://epsongroup.sharepoint.com/sites/00S_01605
+
+List Name:
+GNS Tbl Authority
+
+You'll then see your SharePoint columns.
+
+Map them like this:
+
+SharePoint field	Excel value
+
+UserID	UserID
+Username	Username
+Department	Department
+
+
+The mapping should look approximately like:
+
+Create item
+
+UserID       ← UserID
+Username     ← Username
+Department   ← Department
+
+The values on the right should be selected from List rows present in a table.
+
+
+---
+
+8. Final Flow Structure
+
+Your complete flow will look like this:
+
+┌──────────────────────────────┐
+│ Manually trigger a flow      │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ List rows present in         │
+│ a table                      │
+│                              │
+│ TblAuthorityData.xlsx        │
+│ Table: TblAuthorityData      │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ Get items                    │
+│                              │
+│ GNS Tbl Authority            │
+└──────────────┬───────────────┘
+               ↓
+        ┌──────────────┐
+        │ Apply to each│
+        │ Existing SP │
+        │ items        │
+        └──────┬───────┘
+               ↓
+        ┌──────────────┐
+        │ Delete item  │
+        └──────────────┘
+
+
+Then:
+
+
+┌──────────────────────────────┐
+│ Apply to each                │
+│ Excel rows                   │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ Create item                  │
+│                              │
+│ UserID     ← Excel UserID    │
+│ Username   ← Excel Username  │
+│ Department ← Excel Department│
+└──────────────────────────────┘
+
+
+---
+
+9. One important issue with your current VBA
+
+Your VBA currently saves to:
+
+https://epsongroup.sharepoint.com/sites/00S_01605/ISD-Portal/GNS%20Reactivation%20Archive/TblAuthorityData.xlsx
+
+That's fine conceptually because the Power Automate flow needs to access the file from SharePoint.
+
+However, I would recommend that the Excel file be a fixed file name:
+
+TblAuthorityData.xlsx
+
+which you're already doing.
+
+That is better for Power Automate than generating:
+
+AuthorityData_20260907_090500.xlsx
+AuthorityData_20260907_100500.xlsx
+AuthorityData_20260907_110500.xlsx
+
+because the flow can always point to:
+
+TblAuthorityData.xlsx
+
+
+---
+
+10. Recommended overall automation
+
+You can eventually make the entire process automatic:
+
+SQL Server
+     │
+     ▼
+TBLAUTH_GET_GNSUSER_DATA
+     │
+     ▼
+Excel VBA
+     │
+     ▼
+TblAuthorityData.xlsx
+     │
+     ▼
+SharePoint Document Library
+     │
+     ▼
+Power Automate
+     │
+     ├── Delete old GNS Tbl Authority records
+     │
+     ├── Read TblAuthorityData
+     │
+     └── Create new SharePoint records
+             │
+             ▼
+      GNS Tbl Authority
+
+For your scenario, this is a good architecture because SQL Server remains the source of truth, Excel is the transfer file, and the SharePoint List becomes the application-accessible copy.
+
+One improvement I'd recommend
+
+If your Excel table can contain hundreds or thousands of users, I would change the flow slightly. Instead of deleting everything and recreating everything, we can make Power Automate update existing UserID records and create only new users. That is more efficient and avoids unnecessary SharePoint item deletions/re-creations.
+
+If you tell me approximately how many rows TblAuthorityData contains (e.g. 100, 1,000, 10,000), I can give you the exact recommended Power Automate flow, including the Filter Query / UserID matching.
+
+
+****
+
+
 Option Explicit
 
 Public Sub GetTblAuthorityData()
