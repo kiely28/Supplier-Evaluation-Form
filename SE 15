@@ -1,3 +1,63 @@
+I have a PowerApps application named "Reactivation Form App".
+
+When a user submits the form, the data is saved to a SharePoint List named "Reactivation List".
+
+I also have an Excel template file named "Reactivation.xlsx" stored in a SharePoint Document Library.
+
+I want to use Power Automate and Office Scripts to populate the Excel template using data from the SharePoint List.
+
+Requirements:
+
+1. Populate the following fields in the Excel template:
+   - RequestingSection → Cell F7
+   - RequestDate → Cell D8
+   - ReactivationDate → Cell E9
+
+2. The SharePoint List contains multiple records with the same Reference No.
+
+Example:
+
+Reference No: GNS-002
+
+Record 1:
+- User ID = 001
+- Username = Juan Dela Cruz
+
+Record 2:
+- User ID = 002
+- Username = Bong Gakaday
+
+3. I want all User IDs and Usernames with the same Reference No to be populated into the Excel template:
+
+   J1 = 001
+   J2 = 002
+
+   K1 = Juan Dela Cruz
+   K2 = Bong Gakaday
+
+Continue up to J15:K15 maximum.
+
+4. Please provide:
+   - Complete Power Automate flow design
+   - Get Items filter query based on Reference No
+   - Apply to Each configuration
+   - Initialize Array Variables configuration
+   - Append to Array Variable actions
+   - Complete Office Script
+   - Run Script parameter mapping
+   - Expressions required in Power Automate
+   - Troubleshooting steps for "ScriptParameters/userIds is required" and "ScriptParameters/userNames is required" errors
+
+Assume:
+- SharePoint List name: Reactivation List
+- Excel file: Reactivation.xlsx
+- Worksheet name: Sheet1
+- UserIds and UserNames must be passed as string arrays to Office Script.
+
+
+*****
+
+
 Yes. Since your TblAuthorityData.xlsx is already being saved to your SharePoint document library, you can create a Power Automate flow that reads the Excel table TblAuthorityData and populates the SharePoint List GNS Tbl Authority.
 
 I recommend a full refresh approach:
