@@ -1,3 +1,1136 @@
+Yes. A clean way to build this is:
+
+PowerApps → SharePoint "Reactivation List" → Power Automate → Get Items by Reference No. → Build two arrays → Office Script → Reactivation.xlsx
+
+The important part is that userIds and userNames are passed to Office Scripts as complete string arrays, not as individual values. Microsoft specifically notes that Power Automate has an “Switch to input entire array” option for connector parameters that accept arrays. 
+
+
+---
+
+1. Overall Flow Design
+
+I recommend this flow:
+
+PowerApps
+   │
+   │ Submit
+   ▼
+SharePoint List
+"Reactivation List"
+   │
+   ▼
+Power Automate
+"When an item is created"
+   │
+   ├── Get Items
+   │     Filter by Reference No.
+   │
+   ├── Initialize variable: UserIds
+   │     Array
+   │
+   ├── Initialize variable: UserNames
+   │     Array
+   │
+   ├── Apply to each
+   │     │
+   │     ├── Append User ID
+   │     └── Append Username
+   │
+   ▼
+Run Office Script
+"PopulateReactivation"
+   │
+   ├── F7 = RequestingSection
+   ├── D8 = RequestDate
+   ├── E9 = ReactivationDate
+   ├── J1:J15 = User IDs
+   └── K1:K15 = Usernames
+   │
+   ▼
+Reactivation.xlsx
+
+The Excel Online Business connector's Run script action supports passing parameters to an Office Script. 
+
+
+---
+
+2. Assumed SharePoint Columns
+
+Let's assume your SharePoint list contains:
+
+Display Name	Example
+
+Reference No	GNS-002
+RequestingSection	GNS
+RequestDate	09/07/2026
+ReactivationDate	09/08/2026
+User ID	001
+Username	Juan Dela Cruz
+
+
+Your actual internal column names may be different.
+
+For example, if SharePoint originally created the column as:
+
+Reference No
+
+its internal name may be:
+
+Reference_x0020_No
+
+You should verify this if the Filter Query doesn't work. SharePoint Get Items uses an OData $filter query. 
+
+
+---
+
+3. Power Automate Trigger
+
+Create an Automated cloud flow.
+
+Trigger
+
+Choose:
+
+SharePoint → When an item is created
+
+Configure:
+
+Site Address:
+[your SharePoint site]
+
+List Name:
+Reactivation List
+
+This means that when PowerApps creates the first record, the flow starts.
+
+For example:
+
+Reference No = GNS-002
+User ID = 001
+Username = Juan Dela Cruz
+
+The flow then finds all other records having GNS-002.
+
+
+---
+
+4. Get Items
+
+Add:
+
+SharePoint → Get items
+
+Configure:
+
+Site Address:
+[your SharePoint site]
+
+List Name:
+Reactivation List
+
+Filter Query
+
+If your internal SharePoint column name is:
+
+Reference_x0020_No
+
+use:
+
+Reference_x0020_No eq 'GNS-002'
+
+But we don't want to hard-code GNS-002.
+
+Use the Reference No from the trigger.
+
+Recommended expression
+
+Reference_x0020_No eq '@{triggerBody()?['Reference_x0020_No']}'
+
+If the trigger's dynamic content exposes it as Reference No, you can also build it using Dynamic Content.
+
+Conceptually:
+
+Reference_x0020_No eq '[Reference No from trigger]'
+
+Important
+
+The exact internal name matters.
+
+For example, your actual internal name might be:
+
+ReferenceNo
+
+Then the query is:
+
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+
+or, if Power Automate provides the trigger value through another property:
+
+ReferenceNo eq '@{triggerOutputs()?['body/ReferenceNo']}'
+
+Do not automatically assume Reference_x0020_No is your internal name.
+
+
+---
+
+5. Initialize Array Variable — UserIds
+
+After Get Items, add:
+
+Initialize variable
+
+Configure:
+
+Name:
+UserIds
+
+Type:
+Array
+
+Value:
+[]
+
+So the variable starts as:
+
+[]
+
+
+---
+
+6. Initialize Array Variable — UserNames
+
+Add another:
+
+Initialize variable
+
+Name:
+UserNames
+
+Type:
+Array
+
+Value:
+[]
+
+Again:
+
+[]
+
+At this point:
+
+UserIds   = []
+UserNames = []
+
+
+---
+
+7. Apply to Each
+
+Add:
+
+Control → Apply to each
+
+For the input, select:
+
+value
+
+from:
+
+Get items
+
+So conceptually:
+
+Apply to each
+    input = body('Get_items')?['value']
+
+
+---
+
+8. Append User ID
+
+Inside Apply to each, add:
+
+Append to array variable
+
+Configure:
+
+Name:
+UserIds
+
+Value:
+
+User ID
+
+from the current SharePoint item.
+
+You can also use an expression.
+
+For example, if the internal name is UserID:
+
+items('Apply_to_each')?['UserID']
+
+If the internal name is User_x0020_ID:
+
+items('Apply_to_each')?['User_x0020_ID']
+
+
+---
+
+9. Append Username
+
+Still inside Apply to each, add:
+
+Append to array variable
+
+Configure:
+
+Name:
+UserNames
+
+Value:
+
+Username
+
+Expression example:
+
+items('Apply_to_each')?['Username']
+
+
+---
+
+10. Result of the Arrays
+
+Suppose SharePoint returns:
+
+Record 1
+
+Reference No = GNS-002
+User ID = 001
+Username = Juan Dela Cruz
+
+Record 2
+
+Reference No = GNS-002
+User ID = 002
+Username = Bong Gakaday
+
+After the Apply to each:
+
+UserIds
+
+[
+    "001",
+    "002"
+]
+
+UserNames
+
+[
+    "Juan Dela Cruz",
+    "Bong Gakaday"
+]
+
+That's exactly what we want to send to Office Scripts.
+
+
+---
+
+11. Office Script
+
+Now create an Office Script in Excel.
+
+Open:
+
+Excel → Automate → New Script
+
+Name it:
+
+PopulateReactivation
+
+Use this complete script:
+
+function main(
+  workbook: ExcelScript.Workbook,
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+  userIds: string[],
+  userNames: string[]
+) {
+
+  // =========================================================
+  // SETTINGS
+  // =========================================================
+
+  const sheetName = "Sheet1";
+  const maxRows = 15;
+
+  // =========================================================
+  // GET WORKSHEET
+  // =========================================================
+
+  const sheet = workbook.getWorksheet(sheetName);
+
+  if (!sheet) {
+    throw new Error(`Worksheet "${sheetName}" was not found.`);
+  }
+
+  // =========================================================
+  // POPULATE MAIN INFORMATION
+  // =========================================================
+
+  sheet.getRange("F7").setValue(requestingSection);
+  sheet.getRange("D8").setValue(requestDate);
+  sheet.getRange("E9").setValue(reactivationDate);
+
+  // =========================================================
+  // CLEAR EXISTING USER DATA
+  // =========================================================
+
+  sheet.getRange("J1:K15").clear(ExcelScript.ClearApplyTo.contents);
+
+  // =========================================================
+  // LIMIT TO MAXIMUM 15 USERS
+  // =========================================================
+
+  const count = Math.min(
+    Math.max(userIds.length, userNames.length),
+    maxRows
+  );
+
+  // =========================================================
+  // PREPARE USER ID DATA
+  // =========================================================
+
+  const idData: string[][] = [];
+
+  for (let i = 0; i < count; i++) {
+
+    if (i < userIds.length) {
+      idData.push([String(userIds[i])]);
+    } else {
+      idData.push([""]);
+    }
+  }
+
+  // =========================================================
+  // PREPARE USER NAME DATA
+  // =========================================================
+
+  const nameData: string[][] = [];
+
+  for (let i = 0; i < count; i++) {
+
+    if (i < userNames.length) {
+      nameData.push([String(userNames[i])]);
+    } else {
+      nameData.push([""]);
+    }
+  }
+
+  // =========================================================
+  // WRITE USER IDS
+  // =========================================================
+
+  if (idData.length > 0) {
+    sheet
+      .getRangeByIndexes(0, 9, idData.length, 1)
+      .setValues(idData);
+  }
+
+  // =========================================================
+  // WRITE USER NAMES
+  // =========================================================
+
+  if (nameData.length > 0) {
+    sheet
+      .getRangeByIndexes(0, 10, nameData.length, 1)
+      .setValues(nameData);
+  }
+
+  // =========================================================
+  // OPTIONAL: FORCE TEXT FORMAT
+  // =========================================================
+
+  sheet.getRange("J1:J15").setNumberFormat("@");
+  sheet.getRange("K1:K15").setNumberFormat("@");
+
+  // =========================================================
+  // RETURN INFORMATION TO POWER AUTOMATE
+  // =========================================================
+
+  return {
+    status: "Success",
+    usersWritten: count,
+    requestingSection: requestingSection,
+    requestDate: requestDate,
+    reactivationDate: reactivationDate
+  };
+}
+
+
+---
+
+12. Why the Script Uses string[]
+
+This is important.
+
+The Office Script has:
+
+userIds: string[]
+
+and:
+
+userNames: string[]
+
+This tells Power Automate that these parameters are arrays of strings.
+
+For example:
+
+[
+    "001",
+    "002"
+]
+
+and:
+
+[
+    "Juan Dela Cruz",
+    "Bong Gakaday"
+]
+
+Microsoft documents that Office Script parameters are exposed to Power Automate from the script's main() function. 
+
+
+---
+
+13. Why J1 and K1 Start at Row 1
+
+This part of the script:
+
+sheet.getRangeByIndexes(0, 9, idData.length, 1)
+
+means:
+
+0 = Row 1
+9 = Column J
+
+And:
+
+sheet.getRangeByIndexes(0, 10, nameData.length, 1)
+
+means:
+
+0 = Row 1
+10 = Column K
+
+Therefore:
+
+J1 = 001
+J2 = 002
+
+K1 = Juan Dela Cruz
+K2 = Bong Gakaday
+
+
+---
+
+14. Maximum 15 Records
+
+The script has:
+
+const maxRows = 15;
+
+Therefore it writes:
+
+J1:J15
+K1:K15
+
+If SharePoint has 20 users:
+
+001
+002
+003
+...
+020
+
+only:
+
+001 → 015
+
+will be written.
+
+
+---
+
+15. Run Script in Power Automate
+
+After the Apply to each, add:
+
+Excel Online (Business) → Run script
+
+Select the workbook:
+
+Reactivation.xlsx
+
+from your SharePoint Document Library.
+
+Don't manually type the filename if possible. Use the file picker; Microsoft recommends selecting the workbook through the file browser for Run script. 
+
+Configure:
+
+Location:
+SharePoint Site
+
+Document Library:
+[your document library]
+
+File:
+Reactivation.xlsx
+
+Script:
+PopulateReactivation
+
+
+---
+
+16. Run Script Parameters
+
+After selecting the script, Power Automate should automatically show:
+
+RequestingSection
+RequestDate
+ReactivationDate
+UserIds
+UserNames
+
+This happens because Power Automate reads the parameters from:
+
+function main(
+  workbook: ExcelScript.Workbook,
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+  userIds: string[],
+  userNames: string[]
+)
+
+If you modify the Office Script's parameters later, delete/re-add the Run script action so Power Automate refreshes the parameter definitions. Microsoft specifically recommends recreating the Run script block after changing script parameters. 
+
+
+---
+
+17. Parameter Mapping
+
+Map the parameters like this:
+
+Office Script Parameter	Power Automate Value
+
+requestingSection	RequestingSection from trigger
+requestDate	RequestDate from trigger
+reactivationDate	ReactivationDate from trigger
+userIds	variables('UserIds')
+userNames	variables('UserNames')
+
+
+
+---
+
+18. Expressions
+
+For the three normal values, you can use Dynamic Content.
+
+For example:
+
+RequestingSection
+
+triggerBody()?['RequestingSection']
+
+RequestDate
+
+triggerBody()?['RequestDate']
+
+ReactivationDate
+
+triggerBody()?['ReactivationDate']
+
+The actual property names depend on your SharePoint internal names.
+
+
+---
+
+19. UserIds Expression
+
+For the userIds parameter, use:
+
+variables('UserIds')
+
+Do not use:
+
+string(variables('UserIds'))
+
+because that converts the array into a JSON string instead of passing it as an array.
+
+
+---
+
+20. UserNames Expression
+
+For the userNames parameter:
+
+variables('UserNames')
+
+Again, don't use:
+
+string(variables('UserNames'))
+
+The Office Script expects:
+
+string[]
+
+not:
+
+string
+
+
+---
+
+21. VERY IMPORTANT: "Switch to input entire array"
+
+This is one of the most important parts of your setup.
+
+When you are mapping:
+
+userIds
+
+Power Automate may show an array parameter field.
+
+Look at the upper-right corner of that parameter input.
+
+There should be an option similar to:
+
+Switch to input entire array
+
+Select it.
+
+Then provide:
+
+variables('UserIds')
+
+Do the same for:
+
+userNames
+
+and provide:
+
+variables('UserNames')
+
+Microsoft's Office Scripts troubleshooting documentation specifically describes this behavior: Power Automate can pass array elements individually by default, but connectors/scripts that expect an entire array require Switch to input entire array. 
+
+
+---
+
+22. Your Final Run Script Should Look Like This
+
+Conceptually:
+
+Run script
+
+Location:
+SharePoint Site
+
+Document Library:
+Documents
+
+File:
+Reactivation.xlsx
+
+Script:
+PopulateReactivation
+
+requestingSection:
+[RequestingSection]
+
+requestDate:
+[RequestDate]
+
+reactivationDate:
+[ReactivationDate]
+
+userIds:
+[variables('UserIds')]
+
+userNames:
+[variables('UserNames')]
+
+For the last two:
+
+Switch to input entire array
+
+must be enabled.
+
+
+---
+
+23. Expected Result
+
+Suppose the SharePoint records are:
+
+Reference No	User ID	Username
+
+GNS-002	001	Juan Dela Cruz
+GNS-002	002	Bong Gakaday
+GNS-002	003	Pedro Santos
+
+
+The flow creates:
+
+UserIds:
+[
+  "001",
+  "002",
+  "003"
+]
+
+and:
+
+UserNames:
+[
+  "Juan Dela Cruz",
+  "Bong Gakaday",
+  "Pedro Santos"
+]
+
+Office Script then produces:
+
+Excel Cell	Value
+
+F7	GNS
+D8	Request Date
+E9	Reactivation Date
+J1	001
+J2	002
+J3	003
+K1	Juan Dela Cruz
+K2	Bong Gakaday
+K3	Pedro Santos
+
+
+
+---
+
+24. Troubleshooting: ScriptParameters/userIds is required
+
+If you receive:
+
+ScriptParameters/userIds is required
+
+the most common issue is that Power Automate is not actually passing the array parameter.
+
+Check these in order.
+
+Check 1 — Variable exists
+
+You should have:
+
+Initialize variable
+Name: UserIds
+Type: Array
+Value: []
+
+
+---
+
+Check 2 — Append is inside Apply to each
+
+It should be:
+
+Apply to each
+    ↓
+Append to array variable - UserIds
+
+Not outside the loop.
+
+
+---
+
+Check 3 — UserIds isn't empty
+
+Check the flow run.
+
+Open:
+
+Initialize variable – UserIds
+
+then:
+
+Apply to each
+
+and inspect the final variable.
+
+It should look like:
+
+[
+    "001",
+    "002"
+]
+
+If you see:
+
+[]
+
+the problem is before Office Script.
+
+
+---
+
+Check 4 — Entire array mode
+
+In Run script, make sure:
+
+userIds
+
+uses:
+
+Switch to input entire array
+
+Then:
+
+variables('UserIds')
+
+
+---
+
+25. Troubleshooting: ScriptParameters/userNames is required
+
+Do exactly the same for userNames.
+
+Verify:
+
+Initialize variable
+Name: UserNames
+Type: Array
+Value: []
+
+Then inside Apply to each:
+
+Append to array variable
+Name: UserNames
+Value: Username
+
+Finally:
+
+Run Script
+    userNames = variables('UserNames')
+
+and enable:
+
+Switch to input entire array
+
+
+---
+
+26. Very Important: Don't Pass This
+
+Don't do this:
+
+userIds = "001,002"
+
+because that is one string.
+
+Don't do:
+
+userIds = string(variables('UserIds'))
+
+because that converts the array to a string.
+
+You want:
+
+userIds = variables('UserIds')
+
+with the entire-array option enabled.
+
+
+---
+
+27. Another Common Problem — Script Changed After Run Script Was Created
+
+Suppose you originally created:
+
+function main(
+  workbook: ExcelScript.Workbook,
+  requestingSection: string
+)
+
+Then later changed it to:
+
+function main(
+  workbook: ExcelScript.Workbook,
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+  userIds: string[],
+  userNames: string[]
+)
+
+Power Automate may still have the old parameter definition.
+
+Fix
+
+Delete the:
+
+Run script
+
+action.
+
+Add a new:
+
+Run script
+
+action.
+
+Select:
+
+PopulateReactivation
+
+again.
+
+The new fields should appear.
+
+Microsoft recommends recreating the Run script block when script parameters are changed. 
+
+
+---
+
+28. Another Important Issue — Reference No Filter
+
+If:
+
+Get items
+
+returns only one record instead of all users, check your internal Reference No column.
+
+For example, the display name may be:
+
+Reference No
+
+but the internal name could be:
+
+Reference_x0020_No
+
+or:
+
+ReferenceNo
+
+Use the actual internal name in:
+
+Filter Query
+
+For example:
+
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+
+The SharePoint connector's Get Items action supports OData filter queries for limiting returned list items. 
+
+
+---
+
+29. Recommended Flow Structure
+
+Your final Power Automate flow should therefore be:
+
+1. When an item is created
+       │
+       │
+2. Get items
+       │
+       │ Filter:
+       │ ReferenceNo eq '[Reference No]'
+       │
+       ▼
+3. Initialize variable
+       Name: UserIds
+       Type: Array
+       Value: []
+       │
+       ▼
+4. Initialize variable
+       Name: UserNames
+       Type: Array
+       Value: []
+       │
+       ▼
+5. Apply to each
+       Input:
+       Get items → value
+       │
+       ├── 6. Append to array variable
+       │      UserIds
+       │      User ID
+       │
+       └── 7. Append to array variable
+              UserNames
+              Username
+       │
+       ▼
+8. Run script
+       │
+       ├── requestingSection
+       │
+       ├── requestDate
+       │
+       ├── reactivationDate
+       │
+       ├── userIds
+       │      variables('UserIds')
+       │      Entire Array = ON
+       │
+       └── userNames
+              variables('UserNames')
+              Entire Array = ON
+
+
+---
+
+30. One Recommendation for Your Actual Reactivation Process
+
+There is one additional design point I'd recommend.
+
+Because the same Reference No. has multiple SharePoint records, the flow should use the Reference No to retrieve the complete group:
+
+GNS-002
+ ├── 001 - Juan Dela Cruz
+ ├── 002 - Bong Gakaday
+ └── 003 - Pedro Santos
+
+rather than simply processing only the record that triggered the flow.
+
+That is exactly why the Get Items → Filter Query → Apply to each → two array variables approach is appropriate.
+
+Also, your Office Script deliberately clears:
+
+J1:K15
+
+before writing the new users. This prevents old users from remaining in the template when a subsequent request has fewer users.
+
+One limitation to be aware of: the Office Scripts/Power Automate integration supports array parameters, and Microsoft documents a 30,000,000-byte maximum parameter size, so your 15-user limit is comfortably within the platform's limits. 
+
+Official Microsoft references
+
+[Office Scripts — Pass data to and from scripts in Power Automate](https://learn.microsoft.com/en-us/office/dev/scripts/develop/power-automate-parameters-returns?utm_source=chatgpt.com)
+
+[Troubleshoot Office Scripts running in Power Automate](https://learn.microsoft.com/en-us/office/dev/scripts/testing/power-automate-troubleshooting?utm_source=chatgpt.com)
+
+[SharePoint connector — Get items](https://learn.microsoft.com/en-us/connectors/sharepoint/?utm_source=chatgpt.com)
+
+[Excel Online (Business) connector — Run script](https://learn.microsoft.com/en-us/connectors/excelonlinebusiness/?utm_source=chatgpt.com)
+
+If you give me the exact SharePoint internal names for Reference No, User ID, Username, RequestingSection, RequestDate, and ReactivationDate, I can also turn the above into the exact Power Automate expressions you can copy/paste directly into your flow.
+
+
+****
+
+
 I have a PowerApps application named "Reactivation Form App".
 
 When a user submits the form, the data is saved to a SharePoint List named "Reactivation List".
