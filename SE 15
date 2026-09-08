@@ -1,3 +1,113 @@
+I need a complete beginner-friendly solution using Power Automate and Office Scripts.
+
+Business Requirement:
+
+When a new item is created in the SharePoint List named "Reactivation List", automatically generate an Excel-based Reactivation Form, insert approver signatures, convert the completed Excel file to PDF, and send the PDF as an email attachment.
+
+Environment:
+
+SharePoint List:
+Name: Reactivation List
+
+Columns:
+- RequestingSection
+- RequestDate
+- ReactivationDate
+- Approval1 (Single line of text)
+- Approval2 (Single line of text)
+- Approval3 (Single line of text)
+- Approval4 (Single line of text)
+
+Example Values:
+Approval1 = Bong Gakaday
+Approval2 = King RJ Evangelista
+Approval3 = Juan dela Cruz
+Approval4 = Pedro Santos
+
+SharePoint Document Library:
+Name: GNS Reactivation Archive
+
+Contains signature image files:
+- Bong Gakaday.png
+- King RJ Evangelista.png
+- Juan dela Cruz.png
+- Pedro Santos.png
+
+Excel Template:
+File Name:
+User Account Reactivation-IDLE Account.xlsx
+
+Worksheet:
+Reactivation Form 2
+
+Existing Office Script already populates:
+- Requesting Section
+- Request Date
+- Reactivation Date
+- User IDs
+- User Names
+
+New Requirements:
+
+1. Retrieve Approval1, Approval2, Approval3, and Approval4 values from the SharePoint List.
+
+2. Locate the corresponding PNG signature file in the SharePoint Document Library based on the approver name.
+
+3. Convert each signature image to Base64 in Power Automate.
+
+4. Pass the Base64 image values to the Office Script.
+
+5. Insert signatures into the Excel file at:
+
+Approval1 Signature → C45
+Approval2 Signature → G45
+Approval3 Signature → I45
+Approval4 Signature → J45
+
+6. Write approver names below the signatures:
+
+Approval1 Name → C48
+Approval2 Name → G48
+Approval3 Name → I48
+Approval4 Name → J48
+
+7. Format names as:
+
+King RJ Evangelista → K. Evangelista
+Bong Gakaday → B. Gakaday
+Juan dela Cruz → J. Cruz
+
+8. Resize images appropriately to fit within the approval boxes.
+
+9. After the Office Script finishes, convert the completed Excel file to PDF.
+
+10. Save the PDF to SharePoint.
+
+11. Send an email notification with:
+   - Request Details
+   - PDF attached
+
+12. Use best-practice design so multiple requests can run simultaneously without overwriting each other's Excel files.
+
+Please provide:
+
+- Complete Power Automate flow (step-by-step)
+- All required actions
+- Exact Power Automate expressions
+- Complete Office Script code
+- Run Script parameter mappings
+- PDF conversion steps
+- Email attachment steps
+- Error handling recommendations
+- Recommended folder structure for SharePoint
+- Best practices for production use
+
+
+
+
+******
+
+
 Yes. We can add two email notifications to your existing Power Automate flow:
 
 1. Success email → sent only when the Excel-to-SharePoint synchronization finishes successfully.
