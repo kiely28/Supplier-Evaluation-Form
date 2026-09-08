@@ -1,3 +1,1827 @@
+Worked for 26s
+
+Absolutely. For your scenario, I recommend building it as a request-specific document generation flow:
+
+Reactivation List
+       │
+       │ New item created
+       ▼
+Power Automate
+       │
+       ├── Get all users for same Reference No.
+       ├── Get Approval1–4
+       ├── Get 4 signature PNG files
+       ├── Convert signatures to Base64
+       │
+       ├── Copy Excel template → unique request file
+       │
+       ├── Run Office Script
+       │      ├── Request information
+       │      ├── User IDs / Names
+       │      └── 4 signatures + approver names
+       │
+       ├── Convert completed XLSX → PDF
+       │
+       ├── Save PDF to SharePoint
+       │
+       └── Send email with PDF attachment
+
+The key production principle is never modify the original template. Each request gets its own uniquely named Excel file, which prevents simultaneous requests from overwriting each other.
+
+
+---
+
+1. Recommended SharePoint Structure
+
+I recommend organizing the SharePoint library like this:
+
+GNS Reactivation Archive
+│
+├── Signatures
+│   ├── Bong Gakaday.png
+│   ├── King RJ Evangelista.png
+│   ├── Juan dela Cruz.png
+│   └── Pedro Santos.png
+│
+├── Templates
+│   └── User Account Reactivation-IDLE Account.xlsx
+│
+├── Generated Excel
+│   └── [generated request Excel files]
+│
+└── PDF
+    └── [generated PDF files]
+
+If your current library already has the signature files at the library root, that's fine. You can use:
+
+/GNS Reactivation Archive/Bong Gakaday.png
+
+instead of:
+
+/GNS Reactivation Archive/Signatures/Bong Gakaday.png
+
+The SharePoint connector supports Get file content using path, which is convenient for this design. 
+
+
+---
+
+2. Important Production Architecture
+
+Your template:
+
+User Account Reactivation-IDLE Account.xlsx
+
+should never be used directly by the flow for writing.
+
+Instead:
+
+Template
+   ↓
+Create unique copy
+   ↓
+Run Office Script on unique copy
+   ↓
+Convert unique copy to PDF
+
+For example, if the SharePoint item ID is 125:
+
+User Account Reactivation-125-20260909-074500.xlsx
+
+and:
+
+User Account Reactivation-125-20260909-074500.pdf
+
+Another request:
+
+User Account Reactivation-126-20260909-074512.xlsx
+
+This means two requests never write to the same Excel file.
+
+This is particularly important because the Excel Online connector doesn't support simultaneous modifications to the same workbook reliably. 
+
+
+---
+
+3. Before Creating the Flow
+
+Make sure your SharePoint list has these fields:
+
+Reference No
+RequestingSection
+RequestDate
+ReactivationDate
+
+User ID
+Username
+
+Approval1
+Approval2
+Approval3
+Approval4
+
+Your existing User ID/User Name logic can continue using:
+
+User ID    → C12:C26
+Username   → G12:G26
+
+
+---
+
+4. Create the Office Script
+
+Open your Excel template:
+
+User Account Reactivation-IDLE Account.xlsx
+
+Go to:
+
+Automate → New Script → Create in Code Editor
+
+Name it:
+
+PopulateReactivationForm
+
+Use this complete script.
+
+function main(
+  workbook: ExcelScript.Workbook,
+
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+
+  userIds: string[],
+  userNames: string[],
+
+  approval1: string,
+  approval2: string,
+  approval3: string,
+  approval4: string,
+
+  approval1Signature: string,
+  approval2Signature: string,
+  approval3Signature: string,
+  approval4Signature: string
+) {
+
+  // =========================================================
+  // SETTINGS
+  // =========================================================
+
+  const sheetName = "Reactivation Form 2";
+
+  const maxUsers = 15;
+
+  // Signature locations
+  const signature1Cell = "C45";
+  const signature2Cell = "G45";
+  const signature3Cell = "I45";
+  const signature4Cell = "J45";
+
+  // Name locations
+  const name1Cell = "C48";
+  const name2Cell = "G48";
+  const name3Cell = "I48";
+  const name4Cell = "J48";
+
+  // =========================================================
+  // GET WORKSHEET
+  // =========================================================
+
+  const sheet = workbook.getWorksheet(sheetName);
+
+  if (!sheet) {
+    throw new Error(
+      `Worksheet "${sheetName}" was not found.`
+    );
+  }
+
+  // =========================================================
+  // MAIN REQUEST INFORMATION
+  // =========================================================
+
+  sheet.getRange("F7").setValue(requestingSection);
+  sheet.getRange("D8").setValue(requestDate);
+  sheet.getRange("E9").setValue(reactivationDate);
+
+  // =========================================================
+  // CLEAR OLD USER DATA
+  // =========================================================
+
+  sheet
+    .getRange("C12:C26")
+    .clear(ExcelScript.ClearApplyTo.contents);
+
+  sheet
+    .getRange("G12:G26")
+    .clear(ExcelScript.ClearApplyTo.contents);
+
+  // =========================================================
+  // CLEAR OLD SIGNATURES
+  // =========================================================
+
+  const shapes = sheet.getShapes();
+
+  for (const shape of shapes) {
+
+    const shapeName = shape.getName();
+
+    if (
+      shapeName === "Approval1Signature" ||
+      shapeName === "Approval2Signature" ||
+      shapeName === "Approval3Signature" ||
+      shapeName === "Approval4Signature"
+    ) {
+      shape.delete();
+    }
+  }
+
+  // =========================================================
+  // USER IDS / USER NAMES
+  // =========================================================
+
+  const userCount = Math.min(
+    Math.max(userIds.length, userNames.length),
+    maxUsers
+  );
+
+  const idData: string[][] = [];
+  const nameData: string[][] = [];
+
+  for (let i = 0; i < userCount; i++) {
+
+    if (i < userIds.length) {
+      idData.push([
+        String(userIds[i])
+      ]);
+    } else {
+      idData.push([""]);
+    }
+
+    if (i < userNames.length) {
+      nameData.push([
+        String(userNames[i])
+      ]);
+    } else {
+      nameData.push([""]);
+    }
+  }
+
+  // =========================================================
+  // WRITE USER IDS
+  // C12:C26
+  // =========================================================
+
+  if (idData.length > 0) {
+
+    sheet
+      .getRangeByIndexes(
+        11,  // Row 12
+        2,   // Column C
+        idData.length,
+        1
+      )
+      .setValues(idData);
+  }
+
+  // =========================================================
+  // WRITE USER NAMES
+  // G12:G26
+  // =========================================================
+
+  if (nameData.length > 0) {
+
+    sheet
+      .getRangeByIndexes(
+        11,  // Row 12
+        6,   // Column G
+        nameData.length,
+        1
+      )
+      .setValues(nameData);
+  }
+
+  // Force User ID and User Name columns to text
+  sheet
+    .getRange("C12:C26")
+    .setNumberFormat("@");
+
+  sheet
+    .getRange("G12:G26")
+    .setNumberFormat("@");
+
+  // =========================================================
+  // APPROVER NAMES
+  // =========================================================
+
+  sheet
+    .getRange(name1Cell)
+    .setValue(formatApproverName(approval1));
+
+  sheet
+    .getRange(name2Cell)
+    .setValue(formatApproverName(approval2));
+
+  sheet
+    .getRange(name3Cell)
+    .setValue(formatApproverName(approval3));
+
+  sheet
+    .getRange(name4Cell)
+    .setValue(formatApproverName(approval4));
+
+  // =========================================================
+  // INSERT SIGNATURES
+  // =========================================================
+
+  if (approval1Signature) {
+
+    addSignature(
+      sheet,
+      approval1Signature,
+      signature1Cell,
+      "Approval1Signature"
+    );
+  }
+
+  if (approval2Signature) {
+
+    addSignature(
+      sheet,
+      approval2Signature,
+      signature2Cell,
+      "Approval2Signature"
+    );
+  }
+
+  if (approval3Signature) {
+
+    addSignature(
+      sheet,
+      approval3Signature,
+      signature3Cell,
+      "Approval3Signature"
+    );
+  }
+
+  if (approval4Signature) {
+
+    addSignature(
+      sheet,
+      approval4Signature,
+      signature4Cell,
+      "Approval4Signature"
+    );
+  }
+
+  // =========================================================
+  // RETURN RESULT
+  // =========================================================
+
+  return {
+    status: "Success",
+    usersWritten: userCount,
+
+    approval1: approval1,
+    approval2: approval2,
+    approval3: approval3,
+    approval4: approval4
+  };
+}
+
+
+// =============================================================
+// FORMAT APPROVER NAME
+// =============================================================
+
+function formatApproverName(fullName: string): string {
+
+  if (!fullName) {
+    return "";
+  }
+
+  const cleanName = fullName
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const parts = cleanName.split(" ");
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  const firstName = parts[0];
+
+  const lastName = parts[parts.length - 1];
+
+  const firstInitial = firstName
+    .charAt(0)
+    .toUpperCase();
+
+  return `${firstInitial}. ${lastName}`;
+}
+
+
+// =============================================================
+// ADD SIGNATURE IMAGE
+// =============================================================
+
+function addSignature(
+  sheet: ExcelScript.Worksheet,
+  base64Image: string,
+  anchorCell: string,
+  shapeName: string
+) {
+
+  // ----------------------------------------------------------
+  // Add image
+  // ----------------------------------------------------------
+
+  const image = sheet.addImage(base64Image);
+
+  image.setName(shapeName);
+
+  // ----------------------------------------------------------
+  // Anchor cell
+  // ----------------------------------------------------------
+
+  const cell = sheet.getRange(anchorCell);
+
+  // ----------------------------------------------------------
+  // Maximum signature dimensions
+  //
+  // Adjust these values if necessary to match your
+  // actual approval boxes.
+  // ----------------------------------------------------------
+
+  const maxWidth = 90;
+  const maxHeight = 35;
+
+  // ----------------------------------------------------------
+  // Get original image dimensions
+  // ----------------------------------------------------------
+
+  const originalWidth = image.getWidth();
+  const originalHeight = image.getHeight();
+
+  // ----------------------------------------------------------
+  // Calculate scale while preserving aspect ratio
+  // ----------------------------------------------------------
+
+  const widthScale =
+    maxWidth / originalWidth;
+
+  const heightScale =
+    maxHeight / originalHeight;
+
+  const scale =
+    Math.min(widthScale, heightScale);
+
+  let finalWidth =
+    originalWidth * scale;
+
+  let finalHeight =
+    originalHeight * scale;
+
+  // ----------------------------------------------------------
+  // Position image
+  // ----------------------------------------------------------
+
+  const cellLeft = cell.getLeft();
+  const cellTop = cell.getTop();
+
+  const cellWidth = cell.getWidth();
+  const cellHeight = cell.getHeight();
+
+  const left =
+    cellLeft +
+    Math.max(0, (cellWidth - finalWidth) / 2);
+
+  const top =
+    cellTop +
+    Math.max(0, (cellHeight - finalHeight) / 2);
+
+  // ----------------------------------------------------------
+  // Apply position and size
+  // ----------------------------------------------------------
+
+  image.setLeft(left);
+  image.setTop(top);
+
+  image.setWidth(finalWidth);
+  image.setHeight(finalHeight);
+
+  // ----------------------------------------------------------
+  // Attach image to cells
+  // ----------------------------------------------------------
+
+  image.setPlacement(
+    ExcelScript.Placement.twoCell
+  );
+}
+
+Office Scripts supports inserting a PNG/JPEG from a Base64 string with Worksheet.addImage(). Shapes can then be positioned and resized using their position/size properties. 
+
+The script also uses the range's position and dimensions so the signature can be positioned relative to the target cell. 
+
+
+---
+
+5. Name Formatting
+
+The script automatically converts:
+
+Bong Gakaday
+
+to:
+
+B. Gakaday
+
+and:
+
+King RJ Evangelista
+
+to:
+
+K. Evangelista
+
+and:
+
+Juan dela Cruz
+
+to:
+
+J. Cruz
+
+So you don't need to perform this formatting in Power Automate.
+
+
+---
+
+6. Power Automate Flow
+
+Create:
+
+Automated cloud flow
+
+Name:
+
+Generate Reactivation Form
+
+Trigger:
+
+SharePoint → When an item is created
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+List Name:
+Reactivation List
+
+
+---
+
+7. Get the Other Records for the Same Reference No.
+
+Because multiple records can have the same Reference No., add:
+
+SharePoint → Get items
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+List Name:
+Reactivation List
+
+Filter Query
+
+Assuming the internal column name is:
+
+ReferenceNo
+
+use:
+
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+
+If your internal name is:
+
+Reference_x0020_No
+
+use:
+
+Reference_x0020_No eq '@{triggerBody()?['Reference_x0020_No']}'
+
+The important thing is to use the internal SharePoint column name, not necessarily the display name.
+
+
+---
+
+8. Initialize UserIds
+
+Add:
+
+Variables → Initialize variable
+
+Name:
+UserIds
+
+Type:
+Array
+
+Value:
+[]
+
+
+---
+
+9. Initialize UserNames
+
+Add:
+
+Variables → Initialize variable
+
+Name:
+UserNames
+
+Type:
+Array
+
+Value:
+[]
+
+
+---
+
+10. Apply to Each
+
+Add:
+
+Control → Apply to each
+
+For:
+
+Select an output from previous steps
+
+select:
+
+value
+
+from:
+
+Get items
+
+Conceptually:
+
+Get items
+   ↓
+value
+   ↓
+Apply to each
+
+
+---
+
+11. Append User ID
+
+Inside Apply to each:
+
+Add:
+
+Append to array variable
+
+Name:
+UserIds
+
+Value:
+
+User ID
+
+If using an expression and your internal name is UserID:
+
+items('Apply_to_each')?['UserID']
+
+
+---
+
+12. Append User Name
+
+Still inside Apply to each:
+
+Add:
+
+Append to array variable
+
+Name:
+UserNames
+
+Value:
+
+Username
+
+Expression example:
+
+items('Apply_to_each')?['Username']
+
+
+---
+
+13. Result of the Arrays
+
+For:
+
+GNS-002
+
+SharePoint:
+
+001 | Juan Dela Cruz
+002 | Bong Gakaday
+003 | Pedro Santos
+
+The variables become:
+
+[
+  "001",
+  "002",
+  "003"
+]
+
+and:
+
+[
+  "Juan Dela Cruz",
+  "Bong Gakaday",
+  "Pedro Santos"
+]
+
+
+---
+
+14. Retrieve Approval1 Signature
+
+Now retrieve:
+
+Approval1
+
+from the trigger.
+
+Add:
+
+Condition
+
+Approval1 is not equal to
+
+[leave blank]
+
+Inside Yes:
+
+Add:
+
+SharePoint → Get file content using path
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+File Path:
+
+If your signature files are in the root of the library:
+
+/GNS Reactivation Archive/@{triggerBody()?['Approval1']}.png
+
+If they are inside a Signatures folder:
+
+/GNS Reactivation Archive/Signatures/@{triggerBody()?['Approval1']}.png
+
+The SharePoint connector supports retrieving file content directly using a path. 
+
+
+---
+
+15. Convert Approval1 Image to Base64
+
+Add:
+
+Compose
+
+Name:
+
+Approval1SignatureBase64
+
+Expression:
+
+base64(body('Get_file_content_using_path_Approval1'))
+
+Your actual action name may be slightly different depending on how Power Automate names it.
+
+The result will look like:
+
+iVBORw0KGgoAAAANSUhEUgAA...
+
+Do not add:
+
+data:image/png;base64,
+
+The Office Script expects the Base64 image string itself.
+
+
+---
+
+16. Repeat for Approval2
+
+Condition:
+
+Approval2 is not equal to blank
+
+Then:
+
+Get file content using path
+
+/GNS Reactivation Archive/@{triggerBody()?['Approval2']}.png
+
+Then:
+
+Compose
+
+base64(body('Get_file_content_using_path_Approval2'))
+
+
+---
+
+17. Approval3
+
+Get:
+
+/GNS Reactivation Archive/@{triggerBody()?['Approval3']}.png
+
+Then:
+
+base64(body('Get_file_content_using_path_Approval3'))
+
+
+---
+
+18. Approval4
+
+Get:
+
+/GNS Reactivation Archive/@{triggerBody()?['Approval4']}.png
+
+Then:
+
+base64(body('Get_file_content_using_path_Approval4'))
+
+
+---
+
+19. Better Approach for the Four Base64 Values
+
+For a beginner-friendly flow, I recommend initializing four string variables before retrieving the images:
+
+Approval1SignatureBase64
+Approval2SignatureBase64
+Approval3SignatureBase64
+Approval4SignatureBase64
+
+All should be:
+
+Type: String
+Value: ""
+
+Then after each Get file content using path, use:
+
+Set variable
+
+Example:
+
+Name:
+Approval1SignatureBase64
+
+Value:
+base64(body('Get_file_content_using_path_Approval1'))
+
+This makes the final Run Script action much easier to configure.
+
+
+---
+
+20. Important: Handle Missing Signature Files
+
+Suppose:
+
+Approval1 = Bong Gakaday
+
+but:
+
+Bong Gakaday.png
+
+doesn't exist.
+
+The flow should not silently continue.
+
+For production, I recommend a Scope around the signature retrieval steps.
+
+Scope - Get Signatures
+    │
+    ├── Approval1
+    ├── Approval2
+    ├── Approval3
+    └── Approval4
+
+Then create:
+
+Scope - Error Handling
+
+configured to run when the signature scope:
+
+has failed
+
+The error handler can update the SharePoint item with:
+
+Status = Error
+ErrorMessage = Signature file not found
+
+This is much easier to troubleshoot than allowing the flow to fail later at Office Script.
+
+
+---
+
+21. Create a Unique Excel File
+
+Now we need to make a copy of:
+
+User Account Reactivation-IDLE Account.xlsx
+
+Do not run the Office Script on the original.
+
+First use:
+
+SharePoint → Get file content using path
+
+/GNS Reactivation Archive/Templates/User Account Reactivation-IDLE Account.xlsx
+
+Then:
+
+SharePoint → Create file
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+Folder Path:
+GNS Reactivation Archive/Generated Excel
+
+File Name:
+
+User Account Reactivation-@{triggerBody()?['ID']}-@{formatDateTime(utcNow(),'yyyyMMdd-HHmmss')}.xlsx
+
+File Content:
+
+File Content
+
+from the template Get File Content action.
+
+The SharePoint connector supports Create file and accepts the file content as binary. 
+
+
+---
+
+22. Example Generated Filename
+
+If the SharePoint ID is:
+
+125
+
+the resulting file could be:
+
+User Account Reactivation-125-20260909-074512.xlsx
+
+This is extremely important for concurrency.
+
+Request 125:
+
+User Account Reactivation-125-20260909-074512.xlsx
+
+Request 126:
+
+User Account Reactivation-126-20260909-074515.xlsx
+
+No overwrite occurs.
+
+
+---
+
+23. Get Generated File Metadata
+
+After Create file, add:
+
+SharePoint → Get file metadata
+
+Use:
+
+File Identifier:
+Identifier
+
+from Create file.
+
+This gives you the generated workbook's identifier.
+
+
+---
+
+24. Run Office Script
+
+Now add:
+
+Excel Online (Business) → Run script
+
+The Excel connector supports running an Office Script against an Excel workbook stored in SharePoint, and the workbook can be supplied using a SharePoint file identifier. 
+
+Configure:
+
+Location:
+SharePoint Site
+
+Document Library:
+GNS Reactivation Archive
+
+File:
+Identifier from Get file metadata
+
+Script:
+PopulateReactivationForm
+
+
+---
+
+25. Run Script Parameters
+
+The script parameters should appear as:
+
+requestingSection
+requestDate
+reactivationDate
+
+userIds
+userNames
+
+approval1
+approval2
+approval3
+approval4
+
+approval1Signature
+approval2Signature
+approval3Signature
+approval4Signature
+
+Map them like this:
+
+Office Script	Power Automate
+
+requestingSection	RequestingSection
+requestDate	RequestDate
+reactivationDate	ReactivationDate
+userIds	variables('UserIds')
+userNames	variables('UserNames')
+approval1	Approval1
+approval2	Approval2
+approval3	Approval3
+approval4	Approval4
+approval1Signature	Approval1SignatureBase64
+approval2Signature	Approval2SignatureBase64
+approval3Signature	Approval3SignatureBase64
+approval4Signature	Approval4SignatureBase64
+
+
+
+---
+
+26. VERY IMPORTANT — UserIds/UserNames Arrays
+
+For:
+
+userIds
+
+select:
+
+Switch to input entire array
+
+Then use:
+
+variables('UserIds')
+
+For:
+
+userNames
+
+select:
+
+Switch to input entire array
+
+Then:
+
+variables('UserNames')
+
+Do not use:
+
+string(variables('UserIds'))
+
+or:
+
+string(variables('UserNames'))
+
+The script expects:
+
+string[]
+
+not a single string.
+
+Microsoft specifically documents the Switch to input entire array behavior for Office Scripts in Power Automate. 
+
+
+---
+
+27. Approval Signature Parameters
+
+For:
+
+approval1Signature
+
+use:
+
+variables('Approval1SignatureBase64')
+
+Similarly:
+
+approval2Signature
+
+variables('Approval2SignatureBase64')
+
+approval3Signature
+
+variables('Approval3SignatureBase64')
+
+approval4Signature
+
+variables('Approval4SignatureBase64')
+
+These are normal String parameters, not arrays.
+
+
+---
+
+28. Important Run Script Troubleshooting
+
+If you see:
+
+ScriptParameters/userIds is required
+
+check:
+
+userIds
+
+is mapped to:
+
+variables('UserIds')
+
+and:
+
+Switch to input entire array
+
+is enabled.
+
+Same for:
+
+userNames
+
+Microsoft documents this exact array-parameter behavior. 
+
+
+---
+
+29. If the Script Parameters Don't Appear
+
+If you added the parameters to the Office Script after creating the Run Script action, Power Automate may still have the old parameter definition.
+
+Delete:
+
+Run script
+
+and add it again.
+
+Microsoft recommends recreating the Run Script action when script parameters or return types change. 
+
+
+---
+
+30. Convert Excel to PDF
+
+This is where I recommend using OneDrive for Business temporarily.
+
+The OneDrive for Business connector provides a Convert file / Convert file using path action that can convert a file to another supported format. 
+
+The reason for using a temporary OneDrive file is that your final archive can remain in SharePoint while OneDrive performs the conversion.
+
+
+---
+
+31. Get Completed Excel File Content
+
+After:
+
+Run script
+
+add:
+
+SharePoint → Get file content
+
+Use:
+
+File Identifier:
+Identifier
+
+of your generated Excel file.
+
+This gives you the completed Excel file after the Office Script has inserted the signatures.
+
+
+---
+
+32. Create Temporary OneDrive Excel File
+
+Add:
+
+OneDrive for Business → Create file
+
+For example:
+
+Folder:
+PowerAutomateTemp/Reactivation
+
+File Name:
+
+Reactivation-@{triggerBody()?['ID']}-@{formatDateTime(utcNow(),'yyyyMMdd-HHmmss')}.xlsx
+
+File Content:
+
+File Content
+
+from the SharePoint Get File Content action.
+
+
+---
+
+33. Add a Short Delay
+
+Add:
+
+Delay
+
+Count: 5
+Unit: Seconds
+
+This is useful because the OneDrive connector documentation notes that conversion can occasionally fail immediately after file creation; Microsoft recommends increasing the delay between creation and conversion when this happens. 
+
+
+---
+
+34. Convert File
+
+Add:
+
+OneDrive for Business → Convert file
+
+Configure:
+
+File:
+Id from Create file
+
+Target type:
+PDF
+
+The OneDrive connector's Convert file action returns the converted file content. 
+
+
+---
+
+35. Save PDF to SharePoint
+
+Now add:
+
+SharePoint → Create file
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+Folder Path:
+GNS Reactivation Archive/PDF
+
+File Name:
+
+User Account Reactivation-@{triggerBody()?['ID']}-@{formatDateTime(utcNow(),'yyyyMMdd-HHmmss')}.pdf
+
+File Content:
+
+File Content
+
+from:
+
+Convert file
+
+So:
+
+Excel
+ ↓
+Office Script
+ ↓
+Completed Excel
+ ↓
+OneDrive temporary copy
+ ↓
+Convert to PDF
+ ↓
+SharePoint PDF Archive
+
+
+---
+
+36. Email the PDF
+
+Add:
+
+Office 365 Outlook → Send an email (V2)
+
+For example:
+
+To
+
+Use the appropriate requester/email column from your SharePoint item.
+
+Subject
+
+Reactivation Form - @{triggerBody()?['ReferenceNo']}
+
+Body
+
+Example:
+
+Good day,
+
+Please see the attached Reactivation Form for your reference.
+
+Request Details:
+
+Reference No:
+[Reference No]
+
+Requesting Section:
+[RequestingSection]
+
+Request Date:
+[RequestDate]
+
+Reactivation Date:
+[ReactivationDate]
+
+The completed Reactivation Form is attached as a PDF.
+
+Thank you.
+
+Attachment Name
+
+User Account Reactivation-@{triggerBody()?['ID']}-@{formatDateTime(utcNow(),'yyyyMMdd-HHmmss')}.pdf
+
+Attachment Content
+
+Use:
+
+File Content
+
+from the Convert file action.
+
+You don't actually need to retrieve the SharePoint PDF again for the email; the conversion action already provides the PDF binary.
+
+
+---
+
+37. Delete Temporary OneDrive File
+
+After the email succeeds:
+
+OneDrive for Business → Delete file
+
+Use the ID of the temporary Excel file.
+
+Your temporary OneDrive area therefore stays clean.
+
+
+---
+
+38. Recommended Complete Flow
+
+Your finished flow should look approximately like this:
+
+WHEN AN ITEM IS CREATED
+│
+├── Get Items
+│      Filter by Reference No.
+│
+├── Initialize UserIds
+│      []
+│
+├── Initialize UserNames
+│      []
+│
+├── Apply to Each
+│      │
+│      ├── Append User ID
+│      │
+│      └── Append Username
+│
+├── Initialize Approval1SignatureBase64
+├── Initialize Approval2SignatureBase64
+├── Initialize Approval3SignatureBase64
+└── Initialize Approval4SignatureBase64
+│
+├── Get Approval1 Signature
+│      │
+│      ├── Get file content using path
+│      └── Set Approval1SignatureBase64
+│
+├── Get Approval2 Signature
+│      │
+│      ├── Get file content using path
+│      └── Set Approval2SignatureBase64
+│
+├── Get Approval3 Signature
+│      │
+│      ├── Get file content using path
+│      └── Set Approval3SignatureBase64
+│
+├── Get Approval4 Signature
+│      │
+│      ├── Get file content using path
+│      └── Set Approval4SignatureBase64
+│
+├── Get Template File Content
+│
+├── Create Generated Excel
+│      User Account Reactivation-[ID]-[timestamp].xlsx
+│
+├── Get File Metadata
+│
+├── Run Office Script
+│      │
+│      ├── RequestingSection
+│      ├── RequestDate
+│      ├── ReactivationDate
+│      │
+│      ├── UserIds
+│      ├── UserNames
+│      │
+│      ├── Approval1
+│      ├── Approval2
+│      ├── Approval3
+│      ├── Approval4
+│      │
+│      ├── Approval1SignatureBase64
+│      ├── Approval2SignatureBase64
+│      ├── Approval3SignatureBase64
+│      └── Approval4SignatureBase64
+│
+├── Get Completed Excel Content
+│
+├── OneDrive Create Temporary Excel
+│
+├── Delay 5 seconds
+│
+├── OneDrive Convert File → PDF
+│
+├── SharePoint Create PDF
+│
+├── Send Email
+│      └── Attach PDF
+│
+└── Delete Temporary OneDrive Excel
+
+
+---
+
+39. What the Excel Form Will Look Like
+
+For your example:
+
+Approval1 = Bong Gakaday
+Approval2 = King RJ Evangelista
+Approval3 = Juan dela Cruz
+Approval4 = Pedro Santos
+
+the script produces:
+
+C45
+[ Bong Gakaday signature ]
+
+C48
+B. Gakaday
+
+G45
+[ King RJ Evangelista signature ]
+
+G48
+K. Evangelista
+
+I45
+[ Juan dela Cruz signature ]
+
+I48
+J. Cruz
+
+J45
+[ Pedro Santos signature ]
+
+J48
+P. Santos
+
+The actual PNG signatures are inserted as Excel images rather than merely writing the Base64 text.
+
+
+---
+
+40. Production Error Handling
+
+I recommend using Scopes.
+
+Scope 1 — Prepare Data
+
+Get Items
+Initialize arrays
+Apply to each
+
+Scope 2 — Get Signatures
+
+Get Approval1 Signature
+Get Approval2 Signature
+Get Approval3 Signature
+Get Approval4 Signature
+
+Scope 3 — Generate Excel
+
+Get Template
+Create Excel
+Run Office Script
+
+Scope 4 — Generate PDF
+
+Get Excel
+Create OneDrive Temp
+Delay
+Convert PDF
+Create SharePoint PDF
+
+Scope 5 — Send Email
+
+Send Email
+Delete Temp File
+
+Then create:
+
+Scope - Error Handler
+
+Configure it to run when the main scopes have:
+
+Failed
+Timed out
+Skipped
+
+
+---
+
+41. Recommended Status Column
+
+For production, I strongly recommend adding these columns to Reactivation List:
+
+ProcessingStatus
+GeneratedExcel
+GeneratedPDF
+ProcessingError
+ProcessedDate
+
+Example:
+
+ProcessingStatus = Completed
+GeneratedExcel = User Account Reactivation-125-20260909-074512.xlsx
+GeneratedPDF = User Account Reactivation-125-20260909-074512.pdf
+ProcessedDate = 09/09/2026 07:45
+
+If something fails:
+
+ProcessingStatus = Error
+ProcessingError = Signature file not found: Bong Gakaday.png
+
+This makes support much easier.
+
+
+---
+
+42. Important Issue With Multiple Records Per Reference No.
+
+There's one important business consideration.
+
+You said multiple SharePoint records can have:
+
+Reference No = GNS-002
+
+For example:
+
+GNS-002 | 001 | Juan
+GNS-002 | 002 | Bong
+GNS-002 | 003 | Pedro
+
+If your PowerApps creates three SharePoint items separately, the trigger:
+
+When an item is created
+
+will potentially fire three times.
+
+That could produce:
+
+PDF 1
+PDF 2
+PDF 3
+
+for the same:
+
+GNS-002
+
+even though each flow run retrieves the same three users.
+
+Best production solution
+
+Ideally, have the Reactivation process create a single "request header" record, or add a field such as:
+
+GenerationStatus
+
+and ensure only the designated first/request record generates the document.
+
+If your PowerApps creates all records as one batch, this is especially important to address.
+
+
+---
+
+43. Concurrency
+
+There are actually two separate concurrency issues:
+
+Excel overwrite
+
+Solved by unique filenames:
+
+Request ID + Timestamp
+
+Duplicate processing
+
+Solved by:
+
+ProcessingStatus
+
+or a request/header record.
+
+Power Automate also provides trigger concurrency control. By default, trigger concurrency is off; Microsoft documents enabling it when you need to control simultaneous runs. 
+
+For your design, I would not rely on concurrency control as the main protection. Unique filenames are better because different requests should be allowed to run at the same time.
+
+
+---
+
+44. Another Important Excel Best Practice
+
+Your Office Script should use:
+
+workbook.getWorksheet("Reactivation Form 2")
+
+instead of:
+
+workbook.getActiveWorksheet()
+
+because Power Automate runs Office Scripts in an independent Excel session and there may be no meaningful "active" worksheet. Microsoft specifically recommends avoiding relative references such as getActiveWorksheet() in Power Automate scripts. 
+
+Your script above already follows this best practice.
+
+
+---
+
+45. Date Handling
+
+Power Automate uses UTC, while Excel doesn't have a fixed inherent timezone. If the dates in your SharePoint list are date/time columns, make sure you format them deliberately before sending them to the script. Microsoft documents this Power Automate/Excel timezone difference. 
+
+For example:
+
+formatDateTime(
+    triggerBody()?['RequestDate'],
+    'MM/dd/yyyy'
+)
+
+and:
+
+formatDateTime(
+    triggerBody()?['ReactivationDate'],
+    'MM/dd/yyyy'
+)
+
+If you only need the date, this is preferable to passing the raw ISO timestamp.
+
+
+---
+
+46. Recommended Final Architecture
+
+I would implement your production solution as:
+
+POWER APPS
+                        │
+                        ▼
+              ┌──────────────────┐
+              │ Reactivation List│
+              └────────┬─────────┘
+                       │
+                       │ New Item
+                       ▼
+              ┌──────────────────┐
+              │  POWER AUTOMATE  │
+              └────────┬─────────┘
+                       │
+          ┌────────────┼────────────┐
+          ▼            ▼            ▼
+     SharePoint      Approval      Signatures
+     User Records    1–4           PNG Files
+          │            │            │
+          └────────────┼────────────┘
+                       ▼
+              ┌──────────────────┐
+              │ Base64 Signatures│
+              └────────┬─────────┘
+                       ▼
+              ┌──────────────────┐
+              │ Excel Template   │
+              │       ↓          │
+              │ Unique XLSX      │
+              └────────┬─────────┘
+                       │
+                       ▼
+              ┌──────────────────┐
+              │   Office Script  │
+              │                  │
+              │ F7               │
+              │ D8               │
+              │ E9               │
+              │ C12:C26          │
+              │ G12:G26          │
+              │ C45 Signature    │
+              │ G45 Signature    │
+              │ I45 Signature    │
+              │ J45 Signature    │
+              │ C48 Name         │
+              │ G48 Name         │
+              │ I48 Name         │
+              │ J48 Name         │
+              └────────┬─────────┘
+                       ▼
+                 Completed XLSX
+                       │
+                       ▼
+                 OneDrive Temp
+                       │
+                       ▼
+                 Convert to PDF
+                       │
+                       ▼
+              ┌──────────────────┐
+              │ SharePoint PDF   │
+              │     Archive      │
+              └────────┬─────────┘
+                       │
+                       ▼
+                 Outlook Email
+                       │
+                       ▼
+                  PDF Attachment
+
+This design keeps the template untouched, supports your C12:C26 / G12:G26 user data, inserts the four Base64 signatures, creates a unique Excel/PDF per request, archives the PDF in SharePoint, and sends the completed form by email.
+
+One final practical point: test the Office Script manually in Excel first with four sample Base64 signatures. Once the script successfully places the images at C45, G45, I45, and J45, connect it to Power Automate. This separates Excel/Office Script problems from Power Automate problems and makes troubleshooting much easier.
+
+
+*****
+
+
 I need a complete beginner-friendly solution using Power Automate and Office Scripts.
 
 Business Requirement:
