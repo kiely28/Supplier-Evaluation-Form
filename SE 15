@@ -1,3 +1,519 @@
+Yes. We can add two email notifications to your existing Power Automate flow:
+
+1. Success email → sent only when the Excel-to-SharePoint synchronization finishes successfully.
+
+
+2. Error email → sent when any part of the synchronization fails.
+
+
+
+The best way is to use Scopes + “Configure run after”. This is more reliable than putting a simple email action at the very end.
+
+
+---
+
+Recommended Flow Structure
+
+Your existing flow is:
+
+Manual/Scheduled Trigger
+        ↓
+List rows present in a table
+        ↓
+Get items
+        ↓
+Apply to each
+   └── Delete item
+        ↓
+Apply to each
+   └── Create item
+
+We'll change it to:
+
+┌──────────────────────────────┐
+│ Trigger                      │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ Scope - Synchronization      │
+│                              │
+│ List rows from Excel         │
+│        ↓                     │
+│ Get SharePoint items         │
+│        ↓                     │
+│ Delete old items             │
+│        ↓                     │
+│ Create new items             │
+└──────────────┬───────────────┘
+               ↓
+       ┌───────┴────────┐
+       ↓                ↓
+   SUCCESS            ERROR
+       ↓                ↓
+ Send email          Send email
+
+
+---
+
+1. Create a Scope for the Main Process
+
+Open your existing flow.
+
+You currently have:
+
+Manually trigger a flow
+↓
+List rows present in a table
+↓
+Get items
+↓
+Apply to each - Delete
+↓
+Apply to each - Create
+
+We want all of the synchronization actions inside one Scope.
+
+Click:
+
++ New step
+
+Search:
+
+Scope
+
+Select:
+
+Control → Scope
+
+Rename it:
+
+Synchronize GNS Tbl Authority
+
+
+---
+
+2. Move Your Existing Actions Into the Scope
+
+Move these existing actions into the Scope:
+
+List rows present in a table
+Get items
+Apply to each - Delete
+Apply to each - Create
+
+Your flow should now look like:
+
+Manually trigger a flow
+        ↓
+Scope: Synchronize GNS Tbl Authority
+        │
+        ├── List rows present in a table
+        │
+        ├── Get items
+        │
+        ├── Apply to each
+        │      └── Delete item
+        │
+        └── Apply to each
+               └── Create item
+
+Do not put the trigger inside the Scope.
+
+The trigger stays outside.
+
+
+---
+
+3. Add the Success Email
+
+After the Scope, click:
+
++ New step
+
+Search:
+
+Send an email (V2)
+
+Select:
+
+Office 365 Outlook → Send an email (V2)
+
+Configure something like:
+
+To
+
+Enter the email address where you want to receive the notification.
+
+For example:
+
+your-email@epson.com
+
+Use your actual email address.
+
+Subject
+
+SUCCESS - GNS Tbl Authority Updated
+
+Body
+
+You can use:
+
+GNS Tbl Authority synchronization completed successfully.
+
+The Excel file TblAuthorityData.xlsx was successfully processed and the SharePoint List GNS Tbl Authority was updated.
+
+Status: SUCCESS
+
+
+---
+
+4. Configure the Success Email to Run ONLY on Success
+
+This is the important part.
+
+On the Send an email (V2) action, click:
+
+...
+
+Then select:
+
+Configure run after
+
+You will see options such as:
+
+☐ is successful
+☐ has failed
+☐ is skipped
+☐ has timed out
+
+Select ONLY:
+
+☑ is successful
+
+Then click:
+
+Done
+
+Now the flow means:
+
+Scope succeeds
+      ↓
+Send SUCCESS email
+
+If the Scope fails, this email will not be sent.
+
+
+---
+
+5. Add the Error Email
+
+Now we need a second email that runs when the Scope fails.
+
+Click:
+
++ New step
+
+Add another:
+
+Office 365 Outlook → Send an email (V2)
+
+Rename it:
+
+Send Error Notification
+
+Configure:
+
+To
+
+Your notification email address.
+
+Subject
+
+ERROR - GNS Tbl Authority Synchronization Failed
+
+Body
+
+I recommend including the flow run information:
+
+GNS Tbl Authority synchronization FAILED.
+
+The Power Automate flow was unable to complete the synchronization between:
+
+Excel:
+TblAuthorityData.xlsx
+
+SharePoint List:
+GNS Tbl Authority
+
+Please check the Power Automate run history for the specific error.
+
+Status: FAILED
+
+
+---
+
+6. Configure the Error Email
+
+Click:
+
+...
+
+on the Send Error Notification action.
+
+Select:
+
+Configure run after
+
+You will see:
+
+☐ is successful
+☐ has failed
+☐ is skipped
+☐ has timed out
+
+For the error notification, select:
+
+☑ has failed
+☑ has timed out
+
+I also recommend selecting:
+
+☑ is skipped
+
+This can catch cases where the Scope didn't execute because an earlier dependency prevented it from running.
+
+So select:
+
+☐ is successful
+☑ has failed
+☑ is skipped
+☑ has timed out
+
+Then:
+
+Done
+
+
+---
+
+7. Final Flow
+
+Your flow should now look approximately like this:
+
+┌──────────────────────────────┐
+│ Manually trigger a flow      │
+└──────────────┬───────────────┘
+               ↓
+┌────────────────────────────────────────┐
+│ Scope: Synchronize GNS Tbl Authority   │
+│                                        │
+│ List rows present in a table           │
+│              ↓                         │
+│ Get items                              │
+│              ↓                         │
+│ Apply to each                          │
+│     └── Delete item                    │
+│              ↓                         │
+│ Apply to each                          │
+│     └── Create item                    │
+└──────────────┬─────────────────────────┘
+               │
+          ┌────┴─────┐
+          ↓          ↓
+       SUCCESS      ERROR
+          ↓          ↓
+┌───────────────┐ ┌──────────────────┐
+│ Send email    │ │ Send error email │
+│               │ │                  │
+│ SUCCESS       │ │ ERROR            │
+└───────────────┘ └──────────────────┘
+
+
+---
+
+8. Very Important: Success Email Only After EVERYTHING Finishes
+
+Because the entire synchronization process is inside the Scope:
+
+Scope
+ ├── Read Excel
+ ├── Get SharePoint records
+ ├── Delete old records
+ └── Create new records
+
+the success email won't be sent until all of those operations have completed successfully.
+
+For example:
+
+Read Excel       ✓
+Get SharePoint   ✓
+Delete records   ✓
+Create records   ✓
+                 ↓
+          SUCCESS EMAIL
+
+But if something fails:
+
+Read Excel       ✓
+Get SharePoint   ✓
+Delete records   ✓
+Create records   ✗
+                 ↓
+           ERROR EMAIL
+
+The success email won't be sent.
+
+Instead:
+
+ERROR EMAIL
+
+will be sent.
+
+
+---
+
+9. Make the Error Email More Useful
+
+You can make the error notification much more useful by including the Power Automate flow run link.
+
+In your error email, you can include information such as:
+
+GNS Tbl Authority synchronization FAILED.
+
+Excel File:
+TblAuthorityData.xlsx
+
+SharePoint List:
+GNS Tbl Authority
+
+Please check the Power Automate Run History for details.
+
+Flow:
+Update GNS Tbl Authority
+
+Time:
+[Execution time]
+
+You can insert dynamic content such as:
+
+Workflow()
+
+or use expressions to display the execution time.
+
+For example, the current execution time can be generated with:
+
+utcNow()
+
+
+---
+
+10. Optional: Include Number of Records
+
+I also recommend adding the number of records processed to the success email.
+
+For example:
+
+GNS Tbl Authority synchronization completed successfully.
+
+Excel File:
+TblAuthorityData.xlsx
+
+Records processed:
+125
+
+SharePoint List:
+GNS Tbl Authority
+
+Status:
+SUCCESS
+
+This is useful because you can immediately see whether the expected number of authority records was loaded.
+
+For example:
+
+Records processed: 1,245
+
+instead of just:
+
+SUCCESS
+
+
+---
+
+11. Recommended Email Messages
+
+Success
+
+Subject:
+SUCCESS - GNS Tbl Authority Updated
+
+GNS Tbl Authority synchronization completed successfully.
+
+The latest authority data from TblAuthorityData.xlsx has been successfully synchronized to the SharePoint List GNS Tbl Authority.
+
+Excel File:
+TblAuthorityData.xlsx
+
+SharePoint List:
+GNS Tbl Authority
+
+Status:
+SUCCESS
+
+Time:
+[Execution time]
+
+Error
+
+Subject:
+ERROR - GNS Tbl Authority Synchronization Failed
+
+GNS Tbl Authority synchronization FAILED.
+
+The Power Automate flow was unable to complete the synchronization.
+
+Excel File:
+TblAuthorityData.xlsx
+
+SharePoint List:
+GNS Tbl Authority
+
+Status:
+FAILED
+
+Time:
+[Execution time]
+
+Please check the Power Automate Run History for the detailed error information.
+
+
+---
+
+One important improvement to your current flow
+
+Since your flow deletes all SharePoint records first and then creates the records from Excel, I strongly recommend adding one more protection before using this in production:
+
+Excel successfully read?
+       ↓
+YES → Delete SharePoint records
+       ↓
+       Create new records
+
+NO
+ ↓
+Do NOT delete SharePoint records
+ ↓
+Send ERROR email
+
+This prevents a problem such as the Excel file being empty or unavailable from accidentally causing your GNS Tbl Authority SharePoint List to be emptied.
+
+I can also show you exactly how to build this protected version, including the Scope, error handling, success/error emails, record count, and the exact Power Automate expressions.
+
+
+
+****
+
+
 Absolutely. Let's build the Power Automate flow step-by-step from the beginning, using your exact setup:
 
 Excel file: TblAuthorityData.xlsx
