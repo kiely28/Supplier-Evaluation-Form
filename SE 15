@@ -1,3 +1,1071 @@
+Absolutely. Let's build the Power Automate flow step-by-step from the beginning, using your exact setup:
+
+Excel file: TblAuthorityData.xlsx
+
+Excel table: TblAuthorityData
+
+SharePoint List: GNS Tbl Authority
+
+SharePoint columns:
+
+UserID
+
+Username
+
+Department
+
+
+
+The flow will do a full refresh:
+
+> Read Excel → Get existing SharePoint records → Delete them → Read each Excel row → Create new SharePoint item
+
+
+
+This is a good approach if the Excel file is a complete export of the SQL Server authority data.
+
+
+---
+
+1. Overall Flow
+
+The finished flow will look like this:
+
+Manual/Scheduled Trigger
+        ↓
+List rows present in a table
+        ↓
+Get items
+        ↓
+Apply to each - Delete existing SharePoint items
+        ↓
+Apply to each - Excel rows
+        ↓
+Create item in SharePoint
+
+More visually:
+
+┌──────────────────────────────┐
+│ 1. Trigger                   │
+│ Manual / Scheduled            │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 2. List rows present in      │
+│    Excel table               │
+│                              │
+│ TblAuthorityData.xlsx        │
+│ TblAuthorityData             │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 3. Get items                 │
+│    GNS Tbl Authority         │
+└──────────────┬───────────────┘
+               ↓
+┌──────────────────────────────┐
+│ 4. Apply to each             │
+│    Existing SharePoint items │
+│             ↓                │
+│       Delete item            │
+└──────────────────────────────┘
+
+               ↓
+
+┌──────────────────────────────┐
+│ 5. Apply to each             │
+│    Excel rows                │
+│             ↓                │
+│       Create item            │
+│                              │
+│ UserID     ← UserID          │
+│ Username   ← Username        │
+│ Department ← Department      │
+└──────────────────────────────┘
+
+
+---
+
+2. Before Creating the Flow
+
+First make sure your Excel file is actually stored in SharePoint.
+
+Your file is:
+
+TblAuthorityData.xlsx
+
+in:
+
+ISD-Portal
+    └── GNS Reactivation Archive
+          └── TblAuthorityData.xlsx
+
+And inside the workbook you have:
+
+Sheet1
+
+Table:
+TblAuthorityData
+
+The table should contain something similar to:
+
+UserID	Username	Department
+
+100001	Juan Dela Cruz	ISD
+100002	Pedro Santos	HR
+100003	Maria Garcia	Finance
+
+
+Your SQL stored procedure can return additional columns too, but for this flow we're interested in:
+
+UserID
+Username
+Department
+
+
+---
+
+3. Create the Power Automate Flow
+
+Go to:
+
+Power Automate
+
+Then select:
+
+Create
+
+Choose:
+
+Scheduled cloud flow
+
+For example:
+
+Flow name:
+
+Update GNS Tbl Authority
+
+For the first test, you can also choose Instant cloud flow → Manually trigger a flow.
+
+I recommend Manual trigger first.
+
+That allows you to test the flow without waiting for a scheduled execution.
+
+Select:
+
+Create
+
+
+---
+
+4. Configure the Trigger
+
+If you selected:
+
+Manually trigger a flow
+
+you don't need to add anything.
+
+You will have:
+
+Manually trigger a flow
+
+This is enough for testing.
+
+Later, we can change it to:
+
+Recurrence
+
+if you want it to automatically update the SharePoint list.
+
+For example:
+
+Every 1 hour
+
+
+---
+
+5. Add "List rows present in a table"
+
+Click:
+
++ New step
+
+Search for:
+
+List rows present in a table
+
+Select:
+
+Excel Online (Business) → List rows present in a table
+
+This is the action that reads your TblAuthorityData.xlsx.
+
+
+---
+
+6. Configure the Excel Action
+
+You should see fields similar to:
+
+Location
+Document Library
+File
+Table
+
+Configure them as follows.
+
+Location
+
+Select your SharePoint site.
+
+For example:
+
+https://epsongroup.sharepoint.com/sites/00S_01605
+
+Don't manually type the URL if Power Automate provides a dropdown. Select the SharePoint site from the available locations.
+
+
+---
+
+Document Library
+
+Select:
+
+ISD-Portal
+
+
+---
+
+File
+
+Click the folder/file selector.
+
+Navigate to:
+
+GNS Reactivation Archive
+
+Then select:
+
+TblAuthorityData.xlsx
+
+You should end up with something like:
+
+Location:
+SharePoint Site
+
+Document Library:
+ISD-Portal
+
+File:
+GNS Reactivation Archive/TblAuthorityData.xlsx
+
+
+---
+
+Table
+
+This is very important.
+
+Select:
+
+TblAuthorityData
+
+Do not select Sheet1.
+
+Your VBA creates this table:
+
+tbl.Name = "TblAuthorityData"
+
+Therefore Power Automate should use:
+
+TblAuthorityData
+
+
+---
+
+7. Your First Action Is Now Complete
+
+You should have:
+
+Manually trigger a flow
+        ↓
+List rows present in a table
+
+The Excel action will return something called:
+
+value
+
+value contains all the rows from your Excel table.
+
+For example:
+
+value
+ ├── UserID: 100001
+ │   Username: Juan Dela Cruz
+ │   Department: ISD
+ │
+ ├── UserID: 100002
+ │   Username: Pedro Santos
+ │   Department: HR
+ │
+ └── UserID: 100003
+     Username: Maria Garcia
+     Department: Finance
+
+We'll use this later.
+
+
+---
+
+8. Add "Get items"
+
+Now click:
+
++ New step
+
+Search:
+
+Get items
+
+Select:
+
+SharePoint → Get items
+
+Configure:
+
+Site Address
+
+Select your SharePoint site:
+
+00S_01605
+
+List Name
+
+Select:
+
+GNS Tbl Authority
+
+So you should have:
+
+Get items
+
+Site Address:
+00S_01605
+
+List Name:
+GNS Tbl Authority
+
+This action retrieves all the existing records in your SharePoint list.
+
+
+---
+
+9. Why Are We Getting the Existing Items?
+
+Suppose your SharePoint List currently contains:
+
+ID	UserID	Username	Department
+
+1	100001	Juan	ISD
+2	100002	Pedro	HR
+3	100003	Maria	Finance
+
+
+Then your new Excel export contains:
+
+UserID	Username	Department
+
+100001	Juan	ISD
+100002	Pedro	HR
+100004	Ana	Accounting
+
+
+We don't want the old SharePoint records to remain.
+
+Otherwise we could end up with:
+
+100001
+100002
+100003   ← old
+100001   ← new
+100002   ← new
+100004   ← new
+
+So the flow will first remove the old records.
+
+
+---
+
+10. Add "Apply to each" for SharePoint Items
+
+Click:
+
++ New step
+
+Search:
+
+Apply to each
+
+Select:
+
+Control → Apply to each
+
+You will see:
+
+Select an output from previous steps
+
+Click the field.
+
+From Get items, select:
+
+value
+
+It should look like:
+
+Apply to each
+    Select an output:
+        value
+
+The value here comes from Get items, not Excel.
+
+
+---
+
+11. Put "Delete item" Inside the Apply to Each
+
+Inside the Apply to each, click:
+
+Add an action
+
+Search:
+
+Delete item
+
+Select:
+
+SharePoint → Delete item
+
+Configure:
+
+Site Address
+
+00S_01605
+
+List Name
+
+GNS Tbl Authority
+
+Id
+
+For the Id field, select:
+
+ID
+
+from Get items.
+
+Be careful here.
+
+You want:
+
+Delete item
+    Site Address → 00S_01605
+    List Name    → GNS Tbl Authority
+    Id           → ID
+
+The ID is the SharePoint item's internal ID.
+
+
+---
+
+12. First Part of Flow Is Complete
+
+You now have:
+
+Manually trigger a flow
+        ↓
+List rows present in a table
+        ↓
+Get items
+        ↓
+Apply to each
+        ↓
+Delete item
+
+The first Apply to each means:
+
+> For every existing record in GNS Tbl Authority, delete that record.
+
+
+
+
+---
+
+13. Important: Avoid Deleting Only 100 Records
+
+Depending on your environment and action settings, Get items can return a limited number of records unless pagination is enabled.
+
+If your GNS Tbl Authority list could contain more than 100 records, configure pagination.
+
+Open the Get items action.
+
+Click the:
+
+...
+
+menu.
+
+Select:
+
+Settings
+
+Find:
+
+Pagination
+
+Turn it:
+
+ON
+
+Set the threshold to something appropriate, for example:
+
+5000
+
+Then select:
+
+Done
+
+This allows the action to retrieve more SharePoint records.
+
+
+---
+
+14. Now Create the New SharePoint Records
+
+After the first Apply to each, click:
+
++ New step
+
+Add another:
+
+Apply to each
+
+This time, we want the Excel rows.
+
+For:
+
+Select an output from previous steps
+
+select:
+
+value
+
+from:
+
+List rows present in a table
+
+There will be two value options in Dynamic content.
+
+This is where you need to be careful.
+
+You want:
+
+List rows present in a table
+    → value
+
+NOT:
+
+Get items
+    → value
+
+Your flow is now:
+
+Manually trigger a flow
+        ↓
+List rows present in a table
+        ↓
+Get items
+        ↓
+Apply to each
+   └── Delete item
+        ↓
+Apply to each
+        ↓
+   Create item
+
+
+---
+
+15. Add "Create item"
+
+Inside the second Apply to each, select:
+
+Add an action
+
+Search:
+
+Create item
+
+Select:
+
+SharePoint → Create item
+
+Configure:
+
+Site Address
+
+00S_01605
+
+List Name
+
+GNS Tbl Authority
+
+After selecting the list, Power Automate should display your SharePoint fields.
+
+Something like:
+
+UserID
+Username
+Department
+
+
+---
+
+16. Map UserID
+
+Click the:
+
+UserID
+
+field.
+
+The Dynamic content panel will appear.
+
+Find the Excel column:
+
+UserID
+
+under:
+
+List rows present in a table
+
+Select it.
+
+You should have:
+
+UserID
+    ↓
+UserID from Excel
+
+
+---
+
+17. Map Username
+
+Click:
+
+Username
+
+Then select:
+
+Username
+
+from:
+
+List rows present in a table
+
+So:
+
+Username
+    ↓
+Username from Excel
+
+
+---
+
+18. Map Department
+
+Click:
+
+Department
+
+Then select:
+
+Department
+
+from:
+
+List rows present in a table
+
+So:
+
+Department
+    ↓
+Department from Excel
+
+
+---
+
+19. Your Create Item Should Look Like This
+
+Conceptually:
+
+Create item
+
+Site Address:
+00S_01605
+
+List Name:
+GNS Tbl Authority
+
+UserID:
+    ← UserID
+
+Username:
+    ← Username
+
+Department:
+    ← Department
+
+The values on the right come from the Excel action.
+
+
+---
+
+20. Complete Flow
+
+Your final flow should look like:
+
+┌──────────────────────────────────────┐
+│ Manually trigger a flow              │
+└──────────────────┬───────────────────┘
+                   ↓
+┌──────────────────────────────────────┐
+│ List rows present in a table         │
+│                                      │
+│ File: TblAuthorityData.xlsx          │
+│ Table: TblAuthorityData              │
+└──────────────────┬───────────────────┘
+                   ↓
+┌──────────────────────────────────────┐
+│ Get items                            │
+│                                      │
+│ List: GNS Tbl Authority              │
+└──────────────────┬───────────────────┘
+                   ↓
+        ┌─────────────────────┐
+        │ Apply to each       │
+        │ Existing SP items  │
+        └──────────┬──────────┘
+                   ↓
+        ┌─────────────────────┐
+        │ Delete item         │
+        │                     │
+        │ GNS Tbl Authority   │
+        └─────────────────────┘
+
+                   ↓
+
+        ┌─────────────────────┐
+        │ Apply to each       │
+        │ Excel rows          │
+        └──────────┬──────────┘
+                   ↓
+        ┌─────────────────────┐
+        │ Create item         │
+        │                     │
+        │ UserID ← UserID     │
+        │ Username ← Username │
+        │ Department ← Dept.  │
+        └─────────────────────┘
+
+
+---
+
+21. Test the Flow
+
+Save the flow.
+
+Click:
+
+Test
+
+Select:
+
+Manually
+
+Then:
+
+Run flow
+
+Power Automate should execute the actions in order.
+
+You can open each action to see whether it succeeded.
+
+For example:
+
+✓ Manually trigger a flow
+✓ List rows present in a table
+✓ Get items
+✓ Apply to each
+   ✓ Delete item
+   ✓ Delete item
+   ✓ Delete item
+✓ Apply to each
+   ✓ Create item
+   ✓ Create item
+   ✓ Create item
+
+
+---
+
+22. Check the Excel Data
+
+Before testing, it's a good idea to verify that the Excel table contains data.
+
+For example:
+
+TblAuthorityData
+
+UserID       Username          Department
+------------------------------------------------
+E0001        Juan Dela Cruz    ISD
+E0002        Pedro Santos      HR
+E0003        Maria Santos      Finance
+
+The flow should create:
+
+GNS Tbl Authority
+
+UserID       Username          Department
+------------------------------------------------
+E0001        Juan Dela Cruz    ISD
+E0002        Pedro Santos      HR
+E0003        Maria Santos      Finance
+
+
+---
+
+23. Important Excel Pagination Setting
+
+There's another important consideration.
+
+The List rows present in a table action can also have a row limit.
+
+If you have more than a few hundred authority records, open:
+
+List rows present in a table → ... → Settings
+
+Look for:
+
+Pagination
+
+Turn it on.
+
+For example:
+
+Pagination: On
+Threshold: 5000
+
+This helps ensure the flow processes the entire Excel table rather than only the default number of rows.
+
+
+---
+
+24. Recommended Concurrency Settings
+
+For the Delete item Apply to each, I recommend initially leaving concurrency off.
+
+Why?
+
+Because you're deleting many SharePoint records, and processing them sequentially is easier to troubleshoot.
+
+For example:
+
+Apply to each
+    Concurrency Control: Off
+
+Likewise, for the Create item loop, leave it off initially.
+
+Once everything works, you can optimize it if necessary.
+
+
+---
+
+25. What Happens When VBA Updates the Excel File?
+
+Your VBA does this:
+
+SQL Server
+     ↓
+TBLAUTH_GET_GNSUSER_DATA
+     ↓
+Excel workbook
+     ↓
+TblAuthorityData.xlsx
+
+Then Power Automate does:
+
+TblAuthorityData.xlsx
+     ↓
+Read Excel table
+     ↓
+Delete old SharePoint data
+     ↓
+Create new SharePoint data
+
+So your complete process can eventually be:
+
+SQL SERVER
+                  │
+                  │
+                  ▼
+     TBLAUTH_GET_GNSUSER_DATA
+                  │
+                  ▼
+             Excel VBA
+                  │
+                  ▼
+       TblAuthorityData.xlsx
+                  │
+                  │ SharePoint
+                  ▼
+        Power Automate Flow
+                  │
+          ┌───────┴───────┐
+          ▼               ▼
+       DELETE            CREATE
+     old records       new records
+          │               │
+          └───────┬───────┘
+                  ▼
+       GNS Tbl Authority
+
+
+---
+
+26. One Thing I Recommend Changing in Your VBA
+
+Your VBA currently uses:
+
+exportPath = "https://epsongroup.sharepoint.com/sites/00S_01605/ISD-Portal/GNS%20Reactivation%20Archive/TblAuthorityData.xlsx"
+
+There is a potential issue with using a SharePoint URL directly as the Filename of Workbook.SaveAs.
+
+If this is currently working in your environment, that's fine, but Power Automate should access the resulting file through the SharePoint connector, not through that URL.
+
+The Power Automate configuration should therefore identify:
+
+Site:
+00S_01605
+
+Library:
+ISD-Portal
+
+Folder:
+GNS Reactivation Archive
+
+File:
+TblAuthorityData.xlsx
+
+Table:
+TblAuthorityData
+
+
+---
+
+27. Recommended Next Step: Make It Automatic
+
+Once the manual flow works, I would change:
+
+Manually trigger a flow
+
+to:
+
+Recurrence
+
+For example:
+
+Every 1 hour
+
+Then your system becomes:
+
+SQL SERVER
+                  ↓
+             Excel VBA
+                  ↓
+       TblAuthorityData.xlsx
+                  ↓
+         Scheduled Flow
+                  ↓
+        GNS Tbl Authority
+
+However, the exact timing matters. You don't want Power Automate to read the Excel file while VBA is still writing/updating it.
+
+A safer production design is:
+
+VBA finishes exporting
+          ↓
+Power Automate starts
+          ↓
+Read Excel
+          ↓
+Refresh SharePoint
+
+rather than having Power Automate blindly run at the same time as VBA.
+
+
+---
+
+One more important improvement
+
+For your particular setup, I would actually recommend a slightly different production flow if GNS Tbl Authority is going to be used by your Power Apps application.
+
+Instead of:
+
+Delete ALL
+     ↓
+Create ALL
+
+we can make it:
+
+Read Excel
+     ↓
+For each Excel UserID
+     ↓
+Check SharePoint UserID
+     ↓
+If exists → Update
+     ↓
+If doesn't exist → Create
+     ↓
+Optionally remove users no longer in Excel
+
+That approach preserves the SharePoint item's internal ID and is generally better if other SharePoint data or references depend on those items.
+
+For example:
+
+Excel
+E0001 → Juan
+E0002 → Pedro
+E0003 → Maria
+
+          ↓
+
+SharePoint
+E0001 → Update
+E0002 → Update
+E0003 → Update
+E0004 → Remove if no longer in Excel
+E0005 → Remove if no longer in Excel
+
+For a simple authority/master-data list, however, the full refresh flow above is much easier to build and maintain, so I recommend getting that working first.
+
+
+
+*****
+
+
 Yes. Only the User ID and Username destination cells need to change.
 
 The mapping will now be:
