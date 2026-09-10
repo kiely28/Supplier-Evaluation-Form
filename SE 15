@@ -1,3 +1,276 @@
+Yes. Since your WinActor output is specifically .xls (Excel 97–2003 format), I recommend using a separate VBA protection macro that WinActor runs after it finishes creating the output.
+
+Recommended setup
+
+WinActor
+   ↓
+Generate Output.xls
+   ↓
+Run Excel VBA Protection Macro
+   ↓
+Protect worksheet
+   ↓
+Protect workbook structure
+   ↓
+Save Output.xls
+   ↓
+Close Excel
+
+The important point is that the protection macro does not need to be inside the output .xls file. This is useful because WinActor can continue generating a normal .xls.
+
+
+---
+
+1. Create a separate ProtectExcel.xlsm
+
+For example:
+
+D:\WinActor\Tools\ProtectExcel.xlsm
+
+Put this VBA code in a standard module:
+
+Option Explicit
+
+Public Sub ProtectOutputExcel()
+
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim password As String
+
+    '=========================================
+    ' SETTINGS
+    '=========================================
+    filePath = "D:\WinActor\Output\Output.xls"
+    password = "YourPassword123"
+
+    '=========================================
+    ' OPEN OUTPUT FILE
+    '=========================================
+    Set wb = Workbooks.Open(filePath)
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    '=========================================
+    ' PROTECT ALL WORKSHEETS
+    '=========================================
+    For Each ws In wb.Worksheets
+
+        'Make all cells locked
+        ws.Cells.Locked = True
+
+        'Protect worksheet
+        ws.Protect Password:=password, _
+                   Contents:=True, _
+                   DrawingObjects:=True, _
+                   Scenarios:=True
+
+    Next ws
+
+    '=========================================
+    ' PROTECT WORKBOOK STRUCTURE
+    '=========================================
+    wb.Protect Password:=password, Structure:=True
+
+    '=========================================
+    ' SAVE AS .XLS
+    '=========================================
+    wb.Save
+
+    '=========================================
+    ' CLOSE
+    '=========================================
+    wb.Close SaveChanges:=True
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+    MsgBox "Excel file protection completed.", vbInformation
+
+End Sub
+
+
+---
+
+2. What this does
+
+Suppose WinActor creates:
+
+D:\WinActor\Output\SupplierPayment.xls
+
+The VBA opens it and applies:
+
+Worksheet protection
+
+Users will not be able to normally:
+
+Change cell values
+
+Delete cell contents
+
+Edit formulas
+
+Change locked cells
+
+
+Workbook protection
+
+It can also prevent users from easily:
+
+Adding worksheets
+
+Deleting worksheets
+
+Renaming worksheets
+
+Moving/copying worksheets
+
+
+The important part is:
+
+ws.Cells.Locked = True
+
+followed by:
+
+ws.Protect Password:=password
+
+
+---
+
+3. Better approach for your WinActor process
+
+I would actually recommend not using a fixed filename in the VBA if WinActor creates different output files.
+
+For example, WinActor may create:
+
+111200.xls
+111201.xls
+111202.xls
+
+Instead, make the VBA accept the filename as an argument.
+
+For example:
+
+WinActor
+   ↓
+Create 111200.xls
+   ↓
+Run ProtectExcel.xlsm
+   ↓
+Protect 111200.xls
+   ↓
+Finish
+
+This makes the process much easier to reuse.
+
+
+---
+
+4. If users should be able to edit only certain cells
+
+This is also possible.
+
+For example, suppose your Excel output has:
+
+Cell	Purpose	User can edit?
+
+A1	Supplier Code	❌
+B1	Supplier Name	❌
+C5	System Result	❌
+D5	User Comment	✅
+E5	Remarks	✅
+
+
+You can lock everything first:
+
+ws.Cells.Locked = True
+
+Then unlock specific cells:
+
+ws.Range("D5:E5").Locked = False
+
+Then protect:
+
+ws.Protect Password:=password
+
+The user can edit D5:E5, while the other cells remain protected.
+
+This is probably the better design if the output Excel is intended to be a form that users need to complete.
+
+
+---
+
+5. One important thing about .xls
+
+Because your file is .xls, I recommend explicitly keeping it in the old Excel format.
+
+If you use:
+
+wb.Save
+
+after opening an existing .xls, Excel should normally retain the existing format.
+
+If you need to explicitly save as .xls, you can use:
+
+wb.SaveAs Filename:=filePath, _
+          FileFormat:=xlExcel8
+
+xlExcel8 is the Excel 97–2003 .xls format.
+
+
+---
+
+6. Security recommendation
+
+One thing I want to emphasize: Excel worksheet protection is mainly an editing restriction, not strong security.
+
+For your requirement:
+
+> "The WinActor output Excel can't be edited by someone."
+
+
+
+I would use two layers:
+
+WinActor
+                ↓
+         Generate .xls
+                ↓
+      VBA Worksheet Protection
+                ↓
+       Windows Folder Permission
+                ↓
+          User can READ
+          User cannot MODIFY
+
+The VBA protection prevents normal editing inside Excel.
+
+Windows folder permissions can prevent the user from simply replacing or overwriting the original file.
+
+If the requirement is simply "users should not accidentally change the WinActor output"
+
+VBA worksheet protection is a good solution.
+
+If the requirement is "users must absolutely not be able to modify the original file"
+
+Use Windows/SharePoint permissions in addition to VBA protection.
+
+
+---
+
+For your situation, I recommend this
+
+Since you're using WinActor + .xls output, I'd start with:
+
+ProtectExcel.xlsm → open WinActor output → lock all cells → protect sheet → protect workbook → save .xls → close.
+
+If you tell me the actual folder where WinActor creates the .xls file and whether the filename is always the same or changes, I can give you the complete VBA + WinActor step-by-step procedure, including how WinActor passes the .xls filename to the VBA macro.
+
+
+****
+
+
 Sure. Here are several versions with the same simple and professional tone:
 
 Good day!
