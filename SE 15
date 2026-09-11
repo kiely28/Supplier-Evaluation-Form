@@ -1,3 +1,198 @@
+Yes. Run-time error 91 means VBA is trying to use an object variable that hasn't been successfully assigned.
+
+In the macro I gave you, the most likely places are wb or ws, especially if the Excel file didn't open successfully or the error handler itself tries to reference ws.Name.
+
+I recommend simplifying the error handling and checking each object before using it.
+
+Use this safer version
+
+Option Explicit
+
+Public Sub ProtectOutputExcel()
+
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim password As String
+
+    On Error GoTo ErrorHandler
+
+    '=========================================
+    ' SETTINGS
+    '=========================================
+    filePath = "D:\WinActor\Output\Output.xls"
+    password = "YourPassword123"
+
+    '=========================================
+    ' CHECK FILE
+    '=========================================
+    If Dir(filePath) = "" Then
+        MsgBox "The Excel file was not found." & vbCrLf & vbCrLf & _
+               "File: " & filePath, _
+               vbCritical, "File Not Found"
+        Exit Sub
+    End If
+
+    '=========================================
+    ' OPEN FILE
+    '=========================================
+    Set wb = Workbooks.Open(filePath)
+
+    If wb Is Nothing Then
+        MsgBox "The Excel file could not be opened." & vbCrLf & vbCrLf & _
+               "File: " & filePath, _
+               vbCritical, "Open Error"
+        Exit Sub
+    End If
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    '=========================================
+    ' PROCESS WORKSHEETS
+    '=========================================
+    For Each ws In wb.Worksheets
+
+        'Check worksheet object
+        If ws Is Nothing Then
+            MsgBox "A worksheet object was not found.", _
+                   vbCritical, "Worksheet Error"
+            GoTo CleanUp
+        End If
+
+        '-------------------------------------
+        ' Unprotect worksheet if protected
+        '-------------------------------------
+        If ws.ProtectContents Then
+            ws.Unprotect Password:=password
+        End If
+
+        '-------------------------------------
+        ' Lock used cells
+        '-------------------------------------
+        If ws.UsedRange Is Nothing Then
+            MsgBox "UsedRange could not be accessed." & vbCrLf & _
+                   "Worksheet: " & ws.Name, _
+                   vbCritical, "Range Error"
+            GoTo CleanUp
+        End If
+
+        ws.UsedRange.Locked = True
+
+        '-------------------------------------
+        ' Protect worksheet
+        '-------------------------------------
+        ws.Protect Password:=password, _
+                   Contents:=True, _
+                   DrawingObjects:=True, _
+                   Scenarios:=True
+
+    Next ws
+
+    '=========================================
+    ' PROTECT WORKBOOK STRUCTURE
+    '=========================================
+    If wb.ProtectStructure Then
+        wb.Unprotect Password:=password
+    End If
+
+    wb.Protect Password:=password, Structure:=True
+
+    '=========================================
+    ' SAVE
+    '=========================================
+    wb.Save
+
+    MsgBox "Excel file protection completed successfully." & vbCrLf & vbCrLf & _
+           "File: " & filePath, _
+           vbInformation, "Protection Complete"
+
+CleanUp:
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+    If Not wb Is Nothing Then
+        wb.Close SaveChanges:=False
+    End If
+
+    Set ws = Nothing
+    Set wb = Nothing
+
+    Exit Sub
+
+'=========================================
+' ERROR HANDLER
+'=========================================
+ErrorHandler:
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+    Dim sheetName As String
+
+    sheetName = "(Unknown)"
+
+    If Not ws Is Nothing Then
+        sheetName = ws.Name
+    End If
+
+    MsgBox "An error occurred while protecting the Excel file." & vbCrLf & vbCrLf & _
+           "Error Number: " & Err.Number & vbCrLf & _
+           "Description: " & Err.Description & vbCrLf & vbCrLf & _
+           "Worksheet: " & sheetName & vbCrLf & _
+           "File: " & filePath, _
+           vbCritical, "Protection Error"
+
+    On Error Resume Next
+
+    If Not wb Is Nothing Then
+        wb.Close SaveChanges:=False
+    End If
+
+    Set ws = Nothing
+    Set wb = Nothing
+
+End Sub
+
+Why this is better
+
+The important change is this:
+
+If Not wb Is Nothing Then
+    wb.Close SaveChanges:=False
+End If
+
+and:
+
+If Not ws Is Nothing Then
+    sheetName = ws.Name
+End If
+
+This prevents the error handler itself from causing Error 91 when wb or ws hasn't been successfully created.
+
+One more recommendation
+
+Since your original error was:
+
+> Unable to set the Locked property of the Range class
+
+
+
+I would first test the macro with:
+
+ws.UsedRange.Locked = True
+
+instead of:
+
+ws.Cells.Locked = True
+
+If you still get an error, please upload the actual .xls output file here. I can inspect the workbook structure and determine whether the problem is caused by protection, merged cells, special worksheet content, or something else.
+
+
+****
+
+
 Run-time error '91':
 
 Object variable or With block variable not set
