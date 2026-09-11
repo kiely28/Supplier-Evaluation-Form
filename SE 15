@@ -1,3 +1,182 @@
+Yes. That error usually occurs because the .xls contains a protected worksheet, merged cells, or a range that Excel does not allow VBA to change with .Locked.
+
+Instead of stopping at:
+
+ws.Cells.Locked = True
+
+we can make the macro more robust and add a message box showing exactly where the error occurred.
+
+Try this version:
+
+Option Explicit
+
+Public Sub ProtectOutputExcel()
+
+    Dim wb As Workbook
+    Dim ws As Worksheet
+    Dim filePath As String
+    Dim password As String
+
+    On Error GoTo ErrorHandler
+
+    '=========================================
+    ' SETTINGS
+    '=========================================
+    filePath = "D:\WinActor\Output\Output.xls"
+    password = "YourPassword123"
+
+    '=========================================
+    ' OPEN OUTPUT FILE
+    '=========================================
+    Set wb = Workbooks.Open(filePath)
+
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    '=========================================
+    ' PROCESS EACH WORKSHEET
+    '=========================================
+    For Each ws In wb.Worksheets
+
+        '-------------------------------------
+        ' Unprotect first
+        '-------------------------------------
+        If ws.ProtectContents Then
+            ws.Unprotect Password:=password
+        End If
+
+        '-------------------------------------
+        ' Unlock everything first
+        '-------------------------------------
+        ws.Cells.Locked = False
+
+        '-------------------------------------
+        ' Lock everything
+        '-------------------------------------
+        ws.Cells.Locked = True
+
+        '-------------------------------------
+        ' Protect worksheet
+        '-------------------------------------
+        ws.Protect Password:=password, _
+                   Contents:=True, _
+                   DrawingObjects:=True, _
+                   Scenarios:=True
+
+    Next ws
+
+    '=========================================
+    ' PROTECT WORKBOOK STRUCTURE
+    '=========================================
+    If wb.ProtectStructure Then
+        wb.Unprotect Password:=password
+    End If
+
+    wb.Protect Password:=password, Structure:=True
+
+    '=========================================
+    ' SAVE
+    '=========================================
+    wb.Save
+
+    '=========================================
+    ' CLOSE
+    '=========================================
+    wb.Close SaveChanges:=True
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+    MsgBox "Excel file protection completed successfully." & vbCrLf & _
+           "File: " & filePath, _
+           vbInformation, "Protection Complete"
+
+    Exit Sub
+
+'=========================================
+' ERROR HANDLER
+'=========================================
+ErrorHandler:
+
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+
+    MsgBox "An error occurred while protecting the Excel file." & vbCrLf & vbCrLf & _
+           "Error Number: " & Err.Number & vbCrLf & _
+           "Error Description: " & Err.Description & vbCrLf & vbCrLf & _
+           "Worksheet: " & IIf(ws Is Nothing, "(Unknown)", ws.Name) & vbCrLf & _
+           "File: " & filePath, _
+           vbCritical, "Protection Error"
+
+    On Error Resume Next
+
+    If Not wb Is Nothing Then
+        wb.Close SaveChanges:=False
+    End If
+
+End Sub
+
+However, for your specific error
+
+The problematic line is probably:
+
+ws.Cells.Locked = True
+
+If your .xls contains a large/complex worksheet, I recommend avoiding ws.Cells.Locked entirely.
+
+A safer approach is to use the worksheet's used range:
+
+ws.UsedRange.Locked = True
+
+So replace:
+
+ws.Cells.Locked = False
+ws.Cells.Locked = True
+
+with:
+
+ws.UsedRange.Locked = True
+
+Recommended version
+
+For a WinActor-generated .xls, I would use:
+
+For Each ws In wb.Worksheets
+
+    If ws.ProtectContents Then
+        ws.Unprotect Password:=password
+    End If
+
+    ws.UsedRange.Locked = True
+
+    ws.Protect Password:=password, _
+               Contents:=True, _
+               DrawingObjects:=True, _
+               Scenarios:=True
+
+Next ws
+
+This limits the operation to the area Excel considers used instead of trying to modify the entire worksheet.
+
+
+---
+
+If you still get Error 1004
+
+The new message box will tell you something like:
+
+An error occurred while protecting the Excel file.
+
+Error Number: 1004
+Error Description: Unable to set the Locked property of the Range class
+
+Worksheet: Sheet1
+File: D:\WinActor\Output\Output.xls
+
+If you can upload the actual .xls file, I can check the workbook structure and help identify why the Locked property cannot be changed.
+
+****
+
 Run-time error '1004':
 
 Unable to set the Locked property of the Range class
