@@ -1,3 +1,9 @@
+Run-time error '91':
+
+Object variable or With block variable not set
+
+****
+
 Yes. That error usually occurs because the .xls contains a protected worksheet, merged cells, or a range that Excel does not allow VBA to change with .Locked.
 
 Instead of stopping at:
