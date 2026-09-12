@@ -1,3 +1,686 @@
+Yes. Your current macro can be changed so that TblAuthorityData.xlsx is opened directly, the existing TblAuthorityData table is reused, its old rows are removed, and the SQL results are inserted into the same table.
+
+The important changes are:
+
+No Workbooks.Add
+
+No ListObjects.Add
+
+No SaveAs
+
+Existing workbook is opened with Workbooks.Open
+
+Existing worksheet Sheet1 is accessed
+
+Existing table TblAuthorityData is accessed
+
+Existing table headers are preserved
+
+Existing data rows are removed
+
+SQL results are inserted
+
+Table is resized using tbl.Resize
+
+Table name is never changed
+
+Workbook is saved and closed
+
+SQL objects and workbook are cleaned up even if an error occurs
+
+
+Complete revised VBA
+
+Option Explicit
+
+Public Sub GetTblAuthorityData()
+
+    '==================================================
+    ' VARIABLES
+    '==================================================
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    
+    Dim wbExport As Workbook
+    Dim ws As Worksheet
+    Dim tbl As ListObject
+    
+    Dim serverName As String
+    Dim databaseName As String
+    Dim username As String
+    Dim password As String
+    
+    Dim connectionString As String
+    
+    Dim sharePointFile As String
+    
+    Dim firstDataRow As Long
+    Dim lastDataRow As Long
+    Dim tableFirstColumn As Long
+    Dim tableLastColumn As Long
+    
+    Dim sqlColumnCount As Long
+    Dim tableColumnCount As Long
+    
+    Dim i As Long
+    
+    Dim workbookWasOpened As Boolean
+    Dim saveSuccessful As Boolean
+    
+    Dim errNumber As Long
+    Dim errDescription As String
+    
+    On Error GoTo ErrorHandler
+    
+    '==================================================
+    ' APPLICATION SETTINGS
+    '==================================================
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.EnableEvents = False
+    
+    '==================================================
+    ' SQL SERVER SETTINGS
+    '==================================================
+    serverName = "192.168.0.1"
+    databaseName = "db_users"
+    username = "user"
+    password = "pass"
+    
+    '==================================================
+    ' SHAREPOINT EXCEL FILE
+    '==================================================
+    '
+    'IMPORTANT:
+    'This is the EXISTING Excel file.
+    'Do NOT use Workbooks.Add.
+    'Do NOT use SaveAs.
+    '
+    sharePointFile = _
+        "https://epsongroup.sharepoint.com/sites/00S_01605/" & _
+        "ISD-Portal/GNS%20Reactivation%20Archive/TblAuthorityData.xlsx"
+    
+    '==================================================
+    ' OPEN EXISTING WORKBOOK
+    '==================================================
+    '
+    'If the workbook is already open, use the existing
+    'workbook instead of opening another copy.
+    '
+    On Error Resume Next
+    Set wbExport = Workbooks("TblAuthorityData.xlsx")
+    On Error GoTo ErrorHandler
+    
+    If wbExport Is Nothing Then
+        
+        Set wbExport = Workbooks.Open( _
+            Filename:=sharePointFile, _
+            ReadOnly:=False, _
+            UpdateLinks:=False)
+        
+        workbookWasOpened = True
+        
+    Else
+        
+        workbookWasOpened = False
+        
+    End If
+    
+    'Check that workbook was successfully opened
+    If wbExport Is Nothing Then
+        
+        Err.Raise vbObjectError + 1000, _
+                  "GetTblAuthorityData", _
+                  "Unable to open the SharePoint workbook:" & _
+                  vbCrLf & sharePointFile
+        
+    End If
+    
+    '==================================================
+    ' ACCESS SHEET1
+    '==================================================
+    On Error Resume Next
+    Set ws = wbExport.Worksheets("Sheet1")
+    On Error GoTo ErrorHandler
+    
+    If ws Is Nothing Then
+        
+        Err.Raise vbObjectError + 1001, _
+                  "GetTblAuthorityData", _
+                  "Worksheet 'Sheet1' was not found in " & _
+                  "TblAuthorityData.xlsx."
+        
+    End If
+    
+    '==================================================
+    ' ACCESS EXISTING EXCEL TABLE
+    '==================================================
+    On Error Resume Next
+    Set tbl = ws.ListObjects("TblAuthorityData")
+    On Error GoTo ErrorHandler
+    
+    If tbl Is Nothing Then
+        
+        Err.Raise vbObjectError + 1002, _
+                  "GetTblAuthorityData", _
+                  "Excel table 'TblAuthorityData' was not found " & _
+                  "on Sheet1."
+        
+    End If
+    
+    '==================================================
+    ' CHECK TABLE STRUCTURE
+    '==================================================
+    '
+    'Get the number of columns in the existing table.
+    '
+    tableColumnCount = tbl.ListColumns.Count
+    
+    If tableColumnCount = 0 Then
+        
+        Err.Raise vbObjectError + 1003, _
+                  "GetTblAuthorityData", _
+                  "The existing table 'TblAuthorityData' " & _
+                  "does not contain any columns."
+        
+    End If
+    
+    '==================================================
+    ' SQL SERVER CONNECTION
+    '==================================================
+    connectionString = _
+        "Provider=SQLOLEDB;" & _
+        "Data Source=" & serverName & ";" & _
+        "Initial Catalog=" & databaseName & ";" & _
+        "User ID=" & username & ";" & _
+        "Password=" & password & ";"
+    
+    Set conn = CreateObject("ADODB.Connection")
+    
+    conn.CommandTimeout = 60
+    conn.Open connectionString
+    
+    '==================================================
+    ' STORED PROCEDURE
+    '==================================================
+    Set cmd = CreateObject("ADODB.Command")
+    
+    With cmd
+        .ActiveConnection = conn
+        .CommandType = 4          'adCmdStoredProc
+        .CommandText = "TBLAUTH_GET_GNSUSER_DATA"
+        .CommandTimeout = 60
+    End With
+    
+    '==================================================
+    ' EXECUTE STORED PROCEDURE
+    '==================================================
+    Set rs = cmd.Execute
+    
+    '==================================================
+    ' CHECK SQL RESULT
+    '==================================================
+    sqlColumnCount = rs.Fields.Count
+    
+    If sqlColumnCount = 0 Then
+        
+        Err.Raise vbObjectError + 1004, _
+                  "GetTblAuthorityData", _
+                  "The stored procedure returned zero columns."
+        
+    End If
+    
+    '==================================================
+    ' VERIFY SQL COLUMNS MATCH EXISTING TABLE
+    '==================================================
+    '
+    'We do NOT recreate the table.
+    '
+    'The SQL result must have the same number of columns
+    'as the existing Excel table.
+    '
+    If sqlColumnCount <> tableColumnCount Then
+        
+        Err.Raise vbObjectError + 1005, _
+                  "GetTblAuthorityData", _
+                  "The SQL result does not match the existing " & _
+                  "TblAuthorityData table." & vbCrLf & vbCrLf & _
+                  "Existing table columns: " & tableColumnCount & vbCrLf & _
+                  "SQL result columns: " & sqlColumnCount & vbCrLf & vbCrLf & _
+                  "Please check the stored procedure output and " & _
+                  "the Excel table structure."
+        
+    End If
+    
+    '==================================================
+    ' REMOVE EXISTING TABLE DATA
+    '==================================================
+    '
+    'IMPORTANT:
+    'We only remove the DATA rows.
+    '
+    'The following are preserved:
+    '   - Workbook
+    '   - Worksheet
+    '   - Table
+    '   - Table name
+    '   - Table columns
+    '   - Table headers
+    '   - Table formatting
+    '
+    If Not tbl.DataBodyRange Is Nothing Then
+        
+        tbl.DataBodyRange.Delete
+        
+    End If
+    
+    '==================================================
+    ' GET TABLE LOCATION
+    '==================================================
+    tableFirstColumn = tbl.Range.Column
+    
+    'The first row after the table header
+    firstDataRow = tbl.HeaderRowRange.Row + 1
+    
+    '==================================================
+    ' WRITE SQL RESULTS
+    '==================================================
+    If Not rs.EOF Then
+        
+        '--------------------------------------------------
+        ' SQL returned data
+        '--------------------------------------------------
+        
+        'Move to the first row where data will be inserted.
+        '
+        'The table currently contains only the header.
+        'Resize the existing table first so that it contains
+        'enough rows for the SQL data.
+        '
+        'We use the recordset's RecordCount if available.
+        'If RecordCount is not supported, CopyFromRecordset
+        'will still be used after determining the required
+        'number of rows.
+        '
+        rs.MoveLast
+        rs.MoveFirst
+        
+        '--------------------------------------------------
+        ' Determine number of records
+        '--------------------------------------------------
+        Dim recordCount As Long
+        
+        recordCount = rs.RecordCount
+        
+        If recordCount < 0 Then
+            
+            'Fallback for providers that do not support
+            'RecordCount.
+            '
+            'Use GetRows to determine the number of rows.
+            Dim dataArray As Variant
+            Dim rowCount As Long
+            Dim colCount As Long
+            
+            rs.MoveFirst
+            
+            dataArray = rs.GetRows
+            
+            colCount = UBound(dataArray, 1) + 1
+            rowCount = UBound(dataArray, 2) + 1
+            
+            'Resize existing table
+            lastDataRow = tbl.HeaderRowRange.Row + rowCount
+            
+            tbl.Resize ws.Range( _
+                tbl.HeaderRowRange.Cells(1, 1), _
+                ws.Cells(lastDataRow, _
+                         tableFirstColumn + tableColumnCount - 1))
+            
+            'Write array into the table
+            tbl.DataBodyRange.Cells(1, 1) _
+                .Resize(rowCount, colCount).Value = _
+                TransposeRecordsetArray(dataArray)
+            
+        Else
+            
+            '--------------------------------------------------
+            ' Resize EXISTING table
+            '--------------------------------------------------
+            lastDataRow = tbl.HeaderRowRange.Row + recordCount
+            
+            tbl.Resize ws.Range( _
+                tbl.HeaderRowRange.Cells(1, 1), _
+                ws.Cells(lastDataRow, _
+                         tableFirstColumn + tableColumnCount - 1))
+            
+            '--------------------------------------------------
+            ' Write SQL results into existing table
+            '--------------------------------------------------
+            tbl.DataBodyRange.Cells(1, 1).CopyFromRecordset rs
+            
+        End If
+        
+    Else
+        
+        '==================================================
+        ' SQL RETURNED NO DATA
+        '==================================================
+        '
+        'The table remains with its existing headers.
+        'No table recreation is performed.
+        '
+        'Depending on Excel version, resizing to only the
+        'header row may not be permitted. Therefore we leave
+        'the existing table structure intact.
+        '
+        MsgBox _
+            "The stored procedure executed successfully, " & _
+            "but returned no data." & vbCrLf & vbCrLf & _
+            "The existing table headers were preserved.", _
+            vbInformation, _
+            "Tbl Authority"
+        
+    End If
+    
+    '==================================================
+    ' FORMAT / DISPLAY
+    '==================================================
+    '
+    'Do not recreate or rename the table.
+    'The existing table formatting is preserved.
+    '
+    ws.Columns.AutoFit
+    
+    '==================================================
+    ' CLOSE SQL RECORDSET
+    '==================================================
+    If Not rs Is Nothing Then
+        
+        If rs.State = 1 Then
+            rs.Close
+        End If
+        
+    End If
+    
+    '==================================================
+    ' CLOSE SQL CONNECTION
+    '==================================================
+    If Not conn Is Nothing Then
+        
+        If conn.State = 1 Then
+            conn.Close
+        End If
+        
+    End If
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    '==================================================
+    ' SAVE EXISTING WORKBOOK
+    '==================================================
+    '
+    'IMPORTANT:
+    'Use Save, NOT SaveAs.
+    '
+    'This keeps the same SharePoint file and therefore
+    'keeps the same Excel table that Power Automate uses.
+    '
+    wbExport.Save
+    saveSuccessful = True
+    
+    '==================================================
+    ' CLOSE WORKBOOK
+    '==================================================
+    wbExport.Close SaveChanges:=False
+    
+    Set tbl = Nothing
+    Set ws = Nothing
+    Set wbExport = Nothing
+    
+    '==================================================
+    ' RESTORE APPLICATION SETTINGS
+    '==================================================
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    '==================================================
+    ' SUCCESS MESSAGE
+    '==================================================
+    MsgBox _
+        "Tbl Authority data updated successfully!" & vbCrLf & vbCrLf & _
+        "Stored Procedure:" & vbCrLf & _
+        "TBLAUTH_GET_GNSUSER_DATA" & vbCrLf & vbCrLf & _
+        "Excel Table:" & vbCrLf & _
+        "TblAuthorityData" & vbCrLf & vbCrLf & _
+        "The existing SharePoint workbook was updated.", _
+        vbInformation, _
+        "Tbl Authority"
+    
+    Exit Sub
+
+
+'======================================================
+' ERROR HANDLER
+'======================================================
+ErrorHandler:
+
+    'Save the error information BEFORE using
+    'On Error Resume Next.
+    errNumber = Err.Number
+    errDescription = Err.Description
+    
+    'Prevent another error while cleaning up.
+    On Error Resume Next
+    
+    '==================================================
+    ' CLOSE RECORDSET
+    '==================================================
+    If Not rs Is Nothing Then
+        
+        If rs.State = 1 Then
+            rs.Close
+        End If
+        
+    End If
+    
+    '==================================================
+    ' CLOSE SQL CONNECTION
+    '==================================================
+    If Not conn Is Nothing Then
+        
+        If conn.State = 1 Then
+            conn.Close
+        End If
+        
+    End If
+    
+    '==================================================
+    ' CLEAN SQL OBJECTS
+    '==================================================
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    '==================================================
+    ' CLOSE WORKBOOK
+    '==================================================
+    '
+    'If an error occurs BEFORE Save, do not save the
+    'partially modified workbook.
+    '
+    If Not wbExport Is Nothing Then
+        
+        If saveSuccessful = False Then
+            wbExport.Close SaveChanges:=False
+        Else
+            wbExport.Close SaveChanges:=False
+        End If
+        
+    End If
+    
+    Set tbl = Nothing
+    Set ws = Nothing
+    Set wbExport = Nothing
+    
+    '==================================================
+    ' RESTORE APPLICATION SETTINGS
+    '==================================================
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    On Error GoTo 0
+    
+    '==================================================
+    ' ERROR MESSAGE
+    '==================================================
+    MsgBox _
+        "Tbl Authority data update failed." & vbCrLf & vbCrLf & _
+        "Error Number: " & errNumber & vbCrLf & _
+        "Error Description:" & vbCrLf & _
+        errDescription, _
+        vbCritical, _
+        "Tbl Authority Error"
+
+End Sub
+
+
+'======================================================
+' HELPER FUNCTION
+'======================================================
+'
+'Converts the array returned by ADODB.Recordset.GetRows
+'from:
+'
+'   Fields x Records
+'
+'to:
+'
+'   Records x Fields
+'
+'so that it can be written directly into an Excel range.
+'
+'======================================================
+Private Function TransposeRecordsetArray(ByVal sourceArray As Variant) As Variant
+
+    Dim rowCount As Long
+    Dim colCount As Long
+    
+    Dim r As Long
+    Dim c As Long
+    
+    Dim resultArray() As Variant
+    
+    colCount = UBound(sourceArray, 1) + 1
+    rowCount = UBound(sourceArray, 2) + 1
+    
+    ReDim resultArray(1 To rowCount, 1 To colCount)
+    
+    For r = 1 To rowCount
+        
+        For c = 1 To colCount
+            
+            resultArray(r, c) = sourceArray(c - 1, r - 1)
+            
+        Next c
+        
+    Next r
+    
+    TransposeRecordsetArray = resultArray
+
+End Function
+
+What changed from your original macro
+
+Your original code had this:
+
+Set wbExport = Workbooks.Add(xlWBATWorksheet)
+
+That is now completely removed.
+
+It also had:
+
+ws.ListObjects.Add(...)
+
+That is also completely removed.
+
+Instead, the new macro uses:
+
+Set wbExport = Workbooks.Open( _
+    Filename:=sharePointFile, _
+    ReadOnly:=False, _
+    UpdateLinks:=False)
+
+Then it accesses the existing table:
+
+Set tbl = ws.ListObjects("TblAuthorityData")
+
+The existing table is therefore not recreated.
+
+How the table update works
+
+Suppose your existing table is:
+
+TblAuthorityData
+
+EmployeeNo | UserName | Email | Section
+-----------|----------|-------|--------
+10001      | AAA      | ...   | ISD
+10002      | BBB      | ...   | VP
+10003      | CCC      | ...   | PR
+
+The macro first removes only the existing data rows:
+
+If Not tbl.DataBodyRange Is Nothing Then
+    tbl.DataBodyRange.Delete
+End If
+
+The headers remain:
+
+EmployeeNo | UserName | Email | Section
+
+Then the stored procedure runs:
+
+TBLAUTH_GET_GNSUSER_DATA
+
+If it returns 500 rows, the existing table is resized:
+
+tbl.Resize ...
+
+and the new data is written using:
+
+tbl.DataBodyRange.Cells(1, 1).CopyFromRecordset rs
+
+So Power Automate continues to see:
+
+TblAuthorityData
+
+as the same table.
+
+One important recommendation
+
+I intentionally added this validation:
+
+If sqlColumnCount <> tableColumnCount Then
+
+For example, if your existing Excel table has 8 columns, but the stored procedure suddenly returns 9 columns, the macro stops rather than putting the data into the wrong columns.
+
+That is safer for your Power Automate flow.
+
+Also, I recommend not changing the Excel table headers from VBA. Your Power Automate List rows present in a table action is already configured against the existing table, so the safest approach is to keep the workbook/table structure stable and only replace the data rows.
+
+One thing to verify before using the macro: the SQL stored procedure's column order must match the existing TblAuthorityData column order. If you give me the current TblAuthorityData column names and the output columns of TBLAUTH_GET_GNSUSER_DATA, I can modify the code to validate the column names as well as the column count, which would make the automation safer.
+
+
+
+*****
+
+
 Option Explicit
 
 Public Sub GetTblAuthorityData()
