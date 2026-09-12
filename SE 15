@@ -1,3 +1,34 @@
+I have an existing Excel file named TblAuthorityData.xlsx stored in a SharePoint Document Library. The workbook already contains a worksheet named Sheet1 and an Excel table named TblAuthorityData. This file is used by Power Automate through the List rows present in a table action.
+
+I want to update my VBA desktop macro so that it does not create a new workbook and does not recreate the Excel table on every run.
+
+Requirements:
+
+Open the existing TblAuthorityData.xlsx file from a SharePoint Document Library.
+Access the existing Excel table named TblAuthorityData on Sheet1.
+Remove all existing rows from the table while keeping the table structure and column headers.
+Execute the SQL Server stored procedure:
+TBLAUTH_GET_GNSUSER_DATA
+
+Populate the table with the latest SQL results.
+Automatically resize the Excel table to include all newly imported rows.
+Preserve the existing table name:
+TblAuthorityData
+
+Save and close the workbook.
+Include complete error handling, SQL connection cleanup, and workbook cleanup.
+
+Important:
+
+Do not use Workbooks.Add.
+Do not create a new Excel table using ListObjects.Add.
+Do not change the table name.
+The goal is to keep the same workbook and table so that Power Automate continues to recognize the table without requiring reconfiguration.
+Please provide the complete VBA code with comments explaining each section.
+
+******
+
+
 Yes. Run-time error 91 means VBA is trying to use an object variable that hasn't been successfully assigned.
 
 In the macro I gave you, the most likely places are wb or ws, especially if the Excel file didn't open successfully or the error handler itself tries to reference ws.Name.
