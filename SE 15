@@ -1,3 +1,30 @@
+Good day!
+
+The requested revision has already been updated po.
+
+We also updated the concern regarding the conversion to number issue.
+
+Kindly check and let us know if there are still any concerns po.
+
+Thank you!
+
+
+*****
+
+
+Good day!
+
+The program has already been updated based on the requested revision po.
+
+We also updated the program to address the concern regarding the “convert to number” issue.
+
+Kindly check and test po, and please let us know if there are any other concerns.
+
+Thank you!
+
+
+*****
+
 Yes. Your current macro can be changed so that TblAuthorityData.xlsx is opened directly, the existing TblAuthorityData table is reused, its old rows are removed, and the SQL results are inserted into the same table.
 
 The important changes are:
