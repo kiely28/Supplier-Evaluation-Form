@@ -1,3 +1,624 @@
+Yes. The error is caused by this part of my previous code:
+
+rs.MoveLast
+rs.MoveFirst
+
+Your SQL provider/recordset is forward-only, so it does not support moving backward. That produces:
+
+> Error -2147217884: Rowset does not support fetching backward.
+
+
+
+We don't actually need MoveLast/MoveFirst. A better solution is to use GetRows directly. This also makes the import more reliable because we can determine exactly how many rows were returned before resizing the existing table.
+
+Recommended replacement
+
+Replace your entire GetTblAuthorityData macro with this version:
+
+Option Explicit
+
+Public Sub GetTblAuthorityData()
+
+    '==================================================
+    ' VARIABLES
+    '==================================================
+    Dim conn As Object
+    Dim cmd As Object
+    Dim rs As Object
+    
+    Dim wbExport As Workbook
+    Dim ws As Worksheet
+    Dim tbl As ListObject
+    
+    Dim serverName As String
+    Dim databaseName As String
+    Dim username As String
+    Dim password As String
+    
+    Dim connectionString As String
+    Dim sharePointFile As String
+    
+    Dim dataArray As Variant
+    Dim excelArray As Variant
+    
+    Dim sqlColumnCount As Long
+    Dim tableColumnCount As Long
+    Dim recordCount As Long
+    
+    Dim tableFirstColumn As Long
+    Dim tableLastColumn As Long
+    Dim headerRow As Long
+    Dim lastDataRow As Long
+    
+    Dim errNumber As Long
+    Dim errDescription As String
+    
+    Dim saveSuccessful As Boolean
+    
+    On Error GoTo ErrorHandler
+    
+    '==================================================
+    ' APPLICATION SETTINGS
+    '==================================================
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    Application.EnableEvents = False
+    
+    '==================================================
+    ' SQL SERVER SETTINGS
+    '==================================================
+    serverName = "192.168.0.1"
+    databaseName = "db_users"
+    username = "user"
+    password = "pass"
+    
+    '==================================================
+    ' EXISTING SHAREPOINT EXCEL FILE
+    '==================================================
+    sharePointFile = _
+        "https://epsongroup.sharepoint.com/sites/00S_01605/" & _
+        "ISD-Portal/GNS%20Reactivation%20Archive/TblAuthorityData.xlsx"
+    
+    '==================================================
+    ' OPEN EXISTING WORKBOOK
+    '==================================================
+    '
+    'IMPORTANT:
+    'No Workbooks.Add
+    'No SaveAs
+    '
+    On Error Resume Next
+    
+    Set wbExport = Workbooks("TblAuthorityData.xlsx")
+    
+    On Error GoTo ErrorHandler
+    
+    If wbExport Is Nothing Then
+        
+        Set wbExport = Workbooks.Open( _
+            Filename:=sharePointFile, _
+            ReadOnly:=False, _
+            UpdateLinks:=False)
+        
+    End If
+    
+    If wbExport Is Nothing Then
+        
+        Err.Raise vbObjectError + 1000, _
+                  "GetTblAuthorityData", _
+                  "Unable to open the SharePoint workbook."
+        
+    End If
+    
+    '==================================================
+    ' ACCESS SHEET1
+    '==================================================
+    Set ws = wbExport.Worksheets("Sheet1")
+    
+    If ws Is Nothing Then
+        
+        Err.Raise vbObjectError + 1001, _
+                  "GetTblAuthorityData", _
+                  "Worksheet 'Sheet1' was not found."
+        
+    End If
+    
+    '==================================================
+    ' ACCESS EXISTING TABLE
+    '==================================================
+    Set tbl = ws.ListObjects("TblAuthorityData")
+    
+    If tbl Is Nothing Then
+        
+        Err.Raise vbObjectError + 1002, _
+                  "GetTblAuthorityData", _
+                  "Excel table 'TblAuthorityData' was not found."
+        
+    End If
+    
+    '==================================================
+    ' GET EXISTING TABLE COLUMN COUNT
+    '==================================================
+    tableColumnCount = tbl.ListColumns.Count
+    
+    If tableColumnCount = 0 Then
+        
+        Err.Raise vbObjectError + 1003, _
+                  "GetTblAuthorityData", _
+                  "TblAuthorityData does not contain any columns."
+        
+    End If
+    
+    '==================================================
+    ' SQL CONNECTION
+    '==================================================
+    connectionString = _
+        "Provider=SQLOLEDB;" & _
+        "Data Source=" & serverName & ";" & _
+        "Initial Catalog=" & databaseName & ";" & _
+        "User ID=" & username & ";" & _
+        "Password=" & password & ";"
+    
+    Set conn = CreateObject("ADODB.Connection")
+    
+    conn.CommandTimeout = 60
+    conn.Open connectionString
+    
+    '==================================================
+    ' STORED PROCEDURE
+    '==================================================
+    Set cmd = CreateObject("ADODB.Command")
+    
+    With cmd
+        
+        .ActiveConnection = conn
+        .CommandType = 4       'adCmdStoredProc
+        .CommandText = "TBLAUTH_GET_GNSUSER_DATA"
+        .CommandTimeout = 60
+        
+    End With
+    
+    '==================================================
+    ' EXECUTE STORED PROCEDURE
+    '==================================================
+    Set rs = cmd.Execute
+    
+    '==================================================
+    ' CHECK RESULT COLUMNS
+    '==================================================
+    sqlColumnCount = rs.Fields.Count
+    
+    If sqlColumnCount = 0 Then
+        
+        Err.Raise vbObjectError + 1004, _
+                  "GetTblAuthorityData", _
+                  "The stored procedure returned zero columns."
+        
+    End If
+    
+    '==================================================
+    ' VERIFY COLUMN COUNT
+    '==================================================
+    If sqlColumnCount <> tableColumnCount Then
+        
+        Err.Raise vbObjectError + 1005, _
+                  "GetTblAuthorityData", _
+                  "SQL result columns do not match the " & _
+                  "existing Excel table." & vbCrLf & vbCrLf & _
+                  "Excel table columns: " & tableColumnCount & vbCrLf & _
+                  "SQL result columns: " & sqlColumnCount
+        
+    End If
+    
+    '==================================================
+    ' GET ALL SQL DATA
+    '==================================================
+    '
+    'IMPORTANT:
+    '
+    'Do NOT use:
+    '
+    '    rs.MoveLast
+    '    rs.MoveFirst
+    '
+    'because the SQL provider may return a forward-only
+    'recordset.
+    '
+    'GetRows reads the recordset forward only.
+    '
+    If Not rs.EOF Then
+        
+        dataArray = rs.GetRows
+        
+        '==================================================
+        ' DETERMINE NUMBER OF RECORDS
+        '==================================================
+        '
+        'GetRows returns:
+        '
+        '   Dimension 1 = columns
+        '   Dimension 2 = rows
+        '
+        recordCount = UBound(dataArray, 2) + 1
+        
+        '==================================================
+        ' CONVERT SQL ARRAY
+        ' TO EXCEL ROW/COLUMN ARRAY
+        '==================================================
+        excelArray = RecordsetArrayToExcelArray(dataArray)
+        
+        '==================================================
+        ' REMOVE EXISTING DATA
+        '==================================================
+        '
+        'This removes only the existing rows.
+        '
+        'The table itself remains.
+        'Headers remain.
+        'Table name remains.
+        '
+        If Not tbl.DataBodyRange Is Nothing Then
+            
+            tbl.DataBodyRange.Delete
+            
+        End If
+        
+        '==================================================
+        ' GET TABLE POSITION
+        '==================================================
+        headerRow = tbl.HeaderRowRange.Row
+        
+        tableFirstColumn = tbl.Range.Column
+        
+        tableLastColumn = _
+            tableFirstColumn + tableColumnCount - 1
+        
+        '==================================================
+        ' CALCULATE LAST DATA ROW
+        '==================================================
+        lastDataRow = headerRow + recordCount
+        
+        '==================================================
+        ' RESIZE EXISTING TABLE
+        '==================================================
+        '
+        'IMPORTANT:
+        'This does NOT create a new table.
+        '
+        'It only changes the size of the existing
+        'TblAuthorityData table.
+        '
+        tbl.Resize _
+            ws.Range( _
+                ws.Cells(headerRow, tableFirstColumn), _
+                ws.Cells(lastDataRow, tableLastColumn))
+        
+        '==================================================
+        ' WRITE DATA INTO EXISTING TABLE
+        '==================================================
+        tbl.DataBodyRange.Value = excelArray
+        
+    Else
+        
+        '==================================================
+        ' NO SQL DATA
+        '==================================================
+        '
+        'Remove existing rows but keep the table/header.
+        '
+        If Not tbl.DataBodyRange Is Nothing Then
+            
+            tbl.DataBodyRange.Delete
+            
+        End If
+        
+        MsgBox _
+            "The stored procedure executed successfully " & _
+            "but returned no records." & vbCrLf & vbCrLf & _
+            "The existing table headers were preserved.", _
+            vbInformation, _
+            "Tbl Authority"
+        
+    End If
+    
+    '==================================================
+    ' FORMAT
+    '==================================================
+    ws.Columns.AutoFit
+    
+    '==================================================
+    ' CLOSE RECORDSET
+    '==================================================
+    If Not rs Is Nothing Then
+        
+        If rs.State = 1 Then
+            rs.Close
+        End If
+        
+    End If
+    
+    '==================================================
+    ' CLOSE SQL CONNECTION
+    '==================================================
+    If Not conn Is Nothing Then
+        
+        If conn.State = 1 Then
+            conn.Close
+        End If
+        
+    End If
+    
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    '==================================================
+    ' SAVE EXISTING WORKBOOK
+    '==================================================
+    '
+    'IMPORTANT:
+    'Use Save, NOT SaveAs.
+    '
+    wbExport.Save
+    
+    saveSuccessful = True
+    
+    '==================================================
+    ' CLOSE WORKBOOK
+    '==================================================
+    wbExport.Close SaveChanges:=False
+    
+    Set tbl = Nothing
+    Set ws = Nothing
+    Set wbExport = Nothing
+    
+    '==================================================
+    ' RESTORE EXCEL SETTINGS
+    '==================================================
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    '==================================================
+    ' SUCCESS MESSAGE
+    '==================================================
+    MsgBox _
+        "Tbl Authority data updated successfully!" & vbCrLf & vbCrLf & _
+        "Stored Procedure:" & vbCrLf & _
+        "TBLAUTH_GET_GNSUSER_DATA" & vbCrLf & vbCrLf & _
+        "Records imported: " & recordCount & vbCrLf & vbCrLf & _
+        "Excel Table:" & vbCrLf & _
+        "TblAuthorityData", _
+        vbInformation, _
+        "Tbl Authority"
+    
+    Exit Sub
+
+
+'======================================================
+' ERROR HANDLER
+'======================================================
+ErrorHandler:
+
+    errNumber = Err.Number
+    errDescription = Err.Description
+    
+    On Error Resume Next
+    
+    '==================================================
+    ' CLOSE RECORDSET
+    '==================================================
+    If Not rs Is Nothing Then
+        
+        If rs.State = 1 Then
+            rs.Close
+        End If
+        
+    End If
+    
+    '==================================================
+    ' CLOSE CONNECTION
+    '==================================================
+    If Not conn Is Nothing Then
+        
+        If conn.State = 1 Then
+            conn.Close
+        End If
+        
+    End If
+    
+    '==================================================
+    ' CLEAN SQL OBJECTS
+    '==================================================
+    Set rs = Nothing
+    Set cmd = Nothing
+    Set conn = Nothing
+    
+    '==================================================
+    ' CLOSE WORKBOOK WITHOUT SAVING
+    '==================================================
+    '
+    'If an error occurs before Save, do not save
+    'partially updated data.
+    '
+    If Not wbExport Is Nothing Then
+        
+        wbExport.Close SaveChanges:=False
+        
+    End If
+    
+    Set tbl = Nothing
+    Set ws = Nothing
+    Set wbExport = Nothing
+    
+    '==================================================
+    ' RESTORE EXCEL SETTINGS
+    '==================================================
+    Application.EnableEvents = True
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    On Error GoTo 0
+    
+    '==================================================
+    ' ERROR MESSAGE
+    '==================================================
+    MsgBox _
+        "Tbl Authority data update failed." & vbCrLf & vbCrLf & _
+        "Error Number: " & errNumber & vbCrLf & vbCrLf & _
+        "Error Description:" & vbCrLf & _
+        errDescription, _
+        vbCritical, _
+        "Tbl Authority Error"
+
+End Sub
+
+
+'======================================================
+' FUNCTION:
+' RecordsetArrayToExcelArray
+'
+' ADODB.GetRows returns:
+'
+'       Columns x Rows
+'
+' Excel requires:
+'
+'       Rows x Columns
+'
+' This function converts the array.
+'======================================================
+Private Function RecordsetArrayToExcelArray( _
+    ByVal sourceArray As Variant) As Variant
+
+    Dim rowCount As Long
+    Dim columnCount As Long
+    
+    Dim r As Long
+    Dim c As Long
+    
+    Dim resultArray() As Variant
+    
+    '==================================================
+    ' GET ARRAY DIMENSIONS
+    '==================================================
+    columnCount = UBound(sourceArray, 1) + 1
+    rowCount = UBound(sourceArray, 2) + 1
+    
+    '==================================================
+    ' CREATE EXCEL ARRAY
+    '==================================================
+    ReDim resultArray( _
+        1 To rowCount, _
+        1 To columnCount)
+    
+    '==================================================
+    ' TRANSPOSE DATA
+    '==================================================
+    For r = 1 To rowCount
+        
+        For c = 1 To columnCount
+            
+            resultArray(r, c) = _
+                sourceArray(c - 1, r - 1)
+            
+        Next c
+        
+    Next r
+    
+    '==================================================
+    ' RETURN ARRAY
+    '==================================================
+    RecordsetArrayToExcelArray = resultArray
+
+End Function
+
+Why this fixes your error
+
+Your error was specifically caused by:
+
+rs.MoveLast
+rs.MoveFirst
+
+The revised version never moves backward through the recordset.
+
+Instead:
+
+If Not rs.EOF Then
+    dataArray = rs.GetRows
+End If
+
+GetRows reads the SQL result forward and puts it into an array.
+
+For example, if SQL returns:
+
+10001 | Juan | IT
+10002 | Pedro | HR
+10003 | Maria | Finance
+
+GetRows internally gives us a column-oriented array, and the helper function converts it to an Excel-compatible array:
+
+Col1    Col2    Col3
+Row1    10001   Juan    IT
+Row2    10002   Pedro   HR
+Row3    10003   Maria   Finance
+
+Then:
+
+tbl.DataBodyRange.Value = excelArray
+
+writes everything to Excel in one operation.
+
+The resulting process
+
+Your macro will now work like this:
+
+SharePoint
+    │
+    ▼
+TblAuthorityData.xlsx
+    │
+    ▼
+Sheet1
+    │
+    ▼
+Existing TblAuthorityData
+    │
+    ├── Keep table
+    ├── Keep table name
+    ├── Keep headers
+    └── Delete old rows
+            │
+            ▼
+      SQL Server
+            │
+            ▼
+TBLAUTH_GET_GNSUSER_DATA
+            │
+            ▼
+      GetRows()
+            │
+            ▼
+   Resize existing table
+            │
+            ▼
+    Insert new SQL data
+            │
+            ▼
+         Save()
+            │
+            ▼
+   TblAuthorityData.xlsx
+            │
+            ▼
+      Power Automate
+   List rows present in a table
+
+This is the approach I would use for your Power Automate setup because the workbook and table are never recreated. Only the contents of TblAuthorityData are refreshed.
+
+
+****
+
 Tbl Authority data update failed.
 
 Error Number: -2147217884
