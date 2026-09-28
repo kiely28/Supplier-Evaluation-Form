@@ -1,4 +1,10 @@
+Tbl Authority data update failed.
 
+Error Number: -2147217884
+Error Description:
+Rowset does not support fetching backward.
+
+****
 
 Yes. Your current macro can be changed so that TblAuthorityData.xlsx is opened directly, the existing TblAuthorityData table is reused, its old rows are removed, and the SQL results are inserted into the same table.
 
