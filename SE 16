@@ -1,3 +1,454 @@
+Correct. If OneDrive for Business is unavailable in your Power Automate environment, you should not use the OneDrive temporary-file method from my previous Step 32.
+
+The good news is that the rest of your design can remain in SharePoint. The only part we need to replace is:
+
+> Completed XLSX → OneDrive → Convert to PDF
+
+
+
+Microsoft's current Excel Online (Business) connector supports Excel workbooks stored in SharePoint, and it supports running Office Scripts against SharePoint workbooks.  However, Microsoft doesn't provide a native SharePoint action that directly converts an XLSX workbook to PDF. A PDF conversion service is therefore the appropriate replacement. 
+
+Recommended solution for your environment
+
+I recommend:
+
+SharePoint
+   │
+   ├── Reactivation List
+   │
+   ├── Templates
+   │     └── User Account Reactivation-IDLE Account.xlsx
+   │
+   ├── Signatures
+   │     ├── Bong Gakaday.png
+   │     ├── King RJ Evangelista.png
+   │     ├── Juan dela Cruz.png
+   │     └── Pedro Santos.png
+   │
+   ├── Generated Excel
+   │     └── Request-specific XLSX files
+   │
+   └── PDF
+         └── Request-specific PDF files
+
+Then:
+
+Reactivation List
+       ↓
+Get Items
+       ↓
+Build UserIds/UserNames arrays
+       ↓
+Get signatures
+       ↓
+Base64
+       ↓
+Copy template to unique XLSX
+       ↓
+Run Office Script
+       ↓
+Completed XLSX in SharePoint
+       ↓
+PDF Converter
+       ↓
+PDF
+       ↓
+Save PDF to SharePoint
+       ↓
+Email PDF
+
+Which PDF converter?
+
+There are three practical choices:
+
+1. Muhimbi PDF — good fit for Power Automate and specifically has a Convert Excel document action.
+
+
+2. Encodian — also designed for Power Automate document conversion.
+
+
+3. Adobe PDF Services — another option if your organization already has Adobe licensing.
+
+
+
+Muhimbi's connector specifically exposes Convert Excel document, accepting the Excel filename and file content and producing PDF or other formats.  Encodian also provides Power Automate PDF conversion capabilities, but requires an Encodian subscription/API connection.  Adobe PDF Services provides file-content-based PDF conversion as well. 
+
+For your current setup, I would use Muhimbi if your company permits it.
+
+
+---
+
+Revised Steps 31–36
+
+You can keep everything before this point from my previous solution.
+
+Replace the old:
+
+Get Completed Excel
+   ↓
+OneDrive Create File
+   ↓
+Delay
+   ↓
+OneDrive Convert File
+
+with:
+
+Get Completed Excel
+   ↓
+Muhimbi - Convert Excel document
+   ↓
+SharePoint - Create PDF file
+   ↓
+Send Email
+
+
+---
+
+Step 32 — Get the Completed Excel File
+
+After:
+
+Excel Online (Business) → Run script
+
+add:
+
+SharePoint → Get file content
+
+Use the Identifier from your generated Excel file.
+
+For example:
+
+Site Address:
+Your SharePoint Site
+
+File Identifier:
+Identifier
+
+This gives you the completed XLSX containing:
+
+F7  = Requesting Section
+D8  = Request Date
+E9  = Reactivation Date
+
+C12:C26 = User IDs
+G12:G26 = User Names
+
+C45 = Approval 1 signature
+G45 = Approval 2 signature
+I45 = Approval 3 signature
+J45 = Approval 4 signature
+
+C48 = Approval 1 name
+G48 = Approval 2 name
+I48 = Approval 3 name
+J48 = Approval 4 name
+
+
+---
+
+Step 33 — Muhimbi Convert Excel Document
+
+Add:
+
+Muhimbi PDF → Convert Excel document
+
+The current Muhimbi connector has a dedicated Excel-to-PDF action. 
+
+Configure:
+
+Source file name
+
+Use the name of your generated Excel file:
+
+User Account Reactivation-125-20261006-093500.xlsx
+
+You can use an expression such as:
+
+concat(
+    'User Account Reactivation-',
+    triggerBody()?['ID'],
+    '-',
+    formatDateTime(utcNow(),'yyyyMMdd-HHmmss'),
+    '.xlsx'
+)
+
+However, even better, use the actual filename returned by your Create file action.
+
+
+---
+
+Source file content
+
+Use:
+
+File Content
+
+from:
+
+SharePoint → Get file content
+
+
+---
+
+Output format
+
+Select:
+
+PDF
+
+Muhimbi's connector documents the Excel conversion action as accepting Excel file content and an output format. 
+
+
+---
+
+Step 34 — Give the PDF a Unique Name
+
+Use a Compose action before the Muhimbi action if you want to make the filename easier to manage.
+
+Create:
+
+Compose — PDF File Name
+
+Expression:
+
+concat(
+    'User Account Reactivation-',
+    triggerBody()?['ID'],
+    '-',
+    formatDateTime(utcNow(),'yyyyMMdd-HHmmss'),
+    '.pdf'
+)
+
+Example result:
+
+User Account Reactivation-125-20261006-093500.pdf
+
+
+---
+
+Step 35 — Save PDF to SharePoint
+
+After Muhimbi conversion, add:
+
+SharePoint → Create file
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+Folder:
+
+GNS Reactivation Archive/PDF
+
+File Name:
+
+outputs('Compose_-_PDF_File_Name')
+
+File Content:
+
+PDF output from Muhimbi
+
+The exact dynamic-content label will depend on the version of the Muhimbi action shown in your tenant.
+
+Your flow is now:
+
+Generated Excel
+      ↓
+Get File Content
+      ↓
+Muhimbi Convert Excel → PDF
+      ↓
+SharePoint Create File
+      ↓
+PDF Archive
+
+
+---
+
+Step 36 — Email the PDF
+
+Add:
+
+Office 365 Outlook → Send an email (V2)
+
+To
+
+Use your requester email field, for example:
+
+Requester Email
+
+Subject
+
+Reactivation Form - @{triggerBody()?['ReferenceNo']}
+
+Body
+
+For example:
+
+Good day,
+
+Please see the attached Reactivation Form.
+
+Request Details:
+
+Reference No: [Reference No]
+Requesting Section: [RequestingSection]
+Request Date: [RequestDate]
+Reactivation Date: [ReactivationDate]
+
+The completed Reactivation Form is attached as a PDF.
+
+Thank you.
+
+Attachment Name
+
+Use:
+
+outputs('Compose_-_PDF_File_Name')
+
+Attachment Content
+
+Use the PDF file content returned by Muhimbi.
+
+You don't need to use OneDrive.
+
+
+---
+
+Updated Complete Flow
+
+Your actual production flow should now look like this:
+
+1. When an item is created
+        │
+        ▼
+2. Get Items
+   Filter by Reference No.
+        │
+        ▼
+3. Initialize UserIds
+        │
+4. Initialize UserNames
+        │
+        ▼
+5. Apply to Each
+        │
+        ├── Append User ID
+        │
+        └── Append User Name
+        │
+        ▼
+6. Initialize Approval1SignatureBase64
+7. Initialize Approval2SignatureBase64
+8. Initialize Approval3SignatureBase64
+9. Initialize Approval4SignatureBase64
+        │
+        ▼
+10. Get Approval1 PNG
+11. Convert to Base64
+        │
+12. Get Approval2 PNG
+13. Convert to Base64
+        │
+14. Get Approval3 PNG
+15. Convert to Base64
+        │
+16. Get Approval4 PNG
+17. Convert to Base64
+        │
+        ▼
+18. Get Template File Content
+        │
+        ▼
+19. SharePoint Create File
+   Generated Excel
+        │
+        ▼
+20. Get File Metadata
+        │
+        ▼
+21. Excel Online (Business)
+   Run Script
+        │
+        ▼
+22. SharePoint
+   Get Completed Excel Content
+        │
+        ▼
+23. Compose PDF Filename
+        │
+        ▼
+24. Muhimbi
+   Convert Excel Document
+        │
+        ▼
+25. SharePoint
+   Create PDF
+        │
+        ▼
+26. Outlook
+   Send Email
+   PDF Attachment
+        │
+        ▼
+27. Optional:
+   Update SharePoint Status
+
+
+---
+
+One important correction to my previous recommendation
+
+You do not need OneDrive at all for the Excel portion.
+
+The Excel Online (Business) connector supports files stored in SharePoint, including using a SharePoint file identifier as the workbook. 
+
+So your generated workbook can remain entirely here:
+
+GNS Reactivation Archive
+└── Generated Excel
+    ├── User Account Reactivation-125-20261006-093500.xlsx
+    ├── User Account Reactivation-126-20261006-093502.xlsx
+    └── User Account Reactivation-127-20261006-093504.xlsx
+
+Only the PDF conversion requires a separate service.
+
+My recommendation
+
+For your company environment, I'd choose:
+
+SharePoint + Excel Online (Business) + Office Scripts + Muhimbi + Outlook
+
+rather than trying to make OneDrive available just for this flow.
+
+That gives you:
+
+✅ No OneDrive dependency
+
+✅ Excel remains in SharePoint
+
+✅ Unique Excel per request
+
+✅ Office Script signatures
+
+✅ PDF conversion
+
+✅ PDF SharePoint archive
+
+✅ Email attachment
+
+✅ Multiple requests can generate separate files
+
+✅ Easier auditing
+
+
+If Muhimbi is also unavailable/blocked in your organization, then the next best option is Encodian or Adobe PDF Services; both have current Power Automate connectors capable of document/PDF conversion. 
+
+
+*****
+
 In Step 32: Create Temporary OneDrive Excel File, upon checking, access to OneDrive for Business is currently unavailable.
 As a result, it is not possible to browse or select folders using the OneDrive for Business connector in Power Automate.
 
