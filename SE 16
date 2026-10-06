@@ -1,3 +1,45 @@
+Current Issue: Multiple Excel Files Generated for the Same Reference Number
+
+In Step 22 (Generate Filename), the current file name uses the SharePoint ID:
+
+Reactivation-{ID}.xlsx
+
+
+However, a single reactivation request can contain multiple GNS users, resulting in multiple SharePoint list items with different IDs but the same ReferenceNo.
+
+Example:
+
+ID	ReferenceNo	GNS User ID
+101	GNS-202610-0097	B014172
+102	GNS-202610-0097	B012504
+
+Current behavior:
+
+Reactivation-101.xlsx
+Reactivation-102.xlsx
+
+Desired behavior:
+
+Reactivation-GNS-202610-0097.xlsx
+
+Requirements:
+
+1. Use ReferenceNo instead of SharePoint ID when generating the Excel file name.
+2. Group all SharePoint items that have the same ReferenceNo.
+3. Collect all GNS User IDs and GNS User Names under the same ReferenceNo into arrays.
+4. Generate only one Excel file and one PDF file per ReferenceNo.
+5. Populate the Excel template with all users belonging to the same ReferenceNo.
+6. Prevent duplicate file creation when multiple SharePoint items share the same ReferenceNo.
+
+Suggested filename format:
+
+Reactivation-{ReferenceNo}.xlsx
+
+Example:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
 *****
 
 Worked for 26s
