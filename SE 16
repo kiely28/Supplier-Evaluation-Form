@@ -1,3 +1,198 @@
+Yes — based on the flow you were following, I would update Step 21, because your requirement has now changed from one SharePoint item = one file to one ReferenceNo = one file.
+
+Your Step 21 should now be
+
+21. Create a Unique Excel
+
+Instead of:
+
+User Account Reactivation-[ID]-[timestamp].xlsx
+
+use the ReferenceNo:
+
+Reactivation-GNS-202610-0097.xlsx
+
+For the File Name in SharePoint → Create file:
+
+concat(
+    'Reactivation-',
+    triggerBody()?['ReferenceNo'],
+    '.xlsx'
+)
+
+So if:
+
+ReferenceNo = GNS-202610-0097
+
+the file will be:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
+---
+
+Where should Update item go?
+
+If you are following the previous flow, I recommend putting it immediately after Step 21 Create a Unique Excel:
+
+20. Get Template File Content
+        ↓
+21. Create a Unique Excel
+        ↓
+22. Update item
+        ↓
+23. Get File Metadata
+        ↓
+24. Run Office Script
+        ↓
+25. Get Completed Excel Content
+        ↓
+26. Create Temporary OneDrive Excel
+        ↓
+27. Delay
+        ↓
+28. Convert Excel → PDF
+        ↓
+29. Create PDF in SharePoint
+        ↓
+30. Send Email
+
+Step 22 — Update item
+
+If your Reactivation List has a ProcessingStatus column, set:
+
+ProcessingStatus = Excel Created
+
+You can also save:
+
+GeneratedExcel = Reactivation-GNS-202610-0097.xlsx
+
+However, there is an important problem with updating the original item in your current setup.
+
+You have:
+
+ID 101
+ReferenceNo = GNS-202610-0097
+User ID = B014172
+
+ID 102
+ReferenceNo = GNS-202610-0097
+User ID = B012504
+
+If the trigger came from ID 101, then:
+
+Update item
+ID = 101
+
+only updates ID 101. It does not mean the whole GNS-202610-0097 request has been processed.
+
+
+---
+
+More important: duplicate processing
+
+With your current trigger:
+
+When an item is created
+
+you can have:
+
+ID 101 created
+       ↓
+Flow starts
+       ↓
+Create Reactivation-GNS-202610-0097.xlsx
+
+ID 102 created
+       ↓
+Another flow starts
+       ↓
+Create Reactivation-GNS-202610-0097.xlsx
+
+Both flows may try to create the same filename.
+
+So I would not simply add Update item and consider the problem solved.
+
+For your current design, I recommend this instead
+
+Have Power Apps create all the detail records first, then trigger document generation only once.
+
+For example:
+
+Power Apps
+   │
+   ├── ID 101 → GNS-202610-0097 → B014172
+   │
+   └── ID 102 → GNS-202610-0097 → B012504
+              ↓
+       All users saved
+              ↓
+       Generate Request
+              ↓
+       Power Automate
+              ↓
+       Get all items where
+       ReferenceNo = GNS-202610-0097
+              ↓
+       UserIds = [B014172, B012504]
+       UserNames = [...]
+              ↓
+       Create ONE Excel
+              ↓
+       Run Office Script
+              ↓
+       ONE PDF
+              ↓
+       ONE Email
+
+This is much safer than using a delay and hoping all records have been created before the first trigger runs.
+
+If you want to keep your existing When an item is created trigger
+
+Then we need to add a duplicate/request lock before Step 21.
+
+I would structure it:
+
+20. Check whether ReferenceNo is already processing
+        ↓
+    If YES
+        → Stop flow
+        ↓
+    If NO
+        ↓
+21. Mark ReferenceNo as Processing
+        ↓
+22. Create Unique Excel
+        ↓
+23. Run Office Script
+        ↓
+24. Convert PDF
+        ↓
+25. Update status = Completed
+        ↓
+26. Send Email
+
+But the best implementation is to have a separate Reactivation Request/header list, with one record per ReferenceNo.
+
+Then your detail records can remain:
+
+Reactivation List
+ID 101 → GNS-202610-0097 → B014172
+ID 102 → GNS-202610-0097 → B012504
+
+while the request/header list contains only:
+
+ReferenceNo       Status
+GNS-202610-0097   Processing
+
+That gives Power Automate one reliable request-level record to update.
+
+So, for your existing flow, yes: put Update item after Step 21 — but I recommend we also change Step 21's filename to use ReferenceNo and add a proper duplicate-processing check before it.
+
+****
+
+
+
 Where to put the update action in Powerautomate? after: 21. Create a Unique Excel 
 
 ****
