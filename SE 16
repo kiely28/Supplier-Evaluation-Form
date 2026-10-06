@@ -1,3 +1,7 @@
+Where to put the update action in Powerautomate? after: 21. Create a Unique Excel 
+
+****
+
 Yes. The main change is that ReferenceNo must become the request-level key, rather than the SharePoint item ID.
 
 There is one important issue, though: simply changing the filename to Reactivation-{ReferenceNo}.xlsx does not prevent duplicate flow runs. If items 101 and 102 are both created, the trigger fires twice. Both runs could query GNS-202610-0097, see both users, and both try to create the same file.
