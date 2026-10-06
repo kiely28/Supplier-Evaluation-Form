@@ -1,3 +1,953 @@
+Yes. The main change is that ReferenceNo must become the request-level key, rather than the SharePoint item ID.
+
+There is one important issue, though: simply changing the filename to Reactivation-{ReferenceNo}.xlsx does not prevent duplicate flow runs. If items 101 and 102 are both created, the trigger fires twice. Both runs could query GNS-202610-0097, see both users, and both try to create the same file.
+
+The solution should therefore have two parts:
+
+1. Group users by ReferenceNo
+
+
+2. Use a request-level duplicate check/lock before generating the Excel/PDF
+
+
+
+Recommended flow
+
+SharePoint: Reactivation List
+        │
+        │ Item 101
+        │ GNS-202610-0097 / B014172
+        │
+        │ Item 102
+        │ GNS-202610-0097 / B012504
+        │
+        ▼
+Power Automate Trigger
+        │
+        ▼
+Get ReferenceNo
+        │
+        ▼
+Get Items
+Filter:
+ReferenceNo = GNS-202610-0097
+        │
+        ▼
+Collect ALL users
+        │
+        ├── UserIds
+        │     ["B014172","B012504"]
+        │
+        └── UserNames
+              ["User A","User B"]
+        │
+        ▼
+Check whether request already processed
+        │
+        ├── YES → Stop
+        │
+        └── NO
+             │
+             ▼
+        Create unique Excel
+        Reactivation-GNS-202610-0097.xlsx
+             │
+             ▼
+        Run Office Script
+             │
+             ▼
+        Convert to PDF
+             │
+             ▼
+        Reactivation-GNS-202610-0097.pdf
+             │
+             ▼
+        Send Email
+
+
+---
+
+1. Use ReferenceNo as the Request Key
+
+Your current:
+
+Reactivation-{ID}.xlsx
+
+should become:
+
+Reactivation-{ReferenceNo}.xlsx
+
+For:
+
+ID    ReferenceNo          GNS User ID
+101   GNS-202610-0097      B014172
+102   GNS-202610-0097      B012504
+
+the generated file is:
+
+Reactivation-GNS-202610-0097.xlsx
+
+and:
+
+Reactivation-GNS-202610-0097.pdf
+
+
+---
+
+2. Trigger
+
+Keep:
+
+SharePoint → When an item is created
+
+List:
+
+Reactivation List
+
+Suppose the trigger receives item 101:
+
+ID = 101
+ReferenceNo = GNS-202610-0097
+GNS User ID = B014172
+
+The important value we take from the trigger is:
+
+ReferenceNo
+
+
+---
+
+3. Compose the ReferenceNo
+
+I recommend adding a Compose immediately after the trigger.
+
+Name:
+
+RequestReferenceNo
+
+Expression:
+
+triggerBody()?['ReferenceNo']
+
+If your actual internal column name is Reference_x0020_No, use:
+
+triggerBody()?['Reference_x0020_No']
+
+This gives:
+
+GNS-202610-0097
+
+Using a Compose makes the rest of the flow easier to maintain.
+
+
+---
+
+4. Get All Items for the Same ReferenceNo
+
+Add:
+
+SharePoint → Get items
+
+Configure:
+
+Site Address:
+Your SharePoint Site
+
+List Name:
+Reactivation List
+
+Filter Query
+
+If the internal name is:
+
+ReferenceNo
+
+use:
+
+ReferenceNo eq '@{outputs('RequestReferenceNo')}'
+
+If the internal name is:
+
+Reference_x0020_No
+
+use:
+
+Reference_x0020_No eq '@{outputs('RequestReferenceNo')}'
+
+For your example, Get Items should return:
+
+101 | GNS-202610-0097 | B014172
+102 | GNS-202610-0097 | B012504
+
+This is the key step that groups the records.
+
+
+---
+
+5. Initialize UserIds
+
+Add:
+
+Initialize variable
+
+Name:
+UserIds
+
+Type:
+Array
+
+Value:
+[]
+
+
+---
+
+6. Initialize UserNames
+
+Add:
+
+Initialize variable
+
+Name:
+UserNames
+
+Type:
+Array
+
+Value:
+[]
+
+
+---
+
+7. Apply to Each
+
+Add:
+
+Control → Apply to each
+
+Input:
+
+body('Get_items')?['value']
+
+or simply select:
+
+value from Get Items.
+
+
+---
+
+8. Append GNS User ID
+
+Inside Apply to Each:
+
+Append to array variable
+
+Name:
+UserIds
+
+Value:
+
+items('Apply_to_each')?['GNSUserID']
+
+Replace GNSUserID with your actual internal SharePoint column name.
+
+For example, if the column is GNS_x0020_User_x0020_ID:
+
+items('Apply_to_each')?['GNS_x0020_User_x0020_ID']
+
+
+---
+
+9. Append GNS User Name
+
+Add another:
+
+Append to array variable
+
+Name:
+UserNames
+
+Value:
+
+items('Apply_to_each')?['GNSUserName']
+
+Again, replace this with the actual internal column name.
+
+
+---
+
+10. Result
+
+For:
+
+GNS-202610-0097
+
+you should end up with:
+
+UserIds
+
+[
+  "B014172",
+  "B012504"
+]
+
+UserNames
+
+[
+  "User 1",
+  "User 2"
+]
+
+Your Office Script then receives the complete group.
+
+
+---
+
+11. Do NOT Create the Excel Yet
+
+This is important.
+
+At this point, do not immediately create:
+
+Reactivation-GNS-202610-0097.xlsx
+
+because another flow run may already be processing the same ReferenceNo.
+
+We need a duplicate-protection mechanism first.
+
+
+---
+
+12. Best Solution: Add a Processing Status to SharePoint
+
+I recommend adding these columns to your Reactivation List:
+
+Column	Type
+
+ProcessingStatus	Choice or Single line text
+GeneratedExcel	Single line text
+GeneratedPDF	Single line text
+ProcessedDate	Date/Time
+ProcessingError	Multiple lines of text
+
+
+For example:
+
+ProcessingStatus
+
+can contain:
+
+Pending
+Processing
+Completed
+Error
+
+However, because your ReferenceNo has multiple items, having the status on every user row isn't ideal.
+
+Better production design
+
+Create another SharePoint list:
+
+Reactivation Request
+
+with one row per ReferenceNo.
+
+Example:
+
+ReferenceNo	Status	ExcelFile	PDFFile
+
+GNS-202610-0097	Processing	...xlsx	...pdf
+
+
+Then:
+
+Reactivation List
+    │
+    ├── 101 GNS-202610-0097
+    └── 102 GNS-202610-0097
+
+             ↓
+
+Reactivation Request
+    GNS-202610-0097
+
+This gives you a proper request header / transaction record.
+
+
+---
+
+13. If You Don't Want a Second SharePoint List
+
+You can still implement a simpler duplicate check.
+
+Before creating the Excel file, use:
+
+SharePoint → Get files (properties only)
+
+Folder:
+
+GNS Reactivation Archive/Generated Excel
+
+Then check whether:
+
+Reactivation-GNS-202610-0097.xlsx
+
+already exists.
+
+
+---
+
+14. Compose the Excel Filename
+
+Add:
+
+Compose
+
+Name:
+
+ExcelFileName
+
+Expression:
+
+concat(
+    'Reactivation-',
+    outputs('RequestReferenceNo'),
+    '.xlsx'
+)
+
+Result:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
+---
+
+15. Compose the PDF Filename
+
+Add another Compose:
+
+PdfFileName
+
+Expression:
+
+concat(
+    'Reactivation-',
+    outputs('RequestReferenceNo'),
+    '.pdf'
+)
+
+Result:
+
+Reactivation-GNS-202610-0097.pdf
+
+
+---
+
+16. Check Whether Excel Already Exists
+
+Use:
+
+SharePoint → Get files (properties only)
+
+Folder:
+
+GNS Reactivation Archive/Generated Excel
+
+Then use a Filter array.
+
+From
+
+body('Get_files_(properties_only)')?['value']
+
+Condition
+
+item()?['Name']
+
+is equal to:
+
+outputs('ExcelFileName')
+
+
+---
+
+17. Check the Filter Result
+
+Add a Condition:
+
+length(body('Filter_array'))
+
+is greater than:
+
+0
+
+YES
+
+The Excel already exists.
+
+Do:
+
+Terminate
+
+with:
+
+Status:
+Succeeded
+
+Message:
+Request already processed for ReferenceNo.
+
+NO
+
+Continue to:
+
+Create Excel
+
+This prevents the second trigger from generating another file if the first run has already created the file.
+
+
+---
+
+18. But There Is a Race Condition
+
+There is an important problem with the previous method.
+
+Imagine:
+
+10:00:00.000
+Flow A checks file → NOT FOUND
+
+10:00:00.100
+Flow B checks file → NOT FOUND
+
+10:00:00.200
+Flow A creates file
+
+10:00:00.300
+Flow B creates file
+
+Both flows checked before either created the file.
+
+Therefore, file existence checking alone is not sufficient for strict duplicate prevention.
+
+
+---
+
+19. Recommended Production Solution
+
+For your requirement, I recommend a dedicated:
+
+Reactivation Request SharePoint List
+
+Columns:
+
+ReferenceNo
+Status
+ExcelFile
+PDFFile
+ProcessedDate
+ErrorMessage
+
+The list contains:
+
+GNS-202610-0097
+
+only once.
+
+This becomes the "master request".
+
+
+---
+
+20. Better Flow Architecture
+
+Your flow becomes:
+
+When item created
+       │
+       ▼
+Get ReferenceNo
+       │
+       ▼
+Get all Reactivation List items
+where ReferenceNo = current ReferenceNo
+       │
+       ▼
+Get/Create Reactivation Request
+       │
+       ▼
+Is request already Processing/Completed?
+       │
+       ├── YES → Terminate
+       │
+       └── NO
+            │
+            ▼
+       Mark Processing
+            │
+            ▼
+       Collect users
+            │
+            ▼
+       Generate Excel
+            │
+            ▼
+       Run Office Script
+            │
+            ▼
+       Convert PDF
+            │
+            ▼
+       Save PDF
+            │
+            ▼
+       Email
+            │
+            ▼
+       Mark Completed
+
+
+---
+
+21. An Even Simpler Option
+
+If your PowerApps application is under your control, there is an even better architecture.
+
+Instead of:
+
+PowerApps
+   ↓
+Create User 1
+Create User 2
+Create User 3
+
+create a Request Header first:
+
+Reactivation Request
+ReferenceNo = GNS-202610-0097
+
+Then create the users:
+
+GNS-202610-0097
+    ├── B014172
+    ├── B012504
+    └── B019999
+
+Power Automate can then trigger from the Request Header, rather than from each user row.
+
+That completely eliminates the multiple-trigger problem.
+
+
+---
+
+22. If You Want to Keep Your Current List
+
+If you don't want to modify PowerApps right now, I'd use this approach:
+
+Reactivation List
+        │
+        ▼
+When item created
+        │
+        ▼
+ReferenceNo
+        │
+        ▼
+Get Items
+Filter ReferenceNo
+        │
+        ▼
+Collect all users
+        │
+        ▼
+Check Reactivation Request list
+        │
+        ▼
+Create Request record if needed
+        │
+        ▼
+Only the Processing run continues
+
+This allows your existing PowerApps structure to remain unchanged.
+
+
+---
+
+23. Office Script Does Not Need Major Changes
+
+Your current Office Script already accepts:
+
+userIds: string[],
+userNames: string[]
+
+So it will automatically receive:
+
+[
+  "B014172",
+  "B012504"
+]
+
+and:
+
+[
+  "User 1",
+  "User 2"
+]
+
+and write them to:
+
+C12 = B014172
+C13 = B012504
+
+and:
+
+G12 = User 1
+G13 = User 2
+
+No change is required to the array handling.
+
+
+---
+
+24. Change Your Generated Excel Filename
+
+Replace the old filename expression:
+
+concat(
+    'Reactivation-',
+    triggerBody()?['ID'],
+    '.xlsx'
+)
+
+with:
+
+concat(
+    'Reactivation-',
+    triggerBody()?['ReferenceNo'],
+    '.xlsx'
+)
+
+Better, because we already created RequestReferenceNo:
+
+concat(
+    'Reactivation-',
+    outputs('RequestReferenceNo'),
+    '.xlsx'
+)
+
+Result:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
+---
+
+25. PDF Filename
+
+Use:
+
+concat(
+    'Reactivation-',
+    outputs('RequestReferenceNo'),
+    '.pdf'
+)
+
+Result:
+
+Reactivation-GNS-202610-0097.pdf
+
+
+---
+
+26. Final User Data Result
+
+For:
+
+ID    ReferenceNo          GNS User ID
+101   GNS-202610-0097      B014172
+102   GNS-202610-0097      B012504
+
+Power Automate performs:
+
+Get Items
+Filter:
+ReferenceNo eq 'GNS-202610-0097'
+
+and gets:
+
+Record 101
+Record 102
+
+Then:
+
+UserIds
+[
+    "B014172",
+    "B012504"
+]
+
+The Excel file is:
+
+Reactivation-GNS-202610-0097.xlsx
+
+The PDF is:
+
+Reactivation-GNS-202610-0097.pdf
+
+And there is only one document for the entire ReferenceNo.
+
+
+---
+
+27. One More Important Consideration: When Should Processing Start?
+
+There's a business timing issue here.
+
+Suppose PowerApps creates:
+
+101 | GNS-202610-0097 | B014172
+
+The flow starts immediately.
+
+But 0.5 seconds later PowerApps creates:
+
+102 | GNS-202610-0097 | B012504
+
+The first flow could retrieve only:
+
+B014172
+
+before record 102 exists.
+
+Therefore, I recommend a short delay before Get Items.
+
+For example:
+
+Delay
+
+Count: 10
+Unit: Seconds
+
+Then:
+
+Get Items
+Filter ReferenceNo
+
+This gives PowerApps time to finish creating all the user records.
+
+However, a delay alone isn't a perfect synchronization mechanism. The best solution is for PowerApps to create a single request/header record after all users have been created, or explicitly mark the request as ready.
+
+
+---
+
+28. Best Architecture for Your Application
+
+Given your requirement that one ReferenceNo can contain many GNS users, my strongest recommendation is:
+
+SharePoint List 1 — Reactivation List
+
+Detail records:
+
+ReferenceNo
+GNS User ID
+GNS User Name
+
+Example:
+
+GNS-202610-0097 | B014172 | User A
+GNS-202610-0097 | B012504 | User B
+
+SharePoint List 2 — Reactivation Request
+
+One record per request:
+
+ReferenceNo
+RequestingSection
+RequestDate
+ReactivationDate
+Approval1
+Approval2
+Approval3
+Approval4
+Status
+ExcelFile
+PDFFile
+
+Then the flow triggers from:
+
+Reactivation Request
+
+instead of the individual user records.
+
+The flow then performs:
+
+Request Header
+       │
+       ▼
+Get Reactivation List
+       │
+       │ ReferenceNo = GNS-202610-0097
+       ▼
+B014172
+B012504
+       │
+       ▼
+UserIds[]
+UserNames[]
+       │
+       ▼
+One Excel
+       │
+       ▼
+One PDF
+       │
+       ▼
+One Email
+
+This is the most reliable production design because the trigger represents a request rather than an individual GNS user.
+
+
+---
+
+My recommendation
+
+For a quick modification to your existing flow, make these changes immediately:
+
+1. Use ReferenceNo instead of ID in filenames.
+
+
+2. Get Items using the current ReferenceNo.
+
+
+3. Build UserIds[] and UserNames[] from all matching items.
+
+
+4. Add a 10-second delay before Get Items if PowerApps creates multiple detail records sequentially.
+
+
+5. Add a Reactivation Request list for reliable duplicate prevention.
+
+
+6. Generate exactly one:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
+7. Generate exactly one:
+
+Reactivation-GNS-202610-0097.pdf
+
+
+8. Store the generated filenames/status against the ReferenceNo.
+
+
+
+The dedicated Reactivation Request list is the part I would strongly recommend for production. A filename check by itself can still have a race condition when two SharePoint items are created almost simultaneously.
+
+
+
+***** 
+
 Current Issue: Multiple Excel Files Generated for the Same Reference Number
 
 In Step 22 (Generate Filename), the current file name uses the SharePoint ID:
