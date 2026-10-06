@@ -1,3 +1,7 @@
+Upon checking, access to OneDrive for Business is currently unavailable. As a result, it is not possible to browse or select folders using the OneDrive for Business connector in Power Automate.
+
+*****
+
 Worked for 26s
 
 Absolutely. For your scenario, I recommend building it as a request-specific document generation flow:
