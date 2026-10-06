@@ -1,0 +1,1397 @@
+Your previous design is very close. The important change is that SharePoint ID should no longer identify the request.
+
+Instead, treat:
+
+> ReferenceNo = Request ID / Batch ID
+
+
+
+So all records with:
+
+GNS-202610-0097
+
+belong to one generated document.
+
+
+---
+
+1. New overall design
+
+Your new flow should work like this:
+
+Reactivation List
+│
+├── ID 101 | GNS-202610-0097 | B014172 | User A
+├── ID 102 | GNS-202610-0097 | B012504 | User B
+└── ID 103 | GNS-202610-0097 | B019999 | User C
+             │
+             ▼
+       SAME ReferenceNo
+             │
+             ▼
+       Get all records
+             │
+             ▼
+       UserIds Array
+       ├── B014172
+       ├── B012504
+       └── B019999
+             │
+             ▼
+       UserNames Array
+       ├── User A
+       ├── User B
+       └── User C
+             │
+             ▼
+       Generate ONE Excel
+       Reactivation-GNS-202610-0097.xlsx
+             │
+             ▼
+       Generate ONE PDF
+       Reactivation-GNS-202610-0097.pdf
+             │
+             ▼
+       Send ONE Email
+
+The most important part is preventing IDs 101, 102 and 103 from independently generating three files.
+
+
+---
+
+2. Recommended SharePoint columns
+
+I recommend adding these columns to your Reactivation List if you haven't already.
+
+Column	Type	Purpose
+
+ReferenceNo	Single line text	Groups the users into one request
+UserID	Single line text	GNS User ID
+Username	Single line text	GNS User Name
+Approval1	Single line text	Approver
+Approval2	Single line text	Approver
+Approval3	Single line text	Approver
+Approval4	Single line text	Approver
+ProcessingStatus	Choice/Text	Processing control
+GeneratedExcel	Single line text	Generated XLSX
+GeneratedPDF	Single line text	Generated PDF
+ProcessingError	Multiple lines	Error information
+ProcessedDate	Date/Time	Completion date
+
+
+I also recommend one additional column:
+
+GenerateRequest
+
+Type:
+
+Yes/No
+
+This gives us the most reliable way to tell Power Automate:
+
+> "All records for this ReferenceNo have now been created. Generate the document."
+
+
+
+
+---
+
+3. Why I recommend GenerateRequest
+
+This is important.
+
+Suppose Power Apps creates:
+
+ID 101 → GNS-202610-0097 → B014172
+ID 102 → GNS-202610-0097 → B012504
+ID 103 → GNS-202610-0097 → B019999
+
+Power Automate's:
+
+When an item is created
+
+can trigger three times.
+
+If ID 101 triggers first, Power Automate might query SharePoint before IDs 102 and 103 have been created.
+
+It could see only:
+
+B014172
+
+and generate an incomplete document.
+
+Therefore, the best solution is:
+
+Power Apps creates all user records
+              ↓
+Power Apps marks ONE record
+GenerateRequest = Yes
+              ↓
+Power Automate starts generation
+              ↓
+Get ALL records for ReferenceNo
+
+This is much safer than relying on a delay.
+
+
+---
+
+4. Power Apps side
+
+When the user submits the reactivation request, create all the records as you currently do.
+
+For example:
+
+ReferenceNo: GNS-202610-0097
+
+User 1
+B014172
+Juan Dela Cruz
+
+User 2
+B012504
+Bong Gakaday
+
+User 3
+B019999
+Pedro Santos
+
+All records have:
+
+ReferenceNo = GNS-202610-0097
+
+But only one record should have:
+
+GenerateRequest = Yes
+
+The others:
+
+GenerateRequest = No
+
+For example:
+
+ID	ReferenceNo	UserID	Username	GenerateRequest
+
+101	GNS-202610-0097	B014172	Juan Dela Cruz	No
+102	GNS-202610-0097	B012504	Bong Gakaday	No
+103	GNS-202610-0097	B019999	Pedro Santos	Yes
+
+
+It doesn't matter which record contains Yes.
+
+The important thing is that only one record has Yes.
+
+
+---
+
+5. Modify your Power Automate trigger
+
+Previously you had:
+
+> SharePoint → When an item is created
+
+
+
+You can still use that trigger.
+
+However, add a Trigger Condition so the flow only starts when:
+
+GenerateRequest = Yes
+
+This is better than allowing every user record to start the complete generation process.
+
+
+---
+
+6. Configure Trigger Condition
+
+Open the trigger:
+
+When an item is created
+
+Click:
+
+... → Settings
+
+Find:
+
+Trigger Conditions
+
+Add:
+
+@equals(triggerBody()?['GenerateRequest'], true)
+
+If your SharePoint internal column name is different, use the actual internal name.
+
+For example, if the internal name is:
+
+Generate_x0020_Request
+
+then:
+
+@equals(triggerBody()?['Generate_x0020_Request'], true)
+
+Now:
+
+GenerateRequest = No
+
+→ Flow doesn't start.
+
+And:
+
+GenerateRequest = Yes
+
+→ Flow starts.
+
+
+---
+
+7. First action — get the ReferenceNo
+
+The trigger record contains:
+
+ReferenceNo
+
+We will use that value throughout the entire flow.
+
+For example:
+
+GNS-202610-0097
+
+You can optionally add:
+
+Compose
+
+Name:
+
+RequestReferenceNo
+
+Expression:
+
+triggerBody()?['ReferenceNo']
+
+This isn't absolutely required, but I recommend it because it makes the flow easier to understand.
+
+
+---
+
+8. Get all records for the ReferenceNo
+
+This replaces the old logic where you were effectively working with the individual SharePoint ID.
+
+Add:
+
+SharePoint → Get items
+
+Configure:
+
+Site Address
+
+Your SharePoint site.
+
+List Name
+
+Reactivation List
+
+Filter Query
+
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+
+For your example, Power Automate effectively executes:
+
+ReferenceNo eq 'GNS-202610-0097'
+
+The result will be:
+
+ID 101 → B014172
+ID 102 → B012504
+ID 103 → B019999
+
+
+---
+
+9. Very important — use the internal SharePoint column name
+
+If the display name is:
+
+Reference No
+
+the internal name might be:
+
+ReferenceNo
+
+or:
+
+Reference_x0020_No
+
+You need to use the actual internal name.
+
+So your filter could be:
+
+Reference_x0020_No eq '@{triggerBody()?['Reference_x0020_No']}'
+
+Don't assume the display name is the internal name.
+
+
+---
+
+10. Initialize UserIds
+
+Next:
+
+Variables → Initialize variable
+
+Name:
+
+UserIds
+
+Type:
+
+Array
+
+Value:
+
+[]
+
+
+---
+
+11. Initialize UserNames
+
+Add another:
+
+Initialize variable
+
+Name:
+
+UserNames
+
+Type:
+
+Array
+
+Value:
+
+[]
+
+
+---
+
+12. Apply to each — all records
+
+Add:
+
+Control → Apply to each
+
+For the input, select:
+
+value
+
+from:
+
+Get items
+
+So you have:
+
+Get items
+   ↓
+Apply to each
+   ↓
+All records having same ReferenceNo
+
+
+---
+
+13. Append all User IDs
+
+Inside the Apply to each:
+
+Append to array variable
+
+Variable:
+
+UserIds
+
+Value:
+
+items('Apply_to_each')?['UserID']
+
+If your actual internal field is:
+
+User_x0020_ID
+
+use that instead.
+
+
+---
+
+14. Append all User Names
+
+Still inside Apply to each:
+
+Append to array variable
+
+Variable:
+
+UserNames
+
+Value:
+
+items('Apply_to_each')?['Username']
+
+Again, use the actual internal SharePoint column name.
+
+
+---
+
+15. Result
+
+For:
+
+GNS-202610-0097
+
+with:
+
+UserID	Username
+
+B014172	Juan Dela Cruz
+B012504	Bong Gakaday
+B019999	Pedro Santos
+
+
+your variables become:
+
+UserIds
+
+[
+    "B014172",
+    "B012504",
+    "B019999"
+]
+
+UserNames
+
+[
+    "Juan Dela Cruz",
+    "Bong Gakaday",
+    "Pedro Santos"
+]
+
+These arrays are then passed to Office Script.
+
+
+---
+
+16. Keep your Approval signature section
+
+Your existing steps for:
+
+Approval1
+Approval2
+Approval3
+Approval4
+
+can remain almost exactly the same.
+
+Initialize:
+
+Approval1SignatureBase64
+Approval2SignatureBase64
+Approval3SignatureBase64
+Approval4SignatureBase64
+
+as empty strings.
+
+Then retrieve:
+
+Approval1.png
+Approval2.png
+Approval3.png
+Approval4.png
+
+and convert them to Base64.
+
+For example:
+
+base64(body('Get_file_content_using_path_Approval1'))
+
+No change is required to the Office Script signature logic.
+
+
+---
+
+17. Important change — Excel filename
+
+This is where you need to modify your previous Step 21/22.
+
+Previously:
+
+User Account Reactivation-@{triggerBody()?['ID']}-@{formatDateTime(utcNow(),'yyyyMMdd-HHmmss')}.xlsx
+
+Do not use ID anymore.
+
+Use:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+So if:
+
+ReferenceNo = GNS-202610-0097
+
+the generated file becomes:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
+---
+
+18. I recommend a slightly safer filename
+
+If you want the Excel file to retain your existing naming convention:
+
+User Account Reactivation-GNS-202610-0097.xlsx
+
+use:
+
+User Account Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+Personally, I would use:
+
+Reactivation-GNS-202610-0097.xlsx
+
+because it is shorter and easier to identify.
+
+
+---
+
+19. Important — sanitize ReferenceNo
+
+This is something I recommend adding.
+
+Some characters aren't allowed in SharePoint filenames.
+
+For example:
+
+/
+\
+:
+*
+?
+"
+<
+>
+|
+
+If your ReferenceNo is always something like:
+
+GNS-202610-0097
+
+you don't have a problem.
+
+But if ReferenceNo might contain /, create a Compose:
+
+SafeReferenceNo
+
+Expression:
+
+replace(
+    replace(
+        replace(
+            triggerBody()?['ReferenceNo'],
+            '/',
+            '-'
+        ),
+        '\',
+        '-'
+    ),
+    ':',
+    '-'
+)
+
+Then use:
+
+Reactivation-@{outputs('SafeReferenceNo')}.xlsx
+
+If your ReferenceNo format is always GNS-YYYYMM-NNNN, you can simply use ReferenceNo directly.
+
+
+---
+
+20. Before Create File — check whether the file already exists
+
+This is another important improvement.
+
+Even though only one record has:
+
+GenerateRequest = Yes
+
+it's still good to protect against:
+
+manually running the flow
+
+resubmission
+
+retry
+
+Power Automate failure/retry
+
+someone accidentally setting GenerateRequest to Yes again
+
+
+We can use the ReferenceNo as the duplicate key.
+
+
+---
+
+21. Check ProcessingStatus first
+
+Before generating the Excel, check the trigger record's:
+
+ProcessingStatus
+
+Ideally, when Power Apps creates the record:
+
+ProcessingStatus = Pending
+
+Then Power Automate changes it to:
+
+Processing
+
+when generation begins.
+
+At the end:
+
+Completed
+
+If an error occurs:
+
+Error
+
+
+---
+
+22. Update status to Processing
+
+After the trigger starts, add:
+
+SharePoint → Update item
+
+Set:
+
+ID
+
+to the ID from the trigger.
+
+Set:
+
+ProcessingStatus
+
+to:
+
+Processing
+
+Keep the other required SharePoint fields populated as necessary.
+
+For example:
+
+ProcessingStatus = Processing
+
+
+---
+
+23. Create the Excel file
+
+Now:
+
+SharePoint → Get file content using path
+
+Template:
+
+/GNS Reactivation Archive/Templates/User Account Reactivation-IDLE Account.xlsx
+
+Then:
+
+SharePoint → Create file
+
+Folder:
+
+GNS Reactivation Archive/Generated Excel
+
+Filename:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+File Content:
+
+File Content
+
+from the template.
+
+
+---
+
+24. Result
+
+For these records:
+
+ID 101
+ReferenceNo = GNS-202610-0097
+UserID = B014172
+
+ID 102
+ReferenceNo = GNS-202610-0097
+UserID = B012504
+
+ID 103
+ReferenceNo = GNS-202610-0097
+UserID = B019999
+
+only ONE Excel file is generated:
+
+Reactivation-GNS-202610-0097.xlsx
+
+Not:
+
+Reactivation-101.xlsx
+Reactivation-102.xlsx
+Reactivation-103.xlsx
+
+
+---
+
+25. Run Office Script
+
+Your existing Office Script can remain.
+
+The important part is the mapping.
+
+Office Script parameter	Power Automate
+
+requestingSection	RequestingSection
+requestDate	RequestDate
+reactivationDate	ReactivationDate
+userIds	variables('UserIds')
+userNames	variables('UserNames')
+approval1	Approval1
+approval2	Approval2
+approval3	Approval3
+approval4	Approval4
+approval1Signature	variables('Approval1SignatureBase64')
+approval2Signature	variables('Approval2SignatureBase64')
+approval3Signature	variables('Approval3SignatureBase64')
+approval4Signature	variables('Approval4SignatureBase64')
+
+
+For userIds:
+
+Switch to input entire array
+
+then:
+
+variables('UserIds')
+
+For userNames:
+
+Switch to input entire array
+
+then:
+
+variables('UserNames')
+
+
+---
+
+26. Office Script will now populate ALL users
+
+Your existing script already supports:
+
+C12:C26
+
+and:
+
+G12:G26
+
+So for three users:
+
+C12 = B014172
+C13 = B012504
+C14 = B019999
+
+and:
+
+G12 = Juan Dela Cruz
+G13 = Bong Gakaday
+G14 = Pedro Santos
+
+The remaining rows remain blank.
+
+This is exactly what you want.
+
+
+---
+
+27. Save the generated Excel filename to SharePoint List
+
+After the Create file action, add:
+
+SharePoint → Update item
+
+For:
+
+GeneratedExcel
+
+set:
+
+Reactivation-GNS-202610-0097.xlsx
+
+You can use the dynamic filename you created.
+
+For example:
+
+concat(
+    'Reactivation-',
+    triggerBody()?['ReferenceNo'],
+    '.xlsx'
+)
+
+
+---
+
+28. Get generated Excel metadata
+
+Use:
+
+Get file metadata
+
+with the Identifier returned from:
+
+Create file
+
+This is still the same as your previous design.
+
+
+---
+
+29. Run Office Script against generated workbook
+
+Use:
+
+Excel Online (Business) → Run script
+
+File:
+
+Identifier
+
+from the generated Excel file.
+
+This means:
+
+Template
+    ↓
+Create:
+Reactivation-GNS-202610-0097.xlsx
+    ↓
+Run Office Script
+    ↓
+Populate that file
+
+The original template remains untouched.
+
+
+---
+
+30. Convert to PDF
+
+Your existing OneDrive temporary conversion process can remain.
+
+The flow becomes:
+
+Reactivation-GNS-202610-0097.xlsx
+             ↓
+      Run Office Script
+             ↓
+      Completed Excel
+             ↓
+       OneDrive Temp
+             ↓
+       Convert to PDF
+             ↓
+Reactivation-GNS-202610-0097.pdf
+
+
+---
+
+31. Change the PDF filename
+
+Previously you may have:
+
+User Account Reactivation-125-20260909-074512.pdf
+
+Change it to:
+
+Reactivation-GNS-202610-0097.pdf
+
+Use:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.pdf
+
+So the Excel and PDF have matching names.
+
+
+---
+
+32. Save PDF to SharePoint
+
+Use:
+
+SharePoint → Create file
+
+Folder:
+
+GNS Reactivation Archive/PDF
+
+File Name:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.pdf
+
+File Content:
+
+File Content
+
+from:
+
+OneDrive Convert file
+
+
+---
+
+33. Update GeneratedPDF
+
+After creating the PDF, update the original trigger record:
+
+GeneratedPDF
+
+with:
+
+Reactivation-GNS-202610-0097.pdf
+
+
+---
+
+34. Update ProcessingStatus
+
+After PDF creation succeeds:
+
+ProcessingStatus = Completed
+
+and:
+
+ProcessedDate = utcNow()
+
+So the SharePoint record that triggered the process will look like:
+
+Field	Value
+
+ReferenceNo	GNS-202610-0097
+ProcessingStatus	Completed
+GeneratedExcel	Reactivation-GNS-202610-0097.xlsx
+GeneratedPDF	Reactivation-GNS-202610-0097.pdf
+ProcessedDate	10/06/2026 ...
+
+
+
+---
+
+35. Send the email
+
+Your existing email step can remain.
+
+Subject:
+
+Reactivation Form - @{triggerBody()?['ReferenceNo']}
+
+For example:
+
+Reactivation Form - GNS-202610-0097
+
+Attachment:
+
+Reactivation-GNS-202610-0097.pdf
+
+Attachment Content:
+
+File Content
+
+from the PDF conversion.
+
+
+---
+
+36. Delete the temporary OneDrive Excel
+
+After email succeeds:
+
+OneDrive for Business → Delete file
+
+Delete:
+
+Reactivation-GNS-202610-0097.xlsx
+
+from your temporary folder.
+
+
+---
+
+37. Your new complete flow
+
+I would now structure the flow like this:
+
+┌─────────────────────────────────────┐
+│ SharePoint                          │
+│ When an item is created             │
+└─────────────────┬───────────────────┘
+                  │
+                  │ Trigger Condition:
+                  │ GenerateRequest = Yes
+                  ▼
+        ┌─────────────────────┐
+        │ Get ReferenceNo     │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │ Update Status       │
+        │ Processing          │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │ Get Items           │
+        │ Same ReferenceNo    │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │ Initialize UserIds  │
+        │ []                  │
+        └──────────┬──────────┘
+                   │
+        ┌─────────────────────┐
+        │ Initialize          │
+        │ UserNames []        │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │ Apply to each       │
+        │ Same ReferenceNo    │
+        │                     │
+        │ Append UserID       │
+        │ Append Username     │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌─────────────────────┐
+        │ Get Signatures      │
+        │ Approval 1-4        │
+        └──────────┬──────────┘
+                   │
+                   ▼
+        ┌──────────────────────────┐
+        │ Get Excel Template       │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Create Excel             │
+        │                          │
+        │ Reactivation-            │
+        │ GNS-202610-0097.xlsx    │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Run Office Script        │
+        │                          │
+        │ ALL users                │
+        │ ALL approvers            │
+        │ ALL signatures           │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ OneDrive Temporary Excel │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+                Delay 5 sec
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Convert Excel → PDF      │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Create SharePoint PDF    │
+        │                          │
+        │ Reactivation-            │
+        │ GNS-202610-0097.pdf     │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Send Email               │
+        │ Attach PDF               │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Delete OneDrive Temp     │
+        └────────────┬─────────────┘
+                     │
+                     ▼
+        ┌──────────────────────────┐
+        │ Update Status            │
+        │ Completed                │
+        └──────────────────────────┘
+
+
+---
+
+38. What happens with your example?
+
+Your SharePoint List:
+
+ID	ReferenceNo	User ID	Username	GenerateRequest
+
+101	GNS-202610-0097	B014172	Juan Dela Cruz	No
+102	GNS-202610-0097	B012504	Bong Gakaday	No
+103	GNS-202610-0097	B019999	Pedro Santos	Yes
+
+
+Power Automate starts only for ID 103.
+
+It reads:
+
+ReferenceNo = GNS-202610-0097
+
+Then:
+
+Get items
+
+returns:
+
+101
+102
+103
+
+The arrays become:
+
+UserIds:
+
+[
+    "B014172",
+    "B012504",
+    "B019999"
+]
+
+and:
+
+UserNames:
+
+[
+    "Juan Dela Cruz",
+    "Bong Gakaday",
+    "Pedro Santos"
+]
+
+Then only one Excel is created:
+
+Reactivation-GNS-202610-0097.xlsx
+
+And only one PDF:
+
+Reactivation-GNS-202610-0097.pdf
+
+
+---
+
+39. Important duplicate protection
+
+I would add one more check before Create Excel.
+
+Use:
+
+SharePoint → Get files (properties only)
+
+Point it to:
+
+GNS Reactivation Archive/Generated Excel
+
+Then search for the ReferenceNo.
+
+However, there is an even cleaner approach for your setup:
+
+Use ProcessingStatus
+
+Your intended lifecycle becomes:
+
+Pending
+   ↓
+Processing
+   ↓
+Completed
+
+If already:
+
+Completed
+
+don't generate again.
+
+If:
+
+Error
+
+you can allow an administrator to reset it to:
+
+Pending
+
+and regenerate.
+
+
+---
+
+40. One important improvement I recommend
+
+If your Power Apps currently creates the records one-by-one, I recommend this sequence:
+
+Power Apps
+   │
+   ├── Create User 1
+   ├── Create User 2
+   ├── Create User 3
+   │
+   └── After ALL records are created
+             │
+             ▼
+       Update one record
+       GenerateRequest = Yes
+             │
+             ▼
+       Power Automate
+
+This is much better than:
+
+Create User 1
+   ↓
+Power Automate immediately starts
+
+because the latter can cause the first flow to see only User 1.
+
+
+---
+
+41. If you cannot modify Power Apps
+
+If you don't want to add GenerateRequest, there is a second option.
+
+You can have Power Automate:
+
+1. Wait 30 seconds.
+
+
+2. Get all records for ReferenceNo.
+
+
+3. Find the lowest SharePoint ID.
+
+
+4. Only the lowest ID generates the document.
+
+
+5. All other runs terminate.
+
+
+
+Conceptually:
+
+ID 101 ─┐
+ID 102 ─┼── ReferenceNo GNS-202610-0097
+ID 103 ─┘
+             │
+             ▼
+       Lowest ID = 101
+             │
+             ▼
+       ID 101 generates
+       ID 102 terminates
+       ID 103 terminates
+
+But I don't recommend this as the primary production solution, because if ID 101 starts before IDs 102/103 are created, it can still generate an incomplete document. A GenerateRequest/ready flag is much safer.
+
+
+---
+
+42. Recommended final SharePoint data model
+
+For your current application, I'd use:
+
+Reactivation List
+│
+├── ReferenceNo
+│
+├── RequestingSection
+├── RequestDate
+├── ReactivationDate
+│
+├── UserID
+├── Username
+│
+├── Approval1
+├── Approval2
+├── Approval3
+├── Approval4
+│
+├── GenerateRequest
+│
+├── ProcessingStatus
+├── GeneratedExcel
+├── GeneratedPDF
+├── ProcessingError
+└── ProcessedDate
+
+The key relationship is:
+
+ReferenceNo
+     │
+     ├── User 1
+     ├── User 2
+     ├── User 3
+     ├── User 4
+     └── User 5
+           │
+           ▼
+     ONE Reactivation Form
+           │
+           ├── ONE XLSX
+           ├── ONE PDF
+           └── ONE Email
+
+The main changes from your previous workflow are therefore:
+
+Previous	New
+
+SharePoint ID identifies file	ReferenceNo identifies request
+Reactivation-101.xlsx	Reactivation-GNS-202610-0097.xlsx
+One trigger can generate one document	One GenerateRequest = Yes record generates the document
+Individual record data	Get Items by ReferenceNo
+Individual User ID	All User IDs into array
+Individual Username	All User Names into array
+Multiple XLSX possible	One XLSX per ReferenceNo
+Multiple PDF possible	One PDF per ReferenceNo
+No explicit batch-ready signal	GenerateRequest = Yes
+Basic status	Pending → Processing → Completed/Error
+
+
+I recommend implementing GenerateRequest first before changing the filename. That solves the more important problem: ensuring that all users belonging to GNS-202610-0097 have been created before Power Automate generates the single document.
