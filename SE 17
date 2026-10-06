@@ -1,3 +1,454 @@
+Yes. Since ReactivationDate is initially blank and later updated with a date, you should use a trigger based on item modification, not item creation.
+
+The cleanest setup is:
+
+> When an item is created or modified → check whether ReactivationDate changed from blank to a date → continue only when it has a value.
+
+
+
+1. Change your Power Automate trigger
+
+Instead of:
+
+SharePoint → When an item is created
+
+use:
+
+SharePoint → When an item is created or modified
+
+Configure:
+
+Site Address: your SharePoint site
+
+List Name: Reactivation List
+
+
+
+---
+
+2. Add a Condition immediately after the trigger
+
+Add:
+
+Control → Condition
+
+For the left side, use:
+
+ReactivationDate
+
+Operator:
+
+is not equal to
+
+Right side:
+
+Leave it blank.
+
+Conceptually:
+
+ReactivationDate
+       is not equal to
+          blank
+
+If ReactivationDate contains a date:
+
+2026-10-15
+
+→ Continue.
+
+If it is blank:
+
+null
+
+→ Do nothing.
+
+
+---
+
+3. Better: use an expression
+
+I recommend using an expression because SharePoint date fields can sometimes be represented as null.
+
+In the Condition, use:
+
+not(empty(triggerBody()?['ReactivationDate']))
+
+Set the condition to:
+
+Expression:
+
+not(empty(triggerBody()?['ReactivationDate']))
+
+Then:
+
+If yes
+    ↓
+Continue workflow
+
+and:
+
+If no
+    ↓
+Terminate
+
+
+---
+
+4. But there is an important issue with your current design
+
+Your situation is slightly different because you have multiple SharePoint records for one ReferenceNo.
+
+For example:
+
+ID	ReferenceNo	UserID	ReactivationDate
+
+101	GNS-202610-0097	B014172	blank
+102	GNS-202610-0097	B012504	blank
+103	GNS-202610-0097	B019999	blank
+
+
+Then later the Reactivation Date is entered:
+
+ID	ReferenceNo	UserID	ReactivationDate
+
+101	GNS-202610-0097	B014172	2026-10-15
+102	GNS-202610-0097	B012504	blank
+103	GNS-202610-0097	B019999	blank
+
+
+If you simply use When an item is created or modified, the flow will trigger for ID 101.
+
+That's actually useful because you can then:
+
+ID 101 modified
+       ↓
+ReactivationDate has value
+       ↓
+Get all items
+where ReferenceNo =
+GNS-202610-0097
+       ↓
+Collect ALL users
+       ↓
+Generate ONE Excel
+       ↓
+Generate ONE PDF
+
+So the trigger record doesn't need to contain all users. It only needs to tell the flow:
+
+> "This ReferenceNo is now ready."
+
+
+
+
+---
+
+5. I recommend using ReactivationDate as the trigger
+
+Based on your new requirement, you may not even need the GenerateRequest column I suggested previously.
+
+Your process can become:
+
+Power Apps
+    │
+    ├── Create User 1
+    ├── Create User 2
+    └── Create User 3
+          │
+          ▼
+   ReactivationDate
+   initially blank
+          │
+          ▼
+   Later date is entered
+          │
+          ▼
+SharePoint item modified
+          │
+          ▼
+Power Automate Trigger
+          │
+          ▼
+Is ReactivationDate NOT blank?
+          │
+         YES
+          │
+          ▼
+Get all items with same ReferenceNo
+          │
+          ▼
+Collect all User IDs
+          │
+          ▼
+Collect all User Names
+          │
+          ▼
+Generate ONE Excel
+          │
+          ▼
+Generate ONE PDF
+          │
+          ▼
+Send ONE Email
+
+This is actually a very good fit for your process.
+
+
+---
+
+6. However, there is one thing you should protect against
+
+Suppose your flow triggers when ID 101 gets:
+
+ReactivationDate = 2026-10-15
+
+It generates:
+
+Reactivation-GNS-202610-0097.xlsx
+Reactivation-GNS-202610-0097.pdf
+
+Then someone edits ID 101 again.
+
+For example, they change:
+
+Username
+
+or:
+
+RequestingSection
+
+The trigger will fire again because the item was modified.
+
+Since ReactivationDate is still not blank:
+
+not(empty(ReactivationDate))
+
+will still be true.
+
+You could therefore generate the document again.
+
+
+---
+
+7. Use ProcessingStatus to prevent this
+
+This is why the ProcessingStatus column from the previous design is useful.
+
+For example:
+
+Before ReactivationDate
+
+ProcessingStatus = Pending
+
+When ReactivationDate is entered
+
+Flow starts:
+
+ProcessingStatus = Processing
+
+After successful generation
+
+ProcessingStatus = Completed
+
+Then your Condition should check both:
+
+ReactivationDate is not blank
+AND
+ProcessingStatus is not Completed
+
+
+---
+
+8. Recommended condition
+
+Use:
+
+Condition
+
+@and(
+    not(empty(triggerBody()?['ReactivationDate'])),
+    not(equals(triggerBody()?['ProcessingStatus'], 'Completed'))
+)
+
+Meaning:
+
+ReactivationDate has value
+        AND
+ProcessingStatus is not Completed
+
+Only then does the workflow continue.
+
+
+---
+
+9. Even better for your scenario
+
+I recommend the following statuses:
+
+Pending
+Processing
+Completed
+Error
+
+Initial records
+
+ReferenceNo: GNS-202610-0097
+ReactivationDate: blank
+ProcessingStatus: Pending
+
+Date entered
+
+ReactivationDate: 2026-10-15
+ProcessingStatus: Pending
+
+Flow starts.
+
+Then immediately:
+
+ProcessingStatus = Processing
+
+Then it generates:
+
+Reactivation-GNS-202610-0097.xlsx
+
+and:
+
+Reactivation-GNS-202610-0097.pdf
+
+After successful email:
+
+ProcessingStatus = Completed
+
+
+---
+
+10. One more important consideration: multiple records
+
+You need to decide which SharePoint item receives the ReactivationDate.
+
+For example:
+
+ID	ReferenceNo	UserID	ReactivationDate	Status
+
+101	GNS-202610-0097	B014172	2026-10-15	Pending
+102	GNS-202610-0097	B012504	blank	Pending
+103	GNS-202610-0097	B019999	blank	Pending
+
+
+This is perfectly fine.
+
+The flow uses ID 101 only as the trigger, then executes:
+
+Get items
+Filter:
+ReferenceNo eq 'GNS-202610-0097'
+
+and retrieves:
+
+101
+102
+103
+
+Therefore all three users go into the generated Excel.
+
+
+---
+
+11. Your Office Script doesn't need to change
+
+This is important.
+
+Your existing Office Script already receives:
+
+requestingSection
+requestDate
+reactivationDate
+
+userIds[]
+userNames[]
+
+approval1
+approval2
+approval3
+approval4
+
+approval1Signature
+approval2Signature
+approval3Signature
+approval4Signature
+
+So you can continue using it.
+
+The only difference is that the flow obtains ReactivationDate from the modified SharePoint item.
+
+
+---
+
+12. I recommend this final trigger design
+
+Your flow should start with:
+
+SharePoint
+    │
+    ▼
+When an item is created or modified
+    │
+    ▼
+Condition
+    │
+    ├── ReactivationDate is empty
+    │       ↓
+    │    Do nothing
+    │
+    └── ReactivationDate has value
+            │
+            ▼
+       ProcessingStatus?
+            │
+            ├── Completed
+            │      ↓
+            │    Do nothing
+            │
+            └── Pending/Error
+                   │
+                   ▼
+             Set Processing
+                   │
+                   ▼
+             Get all items
+             same ReferenceNo
+                   │
+                   ▼
+             Build UserIds[]
+             Build UserNames[]
+                   │
+                   ▼
+             Generate ONE Excel
+                   │
+                   ▼
+             Generate ONE PDF
+                   │
+                   ▼
+             Send Email
+                   │
+                   ▼
+             Set Completed
+
+One thing I would change from the earlier workflow
+
+Since ReactivationDate is now your "ready to generate" signal, I would not use GenerateRequest unless you have another reason for it.
+
+Your business logic becomes much simpler:
+
+> When ReactivationDate changes from blank to populated, generate the complete Reactivation Form for that ReferenceNo.
+
+
+
+The only remaining piece I'd strongly recommend is detecting the transition from blank → populated, rather than merely checking that the date is nonblank. That prevents the flow from regenerating the same document whenever the SharePoint item is edited later.
+
+
+****
+
 Your previous design is very close. The important change is that SharePoint ID should no longer identify the request.
 
 Instead, treat:
