@@ -1,3 +1,1038 @@
+Absolutely. Below is the revised design based on your previous workflow. The OneDrive for Business and PDF conversion steps are completely removed.
+
+The final result is:
+
+> One ReferenceNo = One Excel file + One email
+
+
+
+For example:
+
+GNS-202610-0097 → Reactivation-GNS-202610-0097.xlsx → one email with the Excel attached.
+
+Complete Power Automate Reactivation Form Workflow
+
+Excel Attachment Version – No OneDrive / No PDF
+
+I have a Power Apps application named "Reactivation Form App".
+
+When a user submits the form, the data is saved to a SharePoint List named:
+
+Reactivation List
+
+Multiple SharePoint List records can belong to one reactivation request. They are grouped using the same ReferenceNo.
+
+Example:
+
+ID| ReferenceNo| UserID| Username
+101| GNS-202610-0097| B014172| Juan Dela Cruz
+102| GNS-202610-0097| B012504| Bong Gakaday
+103| GNS-202610-0097| B019999| Pedro Santos
+
+These 3 records represent one request.
+
+The desired result is:
+
+Reactivation-GNS-202610-0097.xlsx
+
+and one email containing this Excel file as an attachment.
+
+---
+
+1. Important Business Rule
+
+The workflow must follow:
+
+ONE ReferenceNo
+      ↓
+ONE Excel file
+      ↓
+ONE email
+
+It must NOT create one Excel file per SharePoint item.
+
+For example:
+
+GNS-202610-0097
+ ├── User 1
+ ├── User 2
+ └── User 3
+        ↓
+Reactivation-GNS-202610-0097.xlsx
+        ↓
+One email
+
+---
+
+2. SharePoint List
+
+Use the existing SharePoint List:
+
+Reactivation List
+
+The important columns are:
+
+- "ReferenceNo"
+- "RequestingSection"
+- "RequestDate"
+- "ReactivationDate"
+- "UserID"
+- "Username"
+- "Approval1"
+- "Approval2"
+- "Approval3"
+- "Approval4"
+
+Add these columns if they do not already exist:
+
+ProcessingStatus
+
+Recommended type:
+
+Choice
+
+Values:
+
+Pending
+Processing
+Completed
+Error
+
+Default:
+
+Pending
+
+GeneratedExcel
+
+Type:
+
+Single line of text
+
+ProcessingError
+
+Type:
+
+Multiple lines of text
+
+ProcessedDate
+
+Type:
+
+Date and Time
+
+---
+
+3. Trigger
+
+Create a Power Automate cloud flow.
+
+Use:
+
+SharePoint – When an item is created or modified
+
+Site Address:
+
+Your SharePoint site
+
+List Name:
+
+"Reactivation List"
+
+The flow should use "ReactivationDate" as the signal that the request is ready for processing.
+
+---
+
+4. First Condition – Is ReactivationDate populated?
+
+Add a Condition.
+
+Use this expression:
+
+@not(empty(triggerBody()?['ReactivationDate']))
+
+If No:
+
+Do nothing
+
+If Yes, continue.
+
+---
+
+5. Prevent Already Completed Requests
+
+Add another Condition.
+
+Expression:
+
+@not(equals(triggerBody()?['ProcessingStatus'], 'Completed'))
+
+If No:
+
+Do nothing
+
+If Yes:
+
+Continue processing.
+
+Important: for a production implementation, duplicate/concurrent processing should also be controlled with the request-level status/locking strategy. Do not rely only on checking whether the Excel file already exists.
+
+---
+
+6. Set Processing Status
+
+Add:
+
+SharePoint – Update item
+
+Update the trigger item:
+
+ProcessingStatus = Processing
+
+Keep the other required SharePoint fields populated when using Update item.
+
+---
+
+7. Get All Users for the ReferenceNo
+
+Add:
+
+SharePoint – Get items
+
+Site Address:
+
+Your SharePoint site
+
+List:
+
+"Reactivation List"
+
+Filter Query:
+
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+
+If the actual internal column name is different, use the internal name.
+
+For example, if the internal name is:
+
+Reference_x0020_No
+
+then use:
+
+Reference_x0020_No eq '@{triggerBody()?['ReferenceNo']}'
+
+The important rule is:
+
+Get every record having the same ReferenceNo.
+
+---
+
+8. Initialize User ID Array
+
+Add:
+
+Initialize variable
+
+Name:
+
+UserIds
+
+Type:
+
+Array
+
+Value:
+
+[]
+
+---
+
+9. Initialize User Name Array
+
+Add another:
+
+Initialize variable
+
+Name:
+
+UserNames
+
+Type:
+
+Array
+
+Value:
+
+[]
+
+---
+
+10. Collect All Users
+
+Add:
+
+Apply to each
+
+Input:
+
+value
+
+from:
+
+Get items
+
+Inside the Apply to each, add:
+
+Append User ID
+
+Action:
+
+Append to array variable
+
+Name:
+
+UserIds
+
+Value:
+
+items('Apply_to_each')?['UserID']
+
+Then add:
+
+Append Username
+
+Name:
+
+UserNames
+
+Value:
+
+items('Apply_to_each')?['Username']
+
+After processing the example records, the variables should contain:
+
+UserIds:
+[
+  "B014172",
+  "B012504",
+  "B019999"
+]
+
+and:
+
+UserNames:
+[
+  "Juan Dela Cruz",
+  "Bong Gakaday",
+  "Pedro Santos"
+]
+
+---
+
+11. Initialize Signature Variables
+
+Create four variables.
+
+Approval1SignatureBase64
+
+Type:
+
+String
+
+Value:
+
+empty
+
+Approval2SignatureBase64
+
+Type:
+
+String
+
+Value:
+
+empty
+
+Approval3SignatureBase64
+
+Type:
+
+String
+
+Value:
+
+empty
+
+Approval4SignatureBase64
+
+Type:
+
+String
+
+Value:
+
+empty
+
+---
+
+12. Get Approval 1 Signature
+
+Add a Condition:
+
+@not(empty(triggerBody()?['Approval1']))
+
+If Yes, use:
+
+SharePoint – Get file content using path
+
+Example path:
+
+/GNS Reactivation Archive/@{triggerBody()?['Approval1']}.png
+
+If the signatures are stored in a "Signatures" folder:
+
+/GNS Reactivation Archive/Signatures/@{triggerBody()?['Approval1']}.png
+
+Then add:
+
+Set variable
+
+Variable:
+
+Approval1SignatureBase64
+
+Expression:
+
+base64(body('Get_file_content_using_path_Approval1'))
+
+Do the same for Approval2, Approval3 and Approval4.
+
+---
+
+13. Important Signature Rule
+
+Do not add:
+
+data:image/png;base64,
+
+The Office Script should receive the raw Base64 string only.
+
+If the approval field is blank, leave the signature variable empty.
+
+If an approver is specified but the signature file cannot be found, the flow should go to the Error Handler rather than silently generating an incomplete form.
+
+---
+
+14. Get the Excel Template
+
+The template is:
+
+User Account Reactivation-IDLE Account.xlsx
+
+For example:
+
+/GNS Reactivation Archive/Templates/User Account Reactivation-IDLE Account.xlsx
+
+Use:
+
+SharePoint – Get file content using path
+
+File:
+
+/GNS Reactivation Archive/Templates/User Account Reactivation-IDLE Account.xlsx
+
+The original template must never be modified directly.
+
+---
+
+15. Create the Request-Specific Excel File
+
+Use:
+
+SharePoint – Create file
+
+Folder:
+
+/GNS Reactivation Archive/Generated Excel
+
+File Name:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+File Content:
+
+Use the output of:
+
+Get file content using path
+
+from the template.
+
+For example:
+
+Reactivation-GNS-202610-0097.xlsx
+
+This creates a separate copy for the request.
+
+---
+
+16. Get the Created Excel File Metadata
+
+After Create file, add:
+
+SharePoint – Get file metadata using path
+
+Use the path of the newly created Excel file.
+
+Example:
+
+/GNS Reactivation Archive/Generated Excel/Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+We need the file identifier so that Power Automate can run the Office Script against this newly created workbook.
+
+---
+
+17. Run the Office Script
+
+Use:
+
+Excel Online (Business) – Run script
+
+Important:
+
+Run the script against the newly created request-specific Excel file, NOT the original template.
+
+Workbook:
+
+Use the Identifier/Id from the newly created Excel file.
+
+Script:
+
+PopulateReactivationForm
+
+The Office Script parameters are:
+
+requestingSection
+requestDate
+reactivationDate
+userIds
+userNames
+approval1
+approval2
+approval3
+approval4
+approval1Signature
+approval2Signature
+approval3Signature
+approval4Signature
+
+---
+
+18. Office Script Parameter Mapping
+
+requestingSection
+
+Use:
+
+triggerBody()?['RequestingSection']
+
+requestDate
+
+Recommended:
+
+formatDateTime(triggerBody()?['RequestDate'],'MM/dd/yyyy')
+
+reactivationDate
+
+Use:
+
+formatDateTime(triggerBody()?['ReactivationDate'],'MM/dd/yyyy')
+
+userIds
+
+Use:
+
+variables('UserIds')
+
+For this parameter, use:
+
+Switch to input entire array
+
+Do NOT use:
+
+string(variables('UserIds'))
+
+userNames
+
+Use:
+
+variables('UserNames')
+
+Also enable:
+
+Switch to input entire array
+
+---
+
+19. Approval Parameters
+
+approval1
+
+triggerBody()?['Approval1']
+
+approval2
+
+triggerBody()?['Approval2']
+
+approval3
+
+triggerBody()?['Approval3']
+
+approval4
+
+triggerBody()?['Approval4']
+
+---
+
+20. Signature Parameters
+
+approval1Signature
+
+variables('Approval1SignatureBase64')
+
+approval2Signature
+
+variables('Approval2SignatureBase64')
+
+approval3Signature
+
+variables('Approval3SignatureBase64')
+
+approval4Signature
+
+variables('Approval4SignatureBase64')
+
+---
+
+21. Office Script Workbook
+
+The script should work with:
+
+Reactivation Form 2
+
+and populate:
+
+F7 = Requesting Section
+D8 = Request Date
+E9 = Reactivation Date
+
+Users:
+
+C12:C26 = User ID
+G12:G26 = Username
+
+Signatures:
+
+C45 = Approval 1 signature
+G45 = Approval 2 signature
+I45 = Approval 3 signature
+J45 = Approval 4 signature
+
+Approver names:
+
+C48
+G48
+I48
+J48
+
+The script should clear previous generated user/signature information before inserting the new request data.
+
+---
+
+22. Important Office Script Rule
+
+The script must use:
+
+workbook.getWorksheet("Reactivation Form 2")
+
+Do not use:
+
+workbook.getActiveWorksheet()
+
+This makes the automation safer because the correct worksheet is explicitly selected.
+
+---
+
+23. Get the Completed Excel File
+
+After:
+
+Run script
+
+add:
+
+SharePoint – Get file content using path
+
+Use:
+
+/GNS Reactivation Archive/Generated Excel/Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+This retrieves the final populated Excel file.
+
+This output will be used directly as the email attachment.
+
+---
+
+24. NO ONEDRIVE STEPS
+
+Do NOT use:
+
+OneDrive for Business – Create file
+OneDrive for Business – Convert file
+OneDrive temporary folder
+Delay for OneDrive conversion
+PDF conversion
+Delete temporary OneDrive file
+
+These steps are no longer required.
+
+The final generated Excel file remains in SharePoint.
+
+---
+
+25. Send the Email
+
+Add:
+
+Office 365 Outlook – Send an email (V2)
+
+To:
+
+Your required recipient or approver/email recipient.
+
+Subject:
+
+User Account Reactivation Form - @{triggerBody()?['ReferenceNo']}
+
+Example:
+
+User Account Reactivation Form - GNS-202610-0097
+
+Body:
+
+Good day!
+
+Please see attached the completed User Account Reactivation Form for Reference No. @{triggerBody()?['ReferenceNo']}.
+
+Thank you.
+
+---
+
+26. Email Attachment
+
+In:
+
+Send an email (V2)
+
+Attachment Name:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+Attachment Content:
+
+Use the output from:
+
+Get file content using path
+
+for the generated Excel file.
+
+Therefore the email contains:
+
+Reactivation-GNS-202610-0097.xlsx
+
+---
+
+27. Update SharePoint After Successful Email
+
+After the email succeeds, use:
+
+SharePoint – Update item
+
+Update the trigger item:
+
+ProcessingStatus
+
+Completed
+
+GeneratedExcel
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+ProcessedDate
+
+Use:
+
+utcNow()
+
+ProcessingError
+
+Leave blank.
+
+---
+
+28. Error Handler
+
+Create a separate Scope:
+
+Scope - Error Handler
+
+Configure it to run after the main processing scope has:
+
+Failed
+Timed out
+Skipped
+
+If an error occurs:
+
+Use:
+
+SharePoint – Update item
+
+Set:
+
+ProcessingStatus = Error
+
+and:
+
+ProcessingError = <error information>
+
+For example, the error could be:
+
+The signature file for Approval2 could not be found.
+
+or:
+
+The Excel file could not be generated.
+
+or:
+
+The email could not be sent.
+
+---
+
+29. Recommended Flow Structure
+
+The final Power Automate flow should look approximately like this:
+
+┌─────────────────────────────────────────────┐
+│ SharePoint                                  │
+│ When an item is created or modified         │
+└──────────────────────┬──────────────────────┘
+                       ↓
+             ┌────────────────────┐
+             │ ReactivationDate   │
+             │ populated?         │
+             └─────────┬──────────┘
+                  No ───┴─── Yes
+                  ↓          ↓
+               Stop     ProcessingStatus
+                         != Completed?
+                              ↓
+                         Update Status
+                         = Processing
+                              ↓
+                    Get items by ReferenceNo
+                              ↓
+                    Collect User IDs
+                    Collect User Names
+                              ↓
+                    Get Approval Signatures
+                              ↓
+                    Get Excel Template
+                              ↓
+                    Create Request Excel
+                              ↓
+                    Run Office Script
+                              ↓
+                    Get Completed Excel
+                              ↓
+                    Send Email
+                    Attachment = XLSX
+                              ↓
+                    Update Status
+                    = Completed
+                              ↓
+                           Finish
+
+Error path:
+
+Any processing error
+        ↓
+Error Handler
+        ↓
+ProcessingStatus = Error
+        ↓
+ProcessingError = Error details
+
+---
+
+30. Final File Structure
+
+Recommended SharePoint Document Library structure:
+
+GNS Reactivation Archive
+│
+├── Templates
+│   └── User Account Reactivation-IDLE Account.xlsx
+│
+├── Signatures
+│   ├── Bong Gakaday.png
+│   ├── King RJ Evangelista.png
+│   ├── Juan dela Cruz.png
+│   └── Pedro Santos.png
+│
+└── Generated Excel
+    ├── Reactivation-GNS-202610-0097.xlsx
+    ├── Reactivation-GNS-202610-0098.xlsx
+    └── ...
+
+There is now no PDF folder and no OneDrive temporary folder.
+
+---
+
+31. Example Complete Transaction
+
+Suppose the SharePoint List contains:
+
+ReferenceNo: GNS-202610-0097
+
+User 1:
+UserID = B014172
+Username = Juan Dela Cruz
+
+User 2:
+UserID = B012504
+Username = Bong Gakaday
+
+User 3:
+UserID = B019999
+Username = Pedro Santos
+
+RequestingSection = GNS
+RequestDate = 10/07/2026
+ReactivationDate = 10/08/2026
+
+Approval1 = Bong Gakaday
+Approval2 = King RJ Evangelista
+Approval3 = Juan dela Cruz
+Approval4 = Pedro Santos
+
+Power Automate creates:
+
+Reactivation-GNS-202610-0097.xlsx
+
+The Office Script fills the workbook with:
+
+Requesting Section
+Request Date
+Reactivation Date
+
+B014172    Juan Dela Cruz
+B012504    Bong Gakaday
+B019999    Pedro Santos
+
+Approval 1 signature
+Approval 2 signature
+Approval 3 signature
+Approval 4 signature
+
+Then Power Automate sends:
+
+To: designated recipient
+
+Subject:
+User Account Reactivation Form - GNS-202610-0097
+
+Attachment:
+Reactivation-GNS-202610-0097.xlsx
+
+Finally:
+
+ProcessingStatus = Completed
+
+---
+
+32. Important Duplicate-Processing Consideration
+
+Because the SharePoint trigger is:
+
+When an item is created or modified
+
+changing the SharePoint item itself can trigger the flow again.
+
+Therefore, the workflow should be designed so that:
+
+Pending
+   ↓
+Processing
+   ↓
+Completed
+
+Once it reaches:
+
+Completed
+
+the request must not be processed again.
+
+For a truly production-safe implementation with multiple users submitting records under the same ReferenceNo, I recommend eventually using a separate Reactivation Request Header list containing one record per ReferenceNo. That provides a cleaner request-level processing lock and avoids two flow runs processing the same ReferenceNo at the same time.
+
+For the current implementation, however, the key rule remains:
+
+ReferenceNo is the request identifier, not SharePoint ID.
+
+---
+
+33. Final Architecture
+
+The final solution is now:
+
+Power Apps
+     ↓
+Reactivation List
+     ↓
+ReactivationDate populated
+     ↓
+Power Automate
+     ↓
+Get all records by ReferenceNo
+     ↓
+Collect all users
+     ↓
+Get approval signatures
+     ↓
+Copy Excel template
+     ↓
+Create request-specific Excel
+     ↓
+Run Office Script
+     ↓
+Get completed Excel
+     ↓
+Send Excel as email attachment
+     ↓
+Update ProcessingStatus = Completed
+
+There is no dependency on OneDrive for Business and no PDF conversion step.
+
+Business result:
+
+ONE ReferenceNo
+       ↓
+ONE Excel file
+       ↓
+ONE emailThis version is simpler and better suited to your current environment. The generated Excel file stays in SharePoint, so you also have an archive of what was sent.
+
+
+******
+
 Absolutely. Below is a complete copy-paste prompt you can use in a new ChatGPT conversation to continue building the Power Automate workflow. I included the latest requirement that ReactivationDate is the trigger/ready signal, while ReferenceNo is the request grouping key.
 
 I have an existing Power Apps + SharePoint + Power Automate + Excel Office Script automation for generating a User Account Reactivation Form.
