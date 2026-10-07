@@ -1,3 +1,1612 @@
+Absolutely. Below is the version I recommend implementing. I made one important improvement to your original design: turn on trigger concurrency control and set the degree of parallelism to 1. Microsoft specifically recommends trigger concurrency control when simultaneous runs could cause inconsistent reads/updates. 
+
+This is especially important because your flow updates the same SharePoint item that triggered it.
+
+1. Final Flow Overview
+
+Your finished flow will be:
+
+When an item is created or modified
+             │
+             ▼
+   ReactivationDate populated?
+             │
+        Yes  │  No → Stop
+             ▼
+    ProcessingStatus?
+             │
+       ┌─────┴─────────────┐
+       │                   │
+   Completed          Processing/Error
+       │                   │
+     Stop                  Stop
+       │
+       ▼
+Set ProcessingStatus = Processing
+             │
+             ▼
+Get all items with same ReferenceNo
+             │
+             ▼
+Initialize UserIds / UserNames
+             │
+             ▼
+Collect all users
+             │
+             ▼
+Get Approval 1–4 signatures
+             │
+             ▼
+Get Excel template
+             │
+             ▼
+Create request-specific Excel
+             │
+             ▼
+Run Office Script
+             │
+             ▼
+Get completed Excel content
+             │
+             ▼
+Send ONE email
+             │
+             ▼
+Update status = Completed
+
+If anything fails:
+
+Any error
+   ↓
+Error Handler
+   ↓
+ProcessingStatus = Error
+ProcessingError = error message
+
+The Excel Online connector supports running Office Scripts against workbooks stored in SharePoint, so there is no requirement to move your generated workbook to OneDrive. 
+
+
+---
+
+2. Prepare Your SharePoint List
+
+Your Reactivation List should contain at least:
+
+Column	Type
+
+ReferenceNo	Single line text
+RequestingSection	Single line text
+RequestDate	Date/Time
+ReactivationDate	Date/Time
+UserID	Single line text
+Username	Single line text
+Approval1	Single line text
+Approval2	Single line text
+Approval3	Single line text
+Approval4	Single line text
+ProcessingStatus	Choice
+GeneratedExcel	Single line text
+ProcessingError	Multiple lines
+ProcessedDate	Date/Time
+
+
+For ProcessingStatus, use:
+
+Pending
+Processing
+Completed
+Error
+
+Default:
+
+Pending
+
+
+---
+
+3. Create the Flow
+
+Create an Automated cloud flow.
+
+Name it something like:
+
+Process User Account Reactivation
+
+Trigger:
+
+SharePoint – When an item is created or modified
+
+Select:
+
+Site Address:
+<your SharePoint site>
+
+List Name:
+Reactivation List
+
+The SharePoint connector supports this trigger for both creation and modification. 
+
+
+---
+
+4. VERY IMPORTANT: Enable Concurrency Control
+
+Open the trigger:
+
+When an item is created or modified
+
+Click:
+
+Settings
+
+Turn on:
+
+Concurrency Control
+
+Set:
+
+Degree of Parallelism = 1
+
+This means only one instance of this flow will execute at a time.
+
+Microsoft documents that concurrency control is specifically useful when multiple trigger executions could otherwise read/update data inconsistently. 
+
+Why I recommend 1
+
+Suppose Power Apps creates:
+
+ID 101
+ID 102
+ID 103
+
+almost simultaneously.
+
+Without concurrency:
+
+Flow A ────────────────┐
+Flow B ────────────────┼── potentially simultaneous
+Flow C ────────────────┘
+
+With concurrency = 1:
+
+Flow A
+  ↓
+complete
+  ↓
+Flow B
+  ↓
+complete
+  ↓
+Flow C
+
+Then your ProcessingStatus checks can work reliably.
+
+
+---
+
+5. Condition – ReactivationDate
+
+Add:
+
+Condition
+
+Use the Expression:
+
+@not(empty(triggerBody()?['ReactivationDate']))
+
+If Yes
+
+Continue.
+
+If No
+
+Do nothing.
+
+This is important because your flow is triggered whenever the item is modified.
+
+For example:
+
+Power Apps creates item
+        ↓
+ReactivationDate populated?
+        ↓
+Yes
+
+But later:
+
+ProcessingStatus changed
+        ↓
+Flow triggered again
+        ↓
+ReactivationDate still populated
+
+So we need the next status check.
+
+
+---
+
+6. Condition – ProcessingStatus
+
+Add another Condition.
+
+Expression:
+
+@not(equals(triggerBody()?['ProcessingStatus'], 'Completed'))
+
+However, I recommend an even safer condition:
+
+@equals(
+    coalesce(triggerBody()?['ProcessingStatus'], 'Pending'),
+    'Pending'
+)
+
+This means only Pending items enter the processing section.
+
+Yes
+
+Continue.
+
+No
+
+Stop.
+
+So:
+
+Pending      → Process
+Processing   → Stop
+Completed    → Stop
+Error        → Stop
+
+This is safer than allowing an Error item to automatically process again.
+
+If you want a failed request to be retried later, you can manually change:
+
+Error → Pending
+
+and the flow will process it again.
+
+
+---
+
+7. Create a Main Processing Scope
+
+I recommend placing the main actions inside:
+
+Scope – Process Request
+
+Inside this Scope will be:
+
+Update status
+Get items
+Initialize variables
+Collect users
+Get signatures
+Get template
+Create Excel
+Run script
+Get completed Excel
+Send email
+Update Completed
+
+This makes the Error Handler much easier.
+
+
+---
+
+8. Update Status = Processing
+
+Add:
+
+SharePoint – Update item
+
+Use the same site and list.
+
+For the ID, use:
+
+ID
+
+from the trigger.
+
+Set:
+
+ProcessingStatus = Processing
+
+Also populate the required fields that your SharePoint Update item action requires.
+
+For example:
+
+ReferenceNo       → ReferenceNo from trigger
+RequestingSection → RequestingSection from trigger
+RequestDate       → RequestDate from trigger
+ReactivationDate  → ReactivationDate from trigger
+UserID            → UserID from trigger
+Username          → Username from trigger
+Approval1         → Approval1
+Approval2         → Approval2
+Approval3         → Approval3
+Approval4         → Approval4
+ProcessingStatus  → Processing
+
+Do not overwrite:
+
+GeneratedExcel
+ProcessedDate
+ProcessingError
+
+unless required.
+
+
+---
+
+9. Get All Records for ReferenceNo
+
+Add:
+
+SharePoint – Get items
+
+Site:
+
+<your SharePoint site>
+
+List:
+
+Reactivation List
+
+Filter Query:
+
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+
+For example:
+
+ReferenceNo eq 'GNS-202610-0097'
+
+This is the key step that converts:
+
+SharePoint ID
+
+into:
+
+Request ReferenceNo
+
+SharePoint's Get items supports OData filter queries such as Column eq 'Value'. 
+
+Important
+
+If ReferenceNo is actually stored with a different internal name, use that internal name.
+
+For example:
+
+Reference_x0020_No
+
+Then:
+
+Reference_x0020_No eq '@{triggerBody()?['ReferenceNo']}'
+
+
+---
+
+10. Initialize UserIds
+
+Add:
+
+Initialize variable
+
+Name:
+
+UserIds
+
+Type:
+
+Array
+
+Value:
+
+[]
+
+
+---
+
+11. Initialize UserNames
+
+Add another:
+
+Initialize variable
+
+Name:
+
+UserNames
+
+Type:
+
+Array
+
+Value:
+
+[]
+
+
+---
+
+12. Apply to Each – Collect Users
+
+Add:
+
+Apply to each
+
+Input:
+
+value
+
+from:
+
+Get items
+
+Inside it:
+
+Append User ID
+
+Action:
+
+Append to array variable
+
+Name:
+
+UserIds
+
+Value:
+
+items('Apply_to_each')?['UserID']
+
+Then:
+
+Append Username
+
+Name:
+
+UserNames
+
+Value:
+
+items('Apply_to_each')?['Username']
+
+Your arrays should become:
+
+UserIds
+
+[
+    "B014172",
+    "B012504",
+    "B019999"
+]
+
+and:
+
+UserNames
+
+[
+    "Juan Dela Cruz",
+    "Bong Gakaday",
+    "Pedro Santos"
+]
+
+Leave the Apply to each concurrency at its default/sequential behavior. There is no advantage in parallelizing two simple array appends, and sequential execution avoids unnecessary complexity. Power Automate supports controlling Apply to each concurrency, but sequential processing is the default. 
+
+
+---
+
+13. Initialize Signature Variables
+
+Create four String variables.
+
+Variable 1
+
+Approval1SignatureBase64
+
+Type:
+
+String
+
+Value:
+
+empty
+
+Variable 2
+
+Approval2SignatureBase64
+
+Variable 3
+
+Approval3SignatureBase64
+
+Variable 4
+
+Approval4SignatureBase64
+
+All should start as:
+
+empty
+
+
+---
+
+14. Approval 1 Signature
+
+Add:
+
+Condition
+
+Expression:
+
+@not(empty(triggerBody()?['Approval1']))
+
+If Yes:
+
+SharePoint – Get file content using path
+
+File path:
+
+/GNS Reactivation Archive/Signatures/@{triggerBody()?['Approval1']}.png
+
+For example:
+
+/GNS Reactivation Archive/Signatures/Bong Gakaday.png
+
+Then:
+
+Set variable
+
+Variable:
+
+Approval1SignatureBase64
+
+Expression:
+
+base64(body('Get_file_content_using_path_Approval1'))
+
+Use your actual action name if Power Automate generates a different internal action name.
+
+
+---
+
+15. Approval 2
+
+Condition:
+
+@not(empty(triggerBody()?['Approval2']))
+
+Get:
+
+/GNS Reactivation Archive/Signatures/@{triggerBody()?['Approval2']}.png
+
+Then:
+
+base64(body('Get_file_content_using_path_Approval2'))
+
+into:
+
+Approval2SignatureBase64
+
+
+---
+
+16. Approval 3
+
+Condition:
+
+@not(empty(triggerBody()?['Approval3']))
+
+Get:
+
+/GNS Reactivation Archive/Signatures/@{triggerBody()?['Approval3']}.png
+
+Set:
+
+Approval3SignatureBase64
+
+with:
+
+base64(body('Get_file_content_using_path_Approval3'))
+
+
+---
+
+17. Approval 4
+
+Condition:
+
+@not(empty(triggerBody()?['Approval4']))
+
+Get:
+
+/GNS Reactivation Archive/Signatures/@{triggerBody()?['Approval4']}.png
+
+Set:
+
+Approval4SignatureBase64
+
+with:
+
+base64(body('Get_file_content_using_path_Approval4'))
+
+Important
+
+Do not add:
+
+data:image/png;base64,
+
+The variable should contain only the Base64 data.
+
+
+---
+
+18. Get the Excel Template
+
+Add:
+
+SharePoint – Get file content using path
+
+File:
+
+/GNS Reactivation Archive/Templates/User Account Reactivation-IDLE Account.xlsx
+
+This is your master template.
+
+The flow will copy it rather than modifying it.
+
+
+---
+
+19. Create the Request Excel
+
+Add:
+
+SharePoint – Create file
+
+Folder:
+
+/GNS Reactivation Archive/Generated Excel
+
+File Name:
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+File Content:
+
+Use:
+
+File Content
+
+from the template's Get file content using path action.
+
+Example:
+
+Reactivation-GNS-202610-0097.xlsx
+
+
+---
+
+20. Important Duplicate File Issue
+
+There is one situation you should consider.
+
+If:
+
+Reactivation-GNS-202610-0097.xlsx
+
+already exists, Create file may fail.
+
+That is actually useful because it prevents accidentally overwriting a previously generated request.
+
+For production, I recommend not automatically deleting or overwriting the existing file.
+
+Instead, the flow should go to:
+
+Error
+
+with something like:
+
+Generated Excel file already exists for this ReferenceNo.
+
+This prevents accidental duplicate processing.
+
+
+---
+
+21. Get Created File Metadata
+
+Add:
+
+SharePoint – Get file metadata using path
+
+Path:
+
+/GNS Reactivation Archive/Generated Excel/Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+Use the resulting:
+
+Identifier
+
+for the Excel action.
+
+
+---
+
+22. Office Script
+
+Now add:
+
+Excel Online (Business) – Run script
+
+Because your workbook is in SharePoint, select the SharePoint location/workbook rather than relying on a OneDrive-only script action. Microsoft documents both Run script and Run script from SharePoint library; the latter is appropriate when the script itself is stored in a SharePoint library. 
+
+For the workbook, select your newly generated:
+
+Reactivation-GNS-202610-0097.xlsx
+
+or dynamically use its identifier if the designer allows it.
+
+Script:
+
+PopulateReactivationForm
+
+
+---
+
+23. Complete Office Script
+
+Use this as the script.
+
+function main(
+  workbook: ExcelScript.Workbook,
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+  userIds: string[],
+  userNames: string[],
+  approval1: string,
+  approval2: string,
+  approval3: string,
+  approval4: string,
+  approval1Signature: string,
+  approval2Signature: string,
+  approval3Signature: string,
+  approval4Signature: string
+) {
+  //==================================================
+  // GET WORKSHEET
+  //==================================================
+
+  const sheet = workbook.getWorksheet("Reactivation Form 2");
+
+  if (!sheet) {
+    throw new Error(
+      'Worksheet "Reactivation Form 2" was not found.'
+    );
+  }
+
+  //==================================================
+  // BASIC INFORMATION
+  //==================================================
+
+  sheet.getRange("G7").setValue(requestingSection || "");
+  sheet.getRange("E8").setValue(requestDate || "");
+  sheet.getRange("F9").setValue(reactivationDate || "");
+
+  //==================================================
+  // CLEAR USER INFORMATION
+  //==================================================
+
+  sheet.getRange("C12:C26").clear(
+    ExcelScript.ClearApplyTo.contents
+  );
+
+  sheet.getRange("H12:H26").clear(
+    ExcelScript.ClearApplyTo.contents
+  );
+
+  //==================================================
+  // INSERT USERS
+  //==================================================
+
+  const maxUsers = 15;
+
+  const safeUserIds = Array.isArray(userIds)
+    ? userIds
+    : [];
+
+  const safeUserNames = Array.isArray(userNames)
+    ? userNames
+    : [];
+
+  const userCount = Math.min(
+    Math.max(safeUserIds.length, safeUserNames.length),
+    maxUsers
+  );
+
+  for (let i = 0; i < userCount; i++) {
+
+    const row = 12 + i;
+
+    const userId =
+      safeUserIds[i] !== undefined &&
+      safeUserIds[i] !== null
+        ? String(safeUserIds[i])
+        : "";
+
+    const userName =
+      safeUserNames[i] !== undefined &&
+      safeUserNames[i] !== null
+        ? String(safeUserNames[i])
+        : "";
+
+    sheet.getRange(`C${row}`).setValue(userId);
+    sheet.getRange(`H${row}`).setValue(userName);
+  }
+
+  //==================================================
+  // CLEAR APPROVER NAMES
+  //==================================================
+
+  sheet.getRange("C49").clear(
+    ExcelScript.ClearApplyTo.contents
+  );
+
+  sheet.getRange("I49:K49").clear(
+    ExcelScript.ClearApplyTo.contents
+  );
+
+  //==================================================
+  // INSERT APPROVER NAMES
+  //==================================================
+
+  sheet.getRange("C49").setValue(approval1 || "");
+  sheet.getRange("I49").setValue(approval2 || "");
+  sheet.getRange("J49").setValue(approval3 || "");
+  sheet.getRange("K49").setValue(approval4 || "");
+
+  //==================================================
+  // CLEAR OLD SIGNATURES
+  //==================================================
+
+  sheet.getRange("D46").clear(
+    ExcelScript.ClearApplyTo.contents
+  );
+
+  sheet.getRange("I46:K46").clear(
+    ExcelScript.ClearApplyTo.contents
+  );
+
+  //==================================================
+  // INSERT SIGNATURES
+  //==================================================
+
+  if (approval1Signature) {
+    insertSignature(
+      sheet,
+      approval1Signature,
+      "D46"
+    );
+  }
+
+  if (approval2Signature) {
+    insertSignature(
+      sheet,
+      approval2Signature,
+      "I46"
+    );
+  }
+
+  if (approval3Signature) {
+    insertSignature(
+      sheet,
+      approval3Signature,
+      "J46"
+    );
+  }
+
+  if (approval4Signature) {
+    insertSignature(
+      sheet,
+      approval4Signature,
+      "K46"
+    );
+  }
+}
+
+
+/**
+ * Inserts a Base64 PNG signature into a specified cell.
+ */
+function insertSignature(
+  sheet: ExcelScript.Worksheet,
+  base64Data: string,
+  cellAddress: string
+) {
+  if (!base64Data) {
+    return;
+  }
+
+  let cleanBase64 = base64Data;
+
+  // Remove data URI prefix if one happens to be supplied.
+  // The Power Automate flow should normally provide raw Base64.
+  if (cleanBase64.indexOf(",") >= 0) {
+    cleanBase64 =
+      cleanBase64.substring(
+        cleanBase64.indexOf(",") + 1
+      );
+  }
+
+  const image = sheet.addImage(cleanBase64);
+
+  const range = sheet.getRange(cellAddress);
+
+  const left = range.getLeft();
+  const top = range.getTop();
+  const width = range.getWidth();
+  const height = range.getHeight();
+
+  image.setLeft(left);
+  image.setTop(top);
+
+  // Keep the signature inside the target cell.
+  image.setWidth(Math.min(width, 120));
+  image.setHeight(Math.min(height, 45));
+}
+
+Important note about the signature implementation
+
+The addImage() method is being used to insert the Base64 image into the worksheet. If your template has merged cells or the signature boxes are larger/smaller than the values above, we can adjust the image sizing after you test it.
+
+The script deliberately uses:
+
+workbook.getWorksheet("Reactivation Form 2")
+
+rather than:
+
+workbook.getActiveWorksheet()
+
+which is the safer approach for Power Automate.
+
+
+---
+
+24. Power Automate Script Parameters
+
+After you select the script, Power Automate should expose the parameters.
+
+Map them as follows:
+
+requestingSection
+
+triggerBody()?['RequestingSection']
+
+requestDate
+
+Use:
+
+formatDateTime(
+    triggerBody()?['RequestDate'],
+    'MM/dd/yyyy'
+)
+
+reactivationDate
+
+formatDateTime(
+    triggerBody()?['ReactivationDate'],
+    'MM/dd/yyyy'
+)
+
+userIds
+
+Use:
+
+variables('UserIds')
+
+Important: click:
+
+Switch to input entire array
+
+Do NOT convert it to a string.
+
+Microsoft specifically documents this behavior for Office Script array parameters. 
+
+userNames
+
+Use:
+
+variables('UserNames')
+
+Again:
+
+Switch to input entire array
+
+Microsoft's Office Scripts parameter system supports arrays, and Power Automate can pass the entire array to the script. 
+
+
+---
+
+25. Approval Parameters
+
+Map:
+
+approval1
+
+to:
+
+triggerBody()?['Approval1']
+
+approval2
+
+to:
+
+triggerBody()?['Approval2']
+
+approval3
+
+to:
+
+triggerBody()?['Approval3']
+
+approval4
+
+to:
+
+triggerBody()?['Approval4']
+
+
+---
+
+26. Signature Parameters
+
+Map:
+
+approval1Signature
+
+to:
+
+variables('Approval1SignatureBase64')
+
+Then:
+
+approval2Signature
+
+variables('Approval2SignatureBase64')
+
+Then:
+
+approval3Signature
+
+variables('Approval3SignatureBase64')
+
+Then:
+
+approval4Signature
+
+variables('Approval4SignatureBase64')
+
+
+---
+
+27. Important: Script Changes
+
+If you modify the Office Script's main() parameters after adding the Power Automate action, you may need to recreate the Run script action so Power Automate refreshes the script parameter definition. Microsoft explicitly notes this behavior. 
+
+So if you change:
+
+function main(...)
+
+later, don't be surprised if Power Automate doesn't immediately show the new parameters.
+
+
+---
+
+28. Get the Final Excel File
+
+After:
+
+Run script
+
+add:
+
+SharePoint – Get file content using path
+
+Path:
+
+/GNS Reactivation Archive/Generated Excel/Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+This gives you the actual completed workbook content.
+
+
+---
+
+29. Send Email
+
+Add:
+
+Office 365 Outlook – Send an email (V2)
+
+To:
+
+<your designated recipient>
+
+Subject:
+
+User Account Reactivation Form - @{triggerBody()?['ReferenceNo']}
+
+Body:
+
+Good day!
+
+Please see attached the completed User Account Reactivation Form for Reference No. @{triggerBody()?['ReferenceNo']}.
+
+Thank you.
+
+
+---
+
+30. Email Attachment
+
+Under Attachments, add:
+
+Attachment Name
+
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+Attachment Content
+
+Use:
+
+File Content
+
+from:
+
+Get completed Excel file
+
+Therefore:
+
+Email
+ └── Reactivation-GNS-202610-0097.xlsx
+
+No PDF.
+
+No OneDrive.
+
+No conversion.
+
+
+---
+
+31. Update SharePoint = Completed
+
+After the email succeeds:
+
+Add:
+
+SharePoint – Update item
+
+ID:
+
+ID
+
+from trigger.
+
+Set:
+
+ProcessingStatus = Completed
+
+GeneratedExcel =
+Reactivation-@{triggerBody()?['ReferenceNo']}.xlsx
+
+ProcessedDate =
+utcNow()
+
+Set:
+
+ProcessingError
+
+to blank.
+
+
+---
+
+32. Error Handler
+
+Create a second Scope:
+
+Scope - Error Handler
+
+Put it outside/below the main processing Scope.
+
+Then select:
+
+Configure run after
+
+For:
+
+Scope - Process Request
+
+select:
+
+has failed
+has timed out
+has been skipped
+
+This means:
+
+Process Request
+      │
+      ├── Success → Finish
+      │
+      └── Failure
+             ↓
+       Error Handler
+
+
+---
+
+33. Error Handler – Get Error Message
+
+Inside Error Handler, add a Compose.
+
+Name:
+
+Compose_ErrorDetails
+
+Expression:
+
+string(result('Scope_-_Process_Request'))
+
+Replace the scope name with the actual internal name of your processing Scope if Power Automate generates a different name.
+
+This gives you useful information about which action failed.
+
+
+---
+
+34. Error Handler – Update SharePoint
+
+Add:
+
+SharePoint – Update item
+
+Set:
+
+ProcessingStatus = Error
+
+Set:
+
+ProcessingError =
+outputs('Compose_ErrorDetails')
+
+Set:
+
+ProcessedDate = utcNow()
+
+You can leave GeneratedExcel blank if the Excel file was never successfully created.
+
+
+---
+
+35. Final Flow Layout
+
+Your actual Power Automate designer should look approximately like:
+
+TRIGGER
+└── When an item is created or modified
+       │
+       ▼
+CONDITION
+└── ReactivationDate populated?
+       │
+       ├── NO
+       │    └── Terminate
+       │
+       └── YES
+            │
+            ▼
+       CONDITION
+       └── ProcessingStatus = Pending?
+            │
+            ├── NO
+            │    └── Terminate
+            │
+            └── YES
+                 │
+                 ▼
+           SCOPE
+           Process Request
+                 │
+                 ├── Update item
+                 │      Status = Processing
+                 │
+                 ├── Get items
+                 │      ReferenceNo = current ReferenceNo
+                 │
+                 ├── Initialize UserIds
+                 │
+                 ├── Initialize UserNames
+                 │
+                 ├── Apply to each
+                 │      ├── Append UserID
+                 │      └── Append Username
+                 │
+                 ├── Initialize Signature variables
+                 │
+                 ├── Approval 1 signature
+                 ├── Approval 2 signature
+                 ├── Approval 3 signature
+                 ├── Approval 4 signature
+                 │
+                 ├── Get template
+                 │
+                 ├── Create Excel
+                 │
+                 ├── Get file metadata
+                 │
+                 ├── Run Office Script
+                 │
+                 ├── Get completed Excel
+                 │
+                 ├── Send email
+                 │
+                 └── Update item
+                        Status = Completed
+                        │
+                        ▼
+                      DONE
+
+SCOPE
+Error Handler
+└── Configure Run After:
+       Failed
+       Timed out
+       Skipped
+       │
+       ├── Compose error
+       │
+       └── Update item
+              Status = Error
+              ProcessingError = error
+
+
+---
+
+36. Example Run
+
+Suppose your list contains:
+
+ID	ReferenceNo	UserID	Username
+
+101	GNS-202610-0097	B014172	Juan Dela Cruz
+102	GNS-202610-0097	B012504	Bong Gakaday
+103	GNS-202610-0097	B019999	Pedro Santos
+
+
+The flow receives ID 101.
+
+It then executes:
+
+ReferenceNo =
+GNS-202610-0097
+
+Get items returns:
+
+101
+102
+103
+
+The arrays become:
+
+UserIds:
+
+B014172
+B012504
+B019999
+
+and:
+
+UserNames:
+
+Juan Dela Cruz
+Bong Gakaday
+Pedro Santos
+
+Then:
+
+Create file
+
+creates:
+
+Reactivation-GNS-202610-0097.xlsx
+
+The Office Script fills:
+
+G7 = GNS
+
+E8 = 10/07/2026
+
+F9 = 10/08/2026
+
+and:
+
+C12 = B014172
+H12 = Juan Dela Cruz
+
+C13 = B012504
+H13 = Bong Gakaday
+
+C14 = B019999
+H14 = Pedro Santos
+
+Then signatures are inserted.
+
+Finally:
+
+Send email
+
+with:
+
+Subject:
+User Account Reactivation Form - GNS-202610-0097
+
+Attachment:
+
+Reactivation-GNS-202610-0097.xlsx
+
+Then:
+
+ProcessingStatus = Completed
+
+
+---
+
+37. What Happens When the Flow Is Triggered Again?
+
+Because Update item changes the SharePoint record, it can trigger the flow again.
+
+For example:
+
+Initial item
+ProcessingStatus = Pending
+       ↓
+Flow starts
+       ↓
+ProcessingStatus = Processing
+       ↓
+SharePoint modification triggers flow again
+       ↓
+New flow sees:
+ProcessingStatus = Processing
+       ↓
+STOP
+
+Later:
+
+ProcessingStatus = Completed
+       ↓
+another trigger
+       ↓
+New flow sees Completed
+       ↓
+STOP
+
+This is exactly what we want.
+
+
+---
+
+38. One More Recommendation: Trigger Condition
+
+You can make the flow more efficient by adding a trigger condition so that the flow only starts when the relevant condition is met. Microsoft recommends trigger conditions where appropriate to avoid unnecessary flow executions. 
+
+However, because you also need to react to the transition of ProcessingStatus, I recommend keeping your current trigger and using the Conditions first, at least for the initial implementation.
+
+Once the workflow is working correctly, we can optimize the trigger.
+
+
+---
+
+39. One Important License Check
+
+Your solution uses:
+
+Excel Online (Business)
++
+Office Scripts
++
+Power Automate
+
+Microsoft notes that using Office Scripts with Power Automate requires a qualifying Microsoft 365 business license. 
+
+So before building the entire flow, confirm that the account running the flow can successfully use:
+
+Excel Online (Business)
+→ Run script
+
+If you already used Office Scripts successfully in your previous implementation, you're likely already set up for this part.
+
+
+---
+
+40. Final Architecture
+
+Your finished solution is:
+
+POWER APPS
+                        │
+                        ▼
+                Reactivation List
+                        │
+             Multiple records
+                        │
+                        ▼
+                 ReferenceNo
+                        │
+                        ▼
+             ┌──────────────────┐
+             │ Power Automate   │
+             └────────┬─────────┘
+                      │
+                      ▼
+              ReactivationDate
+                  populated?
+                      │
+                      ▼
+                Status = Pending
+                      │
+                      ▼
+          Get ALL records by ReferenceNo
+                      │
+              ┌───────┴────────┐
+              ▼                ▼
+           UserIds         UserNames
+              │                │
+              └───────┬────────┘
+                      ▼
+              Approval signatures
+                      │
+                      ▼
+               Excel Template
+                      │
+                      ▼
+        Create request-specific XLSX
+                      │
+                      ▼
+             PopulateReactivationForm
+                      │
+                      ▼
+            Completed Excel workbook
+                      │
+                      ▼
+                 ONE EMAIL
+                      │
+                      ▼
+           Excel attachment (.xlsx)
+                      │
+                      ▼
+              Status = Completed
+
+So the business rule is preserved exactly:
+
+> ONE ReferenceNo → ONE Excel file → ONE email
+
+
+
+And importantly, OneDrive and PDF conversion are completely removed.
+
+The Office Script array handling above also follows Microsoft's documented approach: arrays should be passed as the entire array rather than converted to a string. 
+
+One thing I would test before going live: create 3 records with the same ReferenceNo and make sure all 3 are already present before ReactivationDate is populated. That gives you the cleanest test of the intended grouping behavior.
+
+
+
+
+*******
+
+
+
+
 I have a Power Apps application named "Reactivation Form App".
 
 When a user submits the form, the data is saved to a SharePoint List named:
