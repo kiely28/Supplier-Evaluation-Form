@@ -1,9 +1,18 @@
-Based on your test, the main problem is that each SharePoint item is triggering the flow separately, even though IDs 101, 102, and 103 belong to the same ReferenceNo.
-Your result was:
-SharePoint ID ReferenceNo ProcessingStatus
-101 GNS-202610-0097 Completed
-102 GNS-202610-0097 Error
-103 GNS-202610-0097 Error
+The ProcessingError column storing the entire JSON output is a separate issue: your Error Handler is saving the complete result of the processing scope instead of extracting the specific error message.
+My recommendation is to fix both problems:
+Make the flow process a ReferenceNo only once.
+Save a readable error message instead of the entire JSON output.
+
+If No: do nothing. Do not set the item to Error; simply terminate the run successfully.
+This prevents IDs 102 and 103 from attempting to create the same Excel file or send another email.
+Step 3 — Ensure all request rows exist before processing
+This part is critical. If ID 101 starts processing before IDs 102 and 103 have been created, Get items may return only ID 101. The first-item condition alone cannot prevent an incomplete Excel form.
+For reliability, make your Power Apps submission process:
+Create all three user records with the same ReferenceNo.
+After all records have been created, mark the request as ready for processing.
+Let Power Automate process the request only after that readiness signal is set.
+You could use a separate ReadyToProcess Yes/No column or a dedicated request-level control list. A dedicated request-level list is the stronger long-term design if users can submit requests concurrently.
+Also keep in mind that trigger concurrency control set to 1 serializes runs, but it does not by itself deduplicate multiple events for the same request. 
 
 
 *****
