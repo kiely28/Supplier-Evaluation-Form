@@ -1,3 +1,14 @@
+Based on your test, the main problem is that each SharePoint item is triggering the flow separately, even though IDs 101, 102, and 103 belong to the same ReferenceNo.
+Your result was:
+SharePoint ID ReferenceNo ProcessingStatus
+101 GNS-202610-0097 Completed
+102 GNS-202610-0097 Error
+103 GNS-202610-0097 Error
+
+
+*****
+
+
 Worked for 17s
 
 ### 2\. Fix ProcessingError storing the entire JSON
