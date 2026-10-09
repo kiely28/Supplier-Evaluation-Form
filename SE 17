@@ -1,3 +1,19 @@
+If Yes: continue to your existing processing scope.
+If No: do nothing. Do not set the item to Error; simply terminate the run successfully.
+This prevents IDs 102 and 103 from attempting to create the same Excel file or send another email.
+Step 3 — Ensure all request rows exist before processing
+This part is critical. If ID 101 starts processing before IDs 102 and 103 have been created, Get items may return only ID 101. The first-item condition alone cannot prevent an incomplete Excel form.
+For reliability, make your Power Apps submission process:
+Create all three user records with the same ReferenceNo.
+After all records have been created, mark the request as ready for processing.
+Let Power Automate process the request only after that readiness signal is set.
+You could use a separate ReadyToProcess Yes/No column or a dedicated request-level control list. A dedicated request-level list is the stronger long-term design if users can submit requests concurrently.
+Also keep in mind that trigger concurrency control set to 1 serializes runs, but it does not by itself deduplicate multiple events for the same request. 
+
+
+*****
+
+
 @equals(
   int(triggerBody()?['ID']),
   int(first(body('Get_items_Same_ReferenceNo')?['value'])?['ID'])
