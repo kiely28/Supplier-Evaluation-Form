@@ -1,3 +1,11 @@
+@equals(
+  int(triggerBody()?['ID']),
+  int(first(body('Get_items_Same_ReferenceNo')?['value'])?['ID'])
+)
+
+
+****
+
 Step 1 — Modify your existing Get items action
 Rename it to:
 Get_items_Same_ReferenceNo
