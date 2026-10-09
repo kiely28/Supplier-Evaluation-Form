@@ -1,3 +1,121 @@
+Worked for 17s
+
+### 2\. Fix ProcessingError storing the entire JSON
+
+Your current Compose action uses:
+
+```text
+string(result('Scope_-_Process_Request'))
+```
+
+That expression converts the entire processing-scope result into a string, which explains why the whole JSON output is being saved.
+
+Replace it with the following approach.
+
+### Step 1 — Add a Filter array action
+
+Inside `Scope - Error Handler`, add Data Operations → Filter array.
+
+Rename it:
+
+`Filter_Failed_Actions`
+
+From — select the Expression tab and enter:
+
+```text
+result('Scope_-_Process_Request')
+```
+
+Set the condition:
+
+| Field  | Operator    | Value  |
+| ------ | ----------- | ------ |
+| status | is equal to | Failed |
+
+For the left field, use the expression:
+
+```text
+item()?['status']
+```
+
+This filters the scope results to the actions that failed.
+
+### Step 2 — Replace your Compose expression
+
+Rename the Compose action:
+
+`Compose_ErrorMessage`
+
+Use this expression:
+
+```text
+coalesce(
+  first(body('Filter_Failed_Actions'))?['outputs']?['body']?['message'],
+  first(body('Filter_Failed_Actions'))?['outputs']?['body']?['error']?['message'],
+  first(body('Filter_Failed_Actions'))?['error']?['message'],
+  'Processing failed. Check the failed action in the flow run history.'
+)
+```
+
+This attempts to extract the actual error message from the first failed action, rather than saving the entire scope result.
+
+The precise error property can vary by connector, so if the message is still blank, open the failed action in Run history and inspect its Outputs → Body. Microsoft recommends inspecting the specific failed action to identify the underlying error.
+
+### Step 3 — Update the SharePoint error field
+
+In your Error Handler's Update item action, set:
+
+* `ProcessingStatus`: `Error`
+
+* `ProcessingError`: `outputs('Compose_ErrorMessage')`
+
+For example, the column should contain something readable like:
+
+```text
+A file with the same name already exists.
+```
+
+Instead of a large JSON object containing every action's status and output.
+
+### 3\. Find the actual reason IDs 102 and 103 failed
+
+The existing JSON may contain the exact cause. Open the run history for ID 102 and ID 103 and identify the first action marked Failed.
+
+Common possibilities include:
+
+| Failed action               | Possible cause                             |
+| --------------------------- | ------------------------------------------ |
+| Create file                 | The Excel file already exists              |
+| Get file content using path | Incorrect path or file not found           |
+| Run script                  | Script parameter or workbook error         |
+| Send an email (V2)          | Recipient, connection, or attachment error |
+| Update item                 | Required field missing or invalid value    |
+
+Don't assume that the existing Excel file caused the errors until you inspect the failed action's details.
+
+### 4\. Test again
+
+After applying the changes, test with a new ReferenceNo and three user records.
+
+Expected outcome:
+
+| Item       | Expected result                   |
+| ---------- | --------------------------------- |
+| ID 101     | Processes the request             |
+| ID 102     | Stops without an error            |
+| ID 103     | Stops without an error            |
+| Excel file | One request-specific .xlsx file   |
+| Email      | One email with that file attached |
+
+The request must be marked ready only after all three records exist.
+
+One final recommendation: because your current `ProcessingStatus` column is on each user record, consider keeping a single request-level processing status in a separate control list in the future. That provides a clearer place to store the request's lock, error, generated filename, and completion status without confusing individual user rows with the overall request.
+
+
+
+*****
+
+
 Absolutely. Below is the version I recommend implementing. I made one important improvement to your original design: turn on trigger concurrency control and set the degree of parallelism to 1. Microsoft specifically recommends trigger concurrency control when simultaneous runs could cause inconsistent reads/updates. 
 
 This is especially important because your flow updates the same SharePoint item that triggered it.
