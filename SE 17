@@ -1,3 +1,84 @@
+### 2\. Best fix: Update all matching items only after the main request finishes
+
+This is more reliable than letting each duplicate item decide its own status.
+
+### Step A — Change the False branch
+
+In the False branch:
+
+* Remove the Update item action that sets `ProcessingStatus` to `Completed`.
+
+* Keep your Terminate action.
+
+* Set Terminate status to `Succeeded`.
+
+The duplicate item will remain `Pending` or retain its existing status until the main processing flow determines the final result.
+
+### Step B — Update all items after successful processing
+
+At the end of `Scope - Process Request`, after the Excel file has been generated and the email has been sent successfully:
+
+* Add Get items — rename it `Get_items_Final_Status`.
+
+* Select your `Reactivation List`.
+
+* Set Filter Query to:
+
+```text
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+```
+
+* Add Apply to each using the `value` output from `Get_items_Final_Status`.
+
+* Inside it, add Update item:
+
+    * ID: `ID` from the current item in the Apply to each.
+
+    * ProcessingStatus: `Completed`.
+
+    * Preserve any other required SharePoint fields.
+
+This updates IDs 238, 239, and any other matching records to `Completed` only after the main processing has succeeded.
+
+### Step C — Update all items when processing fails
+
+Inside `Scope - Error Handler`, use the same approach:
+
+* Add Get items with the same `ReferenceNo` filter.
+
+* Add Apply to each using the returned `value`.
+
+* Inside it, add Update item:
+
+    * ID: current item's `ID`.
+
+    * ProcessingStatus: `Error`.
+
+    * ProcessingError: your Compose error-message output, if you want the same error recorded on every matching item.
+
+* Keep your Send an email (V2) notification after the status updates.
+
+Configure the Error Handler to run after the main processing scope has failed or has timed out.
+
+### Expected result
+
+| ID  | Main processing result | Final status |
+| --- | ---------------------- | ------------ |
+| 238 | Failed                 | Error        |
+| 239 | Failed                 | Error        |
+| 240 | Failed                 | Error        |
+| 238 | Succeeded              | Completed    |
+| 239 | Succeeded              | Completed    |
+| 240 | Succeeded              | Completed    |
+
+Important: Put the successful status updates at the end of the main processing scope, and the error status updates in the Error Handler. Do not mark duplicates `Completed` in the False branch. This prevents a duplicate item's separate flow run from incorrectly declaring the request successful when the main item fails.
+
+
+
+
+*****
+
+
 I have a Power Automate flow that processes SharePoint items with the same ReferenceNo. The oldest item (lowest ID using ID asc) performs the actual processing, while the other items go to the False branch.
 
 The problem is that when the oldest item fails and is updated to Error, the duplicate item still enters the False branch and gets updated to Completed, even though the request failed.
