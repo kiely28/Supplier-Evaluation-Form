@@ -1,3 +1,18 @@
+I have a Power Automate flow that processes SharePoint items with the same ReferenceNo. The oldest item (lowest ID using ID asc) performs the actual processing, while the other items go to the False branch.
+
+The problem is that when the oldest item fails and is updated to Error, the duplicate item still enters the False branch and gets updated to Completed, even though the request failed.
+
+Example:
+
+ID 238 → Error
+ID 239 → Completed
+
+How can I prevent duplicate items from being marked Completed when the main processing item fails?
+
+*****
+
+
+
 Yes. You can add Send an email (V2) inside your `Scope - Error Handler` in Power Automate. When `Scope - Process Request` fails, the flow can update the SharePoint item's `ProcessingStatus` to `Error` and send you an email notification containing the `ReferenceNo` and error details.
 
 ### 1\. Recommended flow structure
