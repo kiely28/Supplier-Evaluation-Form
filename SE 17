@@ -1,3 +1,91 @@
+Yes. You can add Send an email (V2) inside your `Scope - Error Handler` in Power Automate. When `Scope - Process Request` fails, the flow can update the SharePoint item's `ProcessingStatus` to `Error` and send you an email notification containing the `ReferenceNo` and error details.
+
+### 1\. Recommended flow structure
+
+Scope - Process Request
+
+Get items → Generate Excel → Send email → Update status to Completed
+
+Scope - Error Handler
+
+Run after: Process Request has failed or timed out
+
+1\. Filter failed actions
+
+2\. Compose error message
+
+3\. Update SharePoint status to Error
+
+4\. Send an email notification
+
+### 2\. Configure the Error Handler
+
+### Step 1 — Configure Run after
+
+On `Scope - Error Handler`:
+
+* Click the three dots (⋯).
+
+* Select Configure run after.
+
+* For `Scope - Process Request`, select:
+
+    * has failed
+
+    * has timed out
+
+* Leave is successful unchecked.
+
+* Click Done.
+
+### Step 2 — Add Send an email (V2)
+
+Inside `Scope - Error Handler`, add the Office 365 Outlook action Send an email (V2) after your error-message and SharePoint status-update actions.
+
+Use this sample:
+
+Hello,
+
+The Power Automate flow encountered an error while processing a Reactivation Request.
+
+**Request Details**
+- Reference No.: [ReferenceNo]
+- SharePoint Item ID: [ID]
+- Processing Status: Error
+- Reactivation Date: [ReactivationDate]
+
+**Error Details:**
+[Compose_ErrorMessage output]
+
+Please check the Power Automate run history and resolve the issue before retrying the request.
+
+Thank you.
+
+Replace the bracketed values with the corresponding SharePoint dynamic content and the output of your error-message Compose action.
+
+### Step 3 — Set the recipient
+
+In To, enter the email address of the person responsible for monitoring the flow, such as your own work email or your team's support mailbox.
+
+### Step 4 — Update SharePoint
+
+Before sending the notification, configure Update item to set:
+
+* `ProcessingStatus` = `Error`
+
+* `ProcessingError` = output of your error-message Compose action
+
+You can also update `ProcessedDate` if you use that column to record when processing ended.
+
+Important: If multiple records share the same `ReferenceNo`, consider updating all records for that request to `Error`, rather than updating only the triggering item. Also, if the email action itself fails, the SharePoint status should already have been updated to `Error`.
+
+This setup sends a notification when the processing scope fails or times out, while your intentional Terminate — Succeeded action in the No branch will not trigger the error notification.
+
+
+
+****
+
+
 If Yes: continue to your existing processing scope.
 If No: do nothing. Do not set the item to Error; simply terminate the run successfully.
 This prevents IDs 102 and 103 from attempting to create the same Excel file or send another email.
