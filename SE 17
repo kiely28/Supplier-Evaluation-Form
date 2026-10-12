@@ -1,3 +1,19 @@
+In Power Automate flow where multiple SharePoint items can have the same ReferenceNo. Only the item with the lowest ID processes the request. The other items are duplicate records.
+
+Currently, duplicate records are updated to Skipped in the False branch. However, I want all records with the same ReferenceNo to have the same final status.
+
+Desired behavior:
+
+If the main processing item succeeds, update all items with the same ReferenceNo to Completed.
+If the main processing item fails, update all items with the same ReferenceNo to Error and save the error message.
+Duplicate records should not remain as Skipped.
+
+What is the best Power Automate design to update all rows with the same ReferenceNo based on the final result of the main processing item?
+
+
+*****
+
+
 ### 2\. Best fix: Update all matching items only after the main request finishes
 
 This is more reliable than letting each duplicate item decide its own status.
