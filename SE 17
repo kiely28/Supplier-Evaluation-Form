@@ -1,3 +1,115 @@
+### Step 5 — Modify `Scope - Error Handler`
+
+You already have an Error Handler, so keep it and modify its contents.
+
+### 5.1 Configure Run after
+
+On `Scope - Error Handler`:
+
+* Click ⋯ → Configure run after.
+
+* For `Scope - Process Request`, select:
+
+    * `has failed`
+
+    * `has timed out`
+
+* Leave `is successful` unchecked.
+
+* Click Done.
+
+### 5.2 Add Get items
+
+Inside the Error Handler, add SharePoint Get items and rename it `Get_items_Error_Status`.
+
+Use the same filter:
+
+```text
+ReferenceNo eq '@{triggerBody()?['ReferenceNo']}'
+```
+
+This retrieves all records belonging to the failed request.
+
+### 5.3 Add Apply to each
+
+Use the `value` output from `Get_items_Error_Status`.
+
+Inside the loop, add Update item:
+
+| Field                 | Value                                |
+| --------------------- | ------------------------------------ |
+| ID                    | ID from the current Get items record |
+| ProcessingStatus      | Error                                |
+| ProcessingError       | Output from Compose_ErrorMessage     |
+| Other required fields | Preserve their existing values       |
+
+Use your existing `Compose_ErrorMessage` action if you already extract the actual error message from the failed actions.
+
+### 5.4 Add your error notification
+
+After the error-status updates, add Send an email (V2) with the `ReferenceNo`, the error message, and a link to the failed flow run if available.
+
+This gives you the following result:
+
+* Main processing succeeds → all matching records become `Completed`.
+
+* Main processing fails or times out → all matching records become `Error`, with the error message saved.
+
+* A duplicate record reaches the False branch → it is not marked `Skipped` or `Completed` independently.
+
+If the error handler's SharePoint updates themselves fail, check the Error Handler run history; the handler cannot guarantee that every record was updated if SharePoint rejects those updates.
+
+### Step 6 — Prevent processing before all users are added
+
+This is especially important for your reactivation requests, which can contain several user records under one `ReferenceNo`.
+
+Suppose your app creates IDs 238, 239, and 240 sequentially. If ID 238 triggers the flow immediately, its `Get items` action might retrieve only ID 238. The Excel file could then be generated without the other users.
+
+The reliable solution is to add a request readiness signal:
+
+* Add a Yes/No SharePoint column such as `ReadyToProcess`.
+
+* When Power Apps creates the request, create all user records first.
+
+* Only after all records have been created, set `ReadyToProcess` to Yes for the request's records, or use a separate request-level record to indicate readiness.
+
+* Allow the main processing flow to start only when the request is ready and its status is eligible for processing.
+
+A simple delay is not a reliable substitute for readiness, because record creation can take different amounts of time.
+
+### Step 7 — Test before using the flow in production
+
+Test using three records with the same `ReferenceNo`.
+
+Test checklist
+
+0 of 4 checked
+
+Successful request
+
+All three records should become Completed; only one Excel file and one email should be generated.
+
+Failed request
+
+All three records should become Error and contain the processing error message.
+
+Duplicate trigger
+
+A duplicate run must not independently change the status to Skipped or Completed.
+
+Multiple users
+
+The generated Excel file should contain all users for the ReferenceNo.
+
+One final recommendation: if your flow uses When an item is created or modified, changing `ProcessingStatus` during processing can trigger additional runs. Keep a clear eligibility condition and a request-level processing lock or equivalent guard so the same `ReferenceNo` cannot be processed twice concurrently.
+
+
+
+
+******
+
+
+
 In Power Automate flow where multiple SharePoint items can have the same ReferenceNo. Only the item with the lowest ID processes the request. The other items are duplicate records.
 
 Currently, duplicate records are updated to Skipped in the False branch. However, I want all records with the same ReferenceNo to have the same final status.
