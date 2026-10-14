@@ -1,3 +1,172 @@
+
+// =============================================================
+// FORMAT APPROVER NAME
+// =============================================================
+
+function formatApproverName(fullName: string): string {
+
+  if (!fullName) {
+    return "";
+  }
+
+  const cleanName = fullName
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const parts = cleanName.split(" ");
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  const firstInitial = parts[0]
+    .charAt(0)
+    .toUpperCase();
+
+  // Common compound surnames
+  const compoundSurnames = [
+    "Dela Cruz",
+    "De La Cruz",
+    "Del Rosario",
+    "De Leon",
+    "San Jose",
+    "Santa Maria",
+    "Delos Santos",
+    "De Los Santos",
+    "De Guzman",
+    "Delos Reyes",
+    "De Los Reyes"
+  ];
+
+  const lowerName = cleanName.toLowerCase();
+
+  let surname = parts[parts.length - 1];
+
+  // Check whether the name ends with a compound surname
+  for (const compound of compoundSurnames) {
+
+    if (
+      lowerName.endsWith(compound.toLowerCase())
+    ) {
+      surname = cleanName.substring(
+        cleanName.length - compound.length
+      );
+
+      break;
+    }
+  }
+
+  return `${firstInitial}. ${surname}`;
+}
+
+
+******
+
+
+The issue is in your `formatApproverName()` function. Currently, your code takes the first letter of the first name and combines it with the last word of the full name.
+
+For example:
+
+| Full Name           | Current Output |
+| ------------------- | -------------- |
+| Juan Dela Cruz      | J. Cruz        |
+| Julie Anne San Jose | J. Jose        |
+| King RJ Evangelista | K. Evangelista |
+| Bong Gakaday        | B. Gakaday     |
+
+If you want to preserve the middle names or surnames such as Dela Cruz and San Jose, I recommend changing the function to handle compound surnames.
+
+### Recommended solution
+
+Replace your existing `formatApproverName()` function with the code below. It will keep the first initial and preserve common compound surnames.
+
+```typescript
+// =============================================================
+// FORMAT APPROVER NAME
+// =============================================================
+
+function formatApproverName(fullName: string): string {
+
+  if (!fullName) {
+    return "";
+  }
+
+  const cleanName = fullName
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const parts = cleanName.split(" ");
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  const firstInitial = parts[0]
+    .charAt(0)
+    .toUpperCase();
+
+  // Common compound surnames
+  const compoundSurnames = [
+    "Dela Cruz",
+    "De La Cruz",
+    "Del Rosario",
+    "De Leon",
+    "San Jose",
+    "Santa Maria",
+    "Delos Santos",
+    "De Los Santos",
+    "De Guzman",
+    "Delos Reyes",
+    "De Los Reyes"
+  ];
+
+  const lowerName = cleanName.toLowerCase();
+
+  let surname = parts[parts.length - 1];
+
+  // Check whether the name ends with a compound surname
+  for (const compound of compoundSurnames) {
+
+    if (
+      lowerName.endsWith(compound.toLowerCase())
+    ) {
+      surname = cleanName.substring(
+        cleanName.length - compound.length
+      );
+
+      break;
+    }
+  }
+
+  return `${firstInitial}. ${surname}`;
+}
+```
+
+### Expected results
+
+| Full Name               | New Output     |
+| ----------------------- | -------------- |
+| Juan Dela Cruz          | J. Dela Cruz   |
+| Julie Anne San Jose     | J. San Jose    |
+| King RJ Evangelista     | K. Evangelista |
+| Bong Gakaday            | B. Gakaday     |
+| Maria Clara Del Rosario | M. Del Rosario |
+| Pedro De Guzman         | P. De Guzman   |
+
+Important: You don't need to change your `main()` function, Power Automate flow, signature images, or Excel cell mappings. Just replace the existing `formatApproverName()` function.
+
+### One additional recommendation
+
+This solution works for the compound surnames listed in the code. If your approvers have other surname formats, such as `De Vera`, `De la Peña`, or `Delos Reyes`, you can add them to the `compoundSurnames` array.
+
+For a more reliable long-term solution, especially if your organization has many approvers, I recommend maintaining a separate list of each approver's First Name and Surname in SharePoint rather than trying to infer surname boundaries from a full name. This avoids ambiguity when formatting names for your reactivation form.
+
+
+
+
+********
+
+
 function main(
   workbook: ExcelScript.Workbook,
 
