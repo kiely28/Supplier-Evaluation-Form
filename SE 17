@@ -1,3 +1,433 @@
+function main(
+  workbook: ExcelScript.Workbook,
+
+  requestingSection: string,
+  requestDate: string,
+  reactivationDate: string,
+
+  userIds: string[],
+  userNames: string[],
+
+  RoD: string,
+  Exp: string,
+  RRR: string,
+
+  approval1: string,
+  approval2: string,
+  approval3: string,
+  approval4: string,
+
+  approval1Signature: string,
+  approval2Signature: string,
+  approval3Signature: string,
+  approval4Signature: string
+) {
+
+  // =========================================================
+  // SETTINGS
+  // =========================================================
+
+  const sheetName = "Reactivation Form";
+
+  const maxUsers = 15;
+
+  // Signature locations
+  const signature1Cell = "D46";
+  const signature2Cell = "I46";
+  const signature3Cell = "J46";
+  const signature4Cell = "K46";
+
+  // Name locations
+  const name1Cell = "C49";
+  const name2Cell = "I49";
+  const name3Cell = "J49";
+  const name4Cell = "K49";
+
+  // =========================================================
+  // GET WORKSHEET
+  // =========================================================
+
+  const sheet = workbook.getWorksheet(sheetName);
+
+  if (!sheet) {
+    throw new Error(
+      `Worksheet "${sheetName}" was not found.`
+    );
+  }
+
+  // =========================================================
+  // MAIN REQUEST INFORMATION
+  // =========================================================
+
+  sheet.getRange("G7").setValue(requestingSection);
+  sheet.getRange("E8").setValue(requestDate);
+  sheet.getRange("F9").setValue(reactivationDate);
+
+  sheet.getRange("C30").setValue(RoD);
+  sheet.getRange("C34").setValue(Exp);
+  sheet.getRange("C39").setValue(RRR);
+
+  // =========================================================
+  // CLEAR OLD USER DATA
+  // =========================================================
+
+  /*sheet
+    .getRange("C12:C26")
+    .clear(ExcelScript.ClearApplyTo.contents);
+
+  sheet
+    .getRange("G12:G26")
+    .clear(ExcelScript.ClearApplyTo.contents);*/
+
+  sheet
+    .getRange("C12:C26")
+    .setValues(Array(15).fill([""]));
+
+  sheet
+    .getRange("H12:H26")
+    .setValues(Array(15).fill([""]));
+
+  // =========================================================
+  // CLEAR OLD SIGNATURES
+  // =========================================================
+
+  const shapes = sheet.getShapes();
+
+  for (const shape of shapes) {
+
+    const shapeName = shape.getName();
+
+    if (
+      shapeName === "Approval1Signature" ||
+      shapeName === "Approval2Signature" ||
+      shapeName === "Approval3Signature" ||
+      shapeName === "Approval4Signature"
+    ) {
+      shape.delete();
+    }
+  }
+
+  // =========================================================
+  // USER IDS / USER NAMES
+  // =========================================================
+
+  /*const userCount = Math.min(
+    Math.max(userIds.length, userNames.length),
+    maxUsers
+  );*/
+
+  /*const actualUserIds =
+    Array.isArray(userIds[0])
+      ? userIds[0] as unknown as string[]
+      : userIds;
+
+  const actualUserNames =
+    Array.isArray(userNames[0])
+      ? userNames[0] as unknown as string[]
+      : userNames;*/
+
+  let actualUserIds: string[] = [];
+  let actualUserNames: string[] = [];
+
+  // Handle Power Automate sending:
+  // ['["B014172","B012504"]']
+
+  if (
+    userIds.length > 0 &&
+    typeof userIds[0] === "string" &&
+    userIds[0].startsWith("[")
+  ) {
+    actualUserIds = JSON.parse(userIds[0]);
+  } else {
+    actualUserIds = userIds;
+  }
+
+  if (
+    userNames.length > 0 &&
+    typeof userNames[0] === "string" &&
+    userNames[0].startsWith("[")
+  ) {
+    actualUserNames = JSON.parse(userNames[0]);
+  } else {
+    actualUserNames = userNames;
+  }
+
+  const userCount = Math.min(
+    Math.max(actualUserIds.length, actualUserNames.length),
+    maxUsers
+  );
+
+  const idData: string[][] = [];
+  const nameData: string[][] = [];
+
+  for (let i = 0; i < userCount; i++) {
+
+    idData.push([
+      actualUserIds[i] ?? ""
+    ]);
+
+    nameData.push([
+      actualUserNames[i] ?? ""
+    ]);
+  }
+
+  // =========================================================
+  // WRITE USER IDS
+  // C12:C26
+  // =========================================================
+
+  if (idData.length > 0) {
+
+    sheet
+      .getRangeByIndexes(
+        11,  // Row 12
+        2,   // Column C
+        idData.length,
+        1
+      )
+      .setValues(idData);
+  }
+
+  // =========================================================
+  // WRITE USER NAMES
+  // G12:G26
+  // =========================================================
+
+  if (nameData.length > 0) {
+
+    sheet
+      .getRangeByIndexes(
+        11,  // Row 12
+        7,   // Column G
+        nameData.length,
+        1
+      )
+      .setValues(nameData);
+  }
+
+  // Force User ID and User Name columns to text
+  sheet
+    .getRange("C12:C26")
+    .setNumberFormat("@");
+
+  sheet
+    .getRange("H12:H26")
+    .setNumberFormat("@");
+
+  // =========================================================
+  // APPROVER NAMES
+  // =========================================================
+
+  sheet
+    .getRange(name1Cell)
+    .setValue(formatApproverName(approval1));
+
+  sheet
+    .getRange(name2Cell)
+    .setValue(formatApproverName(approval2));
+
+  sheet
+    .getRange(name3Cell)
+    .setValue(formatApproverName(approval3));
+
+  sheet
+    .getRange(name4Cell)
+    .setValue(formatApproverName(approval4));
+
+  // =========================================================
+  // INSERT SIGNATURES
+  // =========================================================
+
+  if (approval1Signature) {
+
+    addSignature(
+      sheet,
+      approval1Signature,
+      signature1Cell,
+      "Approval1Signature"
+    );
+  }
+
+  if (approval2Signature) {
+
+    addSignature(
+      sheet,
+      approval2Signature,
+      signature2Cell,
+      "Approval2Signature"
+    );
+  }
+
+  if (approval3Signature) {
+
+    addSignature(
+      sheet,
+      approval3Signature,
+      signature3Cell,
+      "Approval3Signature"
+    );
+  }
+
+  if (approval4Signature) {
+
+    addSignature(
+      sheet,
+      approval4Signature,
+      signature4Cell,
+      "Approval4Signature"
+    );
+  }
+
+  // =========================================================
+  // RETURN RESULT
+  // =========================================================
+
+  return {
+    status: "Success",
+    usersWritten: userCount,
+
+    approval1: approval1,
+    approval2: approval2,
+    approval3: approval3,
+    approval4: approval4
+  };
+}
+
+
+// =============================================================
+// FORMAT APPROVER NAME
+// =============================================================
+
+function formatApproverName(fullName: string): string {
+
+  if (!fullName) {
+    return "";
+  }
+
+  const cleanName = fullName
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const parts = cleanName.split(" ");
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  const firstName = parts[0];
+
+  const lastName = parts[parts.length - 1];
+
+  const firstInitial = firstName
+    .charAt(0)
+    .toUpperCase();
+
+  return `${firstInitial}. ${lastName}`;
+}
+
+
+// =============================================================
+// ADD SIGNATURE IMAGE
+// =============================================================
+
+function addSignature(
+  sheet: ExcelScript.Worksheet,
+  base64Image: string,
+  anchorCell: string,
+  shapeName: string
+) {
+
+  // ----------------------------------------------------------
+  // Add image
+  // ----------------------------------------------------------
+
+  const image = sheet.addImage(base64Image);
+
+  image.setName(shapeName);
+
+  // ----------------------------------------------------------
+  // Anchor cell
+  // ----------------------------------------------------------
+
+  const cell = sheet.getRange(anchorCell);
+
+  // ----------------------------------------------------------
+  // Maximum signature dimensions
+  //
+  // Adjust these values if necessary to match your
+  // actual approval boxes.
+  // ----------------------------------------------------------
+
+  const maxWidth = 90;
+  const maxHeight = 35;
+
+  // ----------------------------------------------------------
+  // Get original image dimensions
+  // ----------------------------------------------------------
+
+  const originalWidth = image.getWidth();
+  const originalHeight = image.getHeight();
+
+  // ----------------------------------------------------------
+  // Calculate scale while preserving aspect ratio
+  // ----------------------------------------------------------
+
+  const widthScale =
+    maxWidth / originalWidth;
+
+  const heightScale =
+    maxHeight / originalHeight;
+
+  const scale =
+    Math.min(widthScale, heightScale);
+
+  let finalWidth =
+    originalWidth * scale;
+
+  let finalHeight =
+    originalHeight * scale;
+
+  // ----------------------------------------------------------
+  // Position image
+  // ----------------------------------------------------------
+
+  const cellLeft = cell.getLeft();
+  const cellTop = cell.getTop();
+
+  const cellWidth = cell.getWidth();
+  const cellHeight = cell.getHeight();
+
+  const left =
+    cellLeft +
+    Math.max(0, (cellWidth - finalWidth) / 2);
+
+  const top =
+    cellTop +
+    Math.max(0, (cellHeight - finalHeight) / 2);
+
+  // ----------------------------------------------------------
+  // Apply position and size
+  // ----------------------------------------------------------
+
+  image.setLeft(left);
+  image.setTop(top);
+
+  image.setWidth(finalWidth);
+  image.setHeight(finalHeight);
+
+  // ----------------------------------------------------------
+  // Attach image to cells
+  // ----------------------------------------------------------
+
+  image.setPlacement(
+    ExcelScript.Placement.twoCell
+  );
+}
+
+
+********
+
+
 I need help improving my Power Automate Error Handler email.
 
 Current issue:
