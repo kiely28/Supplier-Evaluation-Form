@@ -1,3 +1,45 @@
+I need help improving my Power Automate Error Handler email.
+
+Current issue:
+My Error Handler email is supposed to show a detailed error message, especially for:
+1. Missing signature files (File not found)
+2. General processing errors
+
+However, the email always returns:
+
+"An action failed. No dependent actions succeeded."
+
+instead of the actual root cause such as:
+- File not found
+- Signature image missing
+- BadRequest
+- Excel/Office Script error
+- SharePoint error
+
+Current setup:
+- Main processing is inside "Scope - Process Request"
+- Error handling is inside "Scope - Error Handler"
+- The Error Handler runs after Process Request has Failed, Timed Out, or Skipped
+- I want to continue using a single Error Handler email for all errors
+- Missing signatures should produce a user-friendly message
+- Other failures should show the actual child action error message whenever possible
+
+Please review my Error Handler design and provide:
+1. The best practice solution
+2. Step-by-step configuration
+3. Exact expressions to use
+4. How to retrieve the child action error instead of the generic:
+   "An action failed. No dependent actions succeeded."
+5. How to identify which action actually failed inside the Process Request scope
+6. How to customize the email body so missing signatures and general processing errors display different messages
+
+Please explain in beginner-friendly detail and include sample expressions and email body examples.
+
+
+*****
+
+
+
 ### Step 5 — Modify `Scope - Error Handler`
 
 You already have an Error Handler, so keep it and modify its contents.
